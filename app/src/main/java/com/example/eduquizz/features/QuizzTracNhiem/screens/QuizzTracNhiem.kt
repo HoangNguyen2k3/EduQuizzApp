@@ -1,5 +1,6 @@
 package com.example.eduquizz.features.QuizzTracNhiem.screens
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -31,6 +32,7 @@ import androidx.compose.ui.draw.alpha
 import com.example.eduquizz.navigation.Routes
 import androidx.navigation.NavController
 import kotlin.random.Random
+@SuppressLint("SuspiciousIndentation")
 @Composable
 fun MainView(name: String, modifier: Modifier = Modifier,navController: NavController,questionViewModel: QuestionViewModel ) {
     val count = remember { mutableStateOf(0) }
