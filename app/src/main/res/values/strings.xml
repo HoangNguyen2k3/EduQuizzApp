@@ -1,3 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">EduQuizz</string>
+
+    <!-- Navigation Labels -->
+    <string name="nav_home">Trang chủ</string>
+    <string name="nav_courses">Khóa học</string>
+    <string name="nav_statistics">Thống kê</string>
+    <string name="nav_profile">Hồ sơ</string>
+
+    <!-- Subject Names -->
+    <string name="subject_english">Tiếng Anh</string>
+    <string name="subject_math">Toán học</string>
+
+    <!-- Content Section Titles -->
+    <string name="courses_title">Khóa học</string>
+    <string name="courses_subtitle">Sắp có thêm nội dung mới!</string>
+    <string name="statistics_title">Thống kê</string>
+    <string name="statistics_subtitle">Theo dõi tiến độ học tập</string>
+    <string name="profile_title">Hồ sơ cá nhân</string>
+    <string name="profile_subtitle">Quản lý thông tin cá nhân</string>
+
+    <!-- Progress Indicators -->
+    <string name="level_value">15</string>
+    <string name="coins_value">456</string>
+    <string name="english_progress">1/10</string>
+    <string name="english_lessons">0/6</string>
+    <string name="math_progress">0/0</string>
+    <string name="math_lessons">0/6</string>
+
+    <!-- Content Descriptions -->
+    <string name="star_icon_desc">Star icon</string>
+    <string name="subject_icon_desc">Subject icon</string>
+    <string name="home_icon_desc">Home</string>
+    <string name="courses_icon_desc">Courses</string>
+    <string name="statistics_icon_desc">Statistics</string>
+    <string name="profile_icon_desc">Profile</string>
 </resources>

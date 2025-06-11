@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.EduQuizz" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/splash</item>
+    </style>
 
-    <style name="Theme.EduQuizz" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.EduQuizz.Splash" parent="Theme.EduQuizz">
+        <!-- Loại bỏ hoàn toàn splash screen mặc định -->
+        <item name="android:windowBackground">@color/splash</item>
+        <item name="android:windowNoTitle">true</item>
+
+        <!-- Vô hiệu hóa splash screen Android 12+ -->
+        <item name="android:windowSplashScreenBackground" tools:targetApi="31">@color/splash</item>
+        <item name="android:windowSplashScreenAnimationDuration" tools:targetApi="31">0</item>
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@null</item>
+
+        <!-- Tăng tốc độ khởi động -->
+        <item name="android:windowDisablePreview">true</item>
+    </style>
 </resources>

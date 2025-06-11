@@ -6,7 +6,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.eduquizz.navigation.NavGraph
 import com.example.eduquizz.ui.theme.EduQuizzTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -66,11 +68,11 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 
 
 
-/*
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    EduQuizzTheme {
-        Greeting("Android")
-    }
-}*/
+
+//@Preview(showBackground = true)
+//@Composable
+//fun GreetingPreview() {
+//    EduQuizzTheme {
+//
+//    }
+//}

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Spacing -->
+    <dimen name="spacing_tiny">4dp</dimen>
+    <dimen name="spacing_small">6dp</dimen>
+    <dimen name="spacing_medium">8dp</dimen>
+    <dimen name="spacing_normal">12dp</dimen>
+    <dimen name="spacing_large">16dp</dimen>
+    <dimen name="spacing_xl">20dp</dimen>
+    <dimen name="spacing_xxl">24dp</dimen>
+    <dimen name="spacing_huge">28dp</dimen>
+
+    <!-- Card dimensions -->
+    <dimen name="subject_card_height">120dp</dimen>
+    <dimen name="subject_card_corner">28dp</dimen>
+    <dimen name="subject_card_elevation">12dp</dimen>
+
+    <!-- Icon sizes -->
+    <dimen name="icon_small">16dp</dimen>
+    <dimen name="icon_medium">22dp</dimen>
+    <dimen name="icon_normal">24dp</dimen>
+    <dimen name="icon_large">40dp</dimen>
+    <dimen name="icon_subject">60dp</dimen>
+    <dimen name="icon_xl">80dp</dimen>
+
+    <!-- Corner radius -->
+    <dimen name="corner_small">12dp</dimen>
+    <dimen name="corner_medium">20dp</dimen>
+    <dimen name="corner_large">25dp</dimen>
+
+    <!-- Navigation bar -->
+    <dimen name="nav_bar_elevation">8dp</dimen>
+
+    <!-- Text sizes -->
+    <dimen name="text_tiny">12sp</dimen>
+    <dimen name="text_small">14sp</dimen>
+    <dimen name="text_normal">16sp</dimen>
+    <dimen name="text_medium">18sp</dimen>
+    <dimen name="text_large">22sp</dimen>
+    <dimen name="text_xl">28sp</dimen>
+
+    <!-- Badge padding -->
+    <dimen name="badge_horizontal_padding">20dp</dimen>
+    <dimen name="badge_vertical_padding">10dp</dimen>
+    <dimen name="badge_small_horizontal_padding">12dp</dimen>
+    <dimen name="badge_small_vertical_padding">6dp</dimen>
+</resources>
