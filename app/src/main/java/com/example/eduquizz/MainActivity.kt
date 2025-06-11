@@ -6,11 +6,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.eduquizz.navigation.NavGraph
-import com.example.eduquizz.ui.theme.EduQuizzTheme
+import com.example.eduquizz.Screens.WordSearch.ui.theme.EduQuizzTheme
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.database.FirebaseDatabase
