@@ -17,10 +17,10 @@ import com.example.eduquizz.features.QuizzTracNhiem.screens.IntroScreen
 import com.example.eduquizz.features.QuizzTracNhiem.screens.MainView
 import com.example.eduquizz.features.QuizzTracNhiem.screens.ResultsScreen
 import com.example.eduquizz.features.QuizzTracNhiem.viewmodel.QuestionViewModel
-import com.example.quizapp.screen.GameDescriptionScreen
+import com.example.eduquizz.features.match.screen.GameDescriptionScreen
 import com.example.quizapp.screen.SettingsScreen
 import com.example.quizapp.screen.WordMatchGameScreen
-import com.example.quizapp.ui.english.EnglishGamesScreen
+import com.example.eduquizz.features.home.english.EnglishGamesScreen
 import com.example.quizapp.ui.main.MainScreen
 import com.example.quizapp.viewmodel.WordMatchGame
 import com.example.quizapp.ui.splash.SplashScreen

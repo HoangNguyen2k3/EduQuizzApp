@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.example.eduquizz.navigation.NavGraph
 import com.example.eduquizz.Screens.WordSearch.ui.theme.EduQuizzTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -18,7 +21,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseDatabase.getInstance().setPersistenceEnabled(true)
+
         enableEdgeToEdge()
+
         setContent {
             EduQuizzTheme {
                 val navController = rememberNavController()

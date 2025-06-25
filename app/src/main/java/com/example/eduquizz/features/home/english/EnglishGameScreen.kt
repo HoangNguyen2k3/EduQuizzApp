@@ -1,4 +1,4 @@
-package com.example.quizapp.ui.english
+package com.example.eduquizz.features.home.english
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,17 +21,13 @@ import androidx.compose.ui.unit.sp
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.example.eduquizz.R
 import com.example.quizapp.ui.theme.QuizAppTheme
-import com.example.quizapp.data.Game
+import com.example.eduquizz.data.models.Game
 
 @Composable
 fun EnglishGamesScreen(
     onBackClick: () -> Unit = {},
     onGameClick: (Game) -> Unit = {}
 ) {
-    // Modern color palette for English games
-    val primaryColor = Color(0xFF6C5CE7)
-    val secondaryColor = Color(0xFF74B9FF)
-    val accentColor = Color(0xFFFD79A8)
 
     // System UI Controller for status bar
     val systemUiController = rememberSystemUiController()
@@ -45,30 +42,30 @@ fun EnglishGamesScreen(
     val games = listOf(
         Game(
             id = "word_find",
-            name = "Tìm từ",
+            name = "Word Search",
             iconRes = R.drawable.eng,
             progress = 8,
             totalQuestions = 550,
             completedQuestions = 8,
             totalLessons = 11,
             gradientColors = listOf(
-                Color(0xFFFF6B9D), // Vibrant Pink
-                Color(0xFFFF8E9E), // Light Pink
-                Color(0xFFFFB4A2)  // Peach
+                Color(0xFF4A85F5),
+                Color(0xFF7B61FF),
+                Color(0xFF7B61FF)
             )
         ),
         Game(
             id = "connect_blocks",
-            name = "Nối ô",
+            name = "Match Game",
             iconRes = R.drawable.eng,
             progress = 3,
             totalQuestions = 400,
             completedQuestions = 3,
             totalLessons = 8,
             gradientColors = listOf(
-                Color(0xFFFFD93D), // Bright Yellow
-                Color(0xFFFFB74D), // Orange
-                Color(0xFFFF8A65)  // Deep Orange
+                Color(0xFFFF5722),
+                Color(0xFFFF9800),
+                Color(0xFFFFC107)
             )
         ),
         Game(
@@ -94,9 +91,9 @@ fun EnglishGamesScreen(
             completedQuestions = 15,
             totalLessons = 10,
             gradientColors = listOf(
-                Color(0xFF667EEA), // Blue Purple
-                Color(0xFF764BA2), // Purple
-                Color(0xFF8E44AD)  // Dark Purple
+                Color(0xFFFF6B9D), // Vibrant Pink
+                Color(0xFFFF8E9E), // Light Pink
+                Color(0xFFFFB4A2)  // Peach
             )
         )
     )
@@ -105,11 +102,10 @@ fun EnglishGamesScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                Brush.verticalGradient(
+                Brush.horizontalGradient(
                     colors = listOf(
-                        Color(0xFFF8F9FA), // Very Light Gray
-                        Color(0xFFE9ECEF), // Light Gray
-                        Color(0xFFDEE2E6)  // Slightly Darker Gray
+                        Color(0xFF667EEA), // Blue Purple
+                        Color(0xFF764BA2)  // Purple
                     )
                 )
             )
@@ -170,7 +166,7 @@ private fun EnglishGamesHeader(
                 .size(48.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.ArrowBack,
+                imageVector = Icons.Default.ArrowBackIosNew,
                 contentDescription = "Quay lại",
                 tint = Color.White,
                 modifier = Modifier.size(24.dp)

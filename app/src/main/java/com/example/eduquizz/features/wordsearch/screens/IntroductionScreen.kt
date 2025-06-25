@@ -29,12 +29,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.wordsearch.ui.components.GameDescriptionCard
-import com.example.wordsearch.ui.components.GamePreviewCard
-import com.example.wordsearch.ui.components.StatisticsRow
+import com.example.eduquizz.features.wordsearch.components.GameDescriptionCard
+import com.example.eduquizz.features.wordsearch.components.GamePreviewCard
+import com.example.eduquizz.features.wordsearch.components.StatisticsRow
 import com.example.wordsearch.ui.theme.Primary
+import com.example.wordsearch.ui.theme.WordSearchGameTheme
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -232,6 +234,18 @@ private fun PlayButton(
                 fontSize = 18.sp
             ),
             color = Color.White
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun IntroductionScreenPreview() {
+    WordSearchGameTheme {
+        IntroductionScreen(
+            onPlayClicked = {},
+            onBackPressed = {},
+            showContinueButton = false
         )
     }
 }

@@ -18,8 +18,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.quizapp.data.Game
-import com.example.quizapp.data.Subject
+import com.example.eduquizz.data.models.Game
 
 @Composable
 fun GameCard(

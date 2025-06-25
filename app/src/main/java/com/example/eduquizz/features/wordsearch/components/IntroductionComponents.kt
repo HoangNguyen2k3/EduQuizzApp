@@ -1,4 +1,4 @@
-package com.example.wordsearch.ui.components
+package com.example.eduquizz.features.wordsearch.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

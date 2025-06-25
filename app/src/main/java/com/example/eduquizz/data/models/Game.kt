@@ -1,4 +1,4 @@
-package com.example.quizapp.data
+package com.example.eduquizz.data.models
 
 import androidx.compose.ui.graphics.Color
 

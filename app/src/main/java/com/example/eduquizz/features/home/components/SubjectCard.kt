@@ -14,66 +14,80 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.eduquizz.R
 import com.example.quizapp.data.Subject
 
 @Composable
-fun SubjectCard(
+public fun SubjectCard(
     subject: Subject,
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(120.dp)
+            .height(dimensionResource(id = com.example.eduquizz.R.dimen.subject_card_height))
             .clickable { onClick() },
-        shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        shape = RoundedCornerShape(dimensionResource(id = com.example.eduquizz.R.dimen.subject_card_corner)),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = dimensionResource(id = com.example.eduquizz.R.dimen.subject_card_elevation)
+        )
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
-                    Brush.horizontalGradient(subject.gradientColors)
+                    Brush.horizontalGradient(
+                        colors = subject.gradientColors,
+                        startX = 0f,
+                        endX = 1000f
+                    )
                 )
         ) {
-            // Recommended badge
-            if (subject.isRecommended) {
-                Box(
-                    modifier = Modifier
-                        .padding(12.dp)
-                        .background(
-                            Color(0xFF00CED1),
-                            RoundedCornerShape(12.dp)
+            // Overlay pattern
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                colorResource(id = com.example.eduquizz.R.color.white_10),
+                                Color.Transparent
+                            ),
+                            radius = 300f
                         )
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text = "Các môn học",
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
                     )
-                }
-            }
+            )
 
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(24.dp),
+                    .padding(dimensionResource(id = com.example.eduquizz.R.dimen.spacing_xxl)),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Subject icon
-                Image(
-                    painter = painterResource(id = subject.iconRes),
-                    contentDescription = null,
-                    modifier = Modifier.size(56.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(dimensionResource(id = com.example.eduquizz.R.dimen.icon_subject))
+                        .background(
+                            colorResource(id = com.example.eduquizz.R.color.white_20),
+                            RoundedCornerShape(dimensionResource(id = com.example.eduquizz.R.dimen.corner_medium))
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = subject.iconRes),
+                        contentDescription = stringResource(id = com.example.eduquizz.R.string.subject_icon_desc),
+                        modifier = Modifier.size(dimensionResource(id = com.example.eduquizz.R.dimen.icon_large))
+                    )
+                }
 
-                Spacer(modifier = Modifier.width(24.dp))
+                Spacer(modifier = Modifier.width(dimensionResource(id = com.example.eduquizz.R.dimen.spacing_xxl)))
 
                 // Subject info
                 Column(
@@ -82,46 +96,72 @@ fun SubjectCard(
                     Text(
                         text = subject.name,
                         color = Color.White,
-                        fontSize = 24.sp,
+                        fontSize = dimensionResource(id = com.example.eduquizz.R.dimen.text_large).value.sp,
                         fontWeight = FontWeight.Bold
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(dimensionResource(id = com.example.eduquizz.R.dimen.spacing_normal)))
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "${subject.completedQuestions}/${subject.totalQuestions}",
-                            color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = null,
-                            tint = Color.White,
+                        // Progress indicator
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
-                                .size(18.dp)
-                                .padding(start = 4.dp)
-                        )
+                                .background(
+                                    colorResource(id = com.example.eduquizz.R.color.white_20),
+                                    RoundedCornerShape(dimensionResource(id = com.example.eduquizz.R.dimen.corner_small))
+                                )
+                                .padding(
+                                    horizontal = dimensionResource(id = com.example.eduquizz.R.dimen.badge_small_horizontal_padding),
+                                    vertical = dimensionResource(id = com.example.eduquizz.R.dimen.badge_small_vertical_padding)
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(dimensionResource(id = com.example.eduquizz.R.dimen.icon_small))
+                            )
+                            Spacer(modifier = Modifier.width(dimensionResource(id = com.example.eduquizz.R.dimen.spacing_tiny)))
+                            Text(
+                                text = "${subject.progress}/${subject.totalQuestions}",
+                                color = Color.White,
+                                fontSize = dimensionResource(id = com.example.eduquizz.R.dimen.text_small).value.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
 
-                        Spacer(modifier = Modifier.width(20.dp))
+                        Spacer(modifier = Modifier.width(dimensionResource(id = com.example.eduquizz.R.dimen.spacing_normal)))
 
-                        Text(
-                            text = "${subject.progress}/${subject.totalLessons}",
-                            color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = null,
-                            tint = Color.White,
+                        // Lessons indicator
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
-                                .size(18.dp)
-                                .padding(start = 4.dp)
-                        )
+                                .background(
+                                    colorResource(id = com.example.eduquizz.R.color.white_20),
+                                    RoundedCornerShape(dimensionResource(id = com.example.eduquizz.R.dimen.corner_small))
+                                )
+                                .padding(
+                                    horizontal = dimensionResource(id = com.example.eduquizz.R.dimen.badge_small_horizontal_padding),
+                                    vertical = dimensionResource(id = com.example.eduquizz.R.dimen.badge_small_vertical_padding)
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(dimensionResource(id = com.example.eduquizz.R.dimen.icon_small))
+                            )
+                            Spacer(modifier = Modifier.width(dimensionResource(id = com.example.eduquizz.R.dimen.spacing_tiny)))
+                            Text(
+                                text = "${subject.completedQuestions}/6",
+                                color = Color.White,
+                                fontSize = dimensionResource(id = R.dimen.text_small).value.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 }
             }
