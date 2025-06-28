@@ -1,16 +1,12 @@
 package com.example.eduquizz.navigation
 
-import android.content.Intent
-import androidx.activity.compose.setContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.core.content.ContextCompat.startActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -21,15 +17,12 @@ import com.example.eduquizz.Screens.QuizzTracNhiem.IntroScreen
 import com.example.eduquizz.Screens.QuizzTracNhiem.MainView
 import com.example.eduquizz.Screens.QuizzTracNhiem.ResultsScreen
 import com.example.eduquizz.viewmodel.QuestionViewModel
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.quizapp.screen.GameDescriptionScreen
 import com.example.quizapp.screen.SettingsScreen
-import com.example.quizapp.screen.WordMatchGameScreen
+import com.example.eduquizz.Screens.NoiTu.screen.WordMatchGameScreen
 import com.example.quizapp.ui.english.EnglishGamesScreen
 import com.example.quizapp.ui.main.MainScreen
-import com.example.quizapp.viewmodel.WordMatchGame
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.eduquizz.MainActivity
+import com.example.eduquizz.Screens.NoiTu.viewmodel.WordMatchGame
 import com.example.quizapp.ui.splash.SplashScreen
 import com.example.wordsearch.ui.screens.IntroductionScreen
 import com.example.wordsearch.ui.screens.WordSearchGame
