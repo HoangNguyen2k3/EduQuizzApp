@@ -34,12 +34,12 @@
     <color name="bg_darker_gray">#DEE2E6</color>
 
     <!-- Subject Card Colors -->
-    <color name="english_red">#FF7675</color>
-    <color name="english_coral">#E17055</color>
-    <color name="english_pink">#FD79A8</color>
-    <color name="math_blue">#74B9FF</color>
-    <color name="math_purple">#6C5CE7</color>
-    <color name="math_light_purple">#A29BFE</color>
+    <color name="english_red">#74B9FF</color>
+    <color name="english_coral">#6C5CE7</color>
+    <color name="english_pink">#A29BFE</color>
+    <color name="math_blue">#FF7675</color>
+    <color name="math_purple">#E17055</color>
+    <color name="math_light_purple">#FD79A8</color>
 
     <!-- Header Badge Colors -->
     <color name="level_gradient_start">#E17055</color>

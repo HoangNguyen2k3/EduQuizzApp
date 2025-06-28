@@ -1,4 +1,4 @@
-package com.example.eduquizz.ui.theme
+package com.example.eduquizz.Screens.WordSearch.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
