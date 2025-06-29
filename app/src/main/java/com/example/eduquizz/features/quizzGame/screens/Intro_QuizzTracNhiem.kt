@@ -1,20 +1,16 @@
-package com.example.eduquizz.features.wordsearch.screens
+package com.example.eduquizz.features.quizzGame.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
@@ -23,31 +19,35 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.eduquizz.features.wordsearch.components.GameDescriptionCard
-import com.example.eduquizz.features.wordsearch.components.GamePreviewCard
-import com.example.eduquizz.features.wordsearch.components.StatisticsRow
-import com.example.wordsearch.ui.theme.Primary
-import com.example.wordsearch.ui.theme.WordSearchGameTheme
+import androidx.navigation.NavController
+import com.example.eduquizz.R
+import com.example.eduquizz.navigation.Routes
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun IntroductionScreen(
-    onPlayClicked: () -> Unit,
-    onBackPressed: () -> Unit,
-    showContinueButton: Boolean = false
+fun IntroScreen(
+    navController: NavController,
+    onBackPressed: () -> Unit
 ) {
-    val context = LocalContext.current
     var isVisible by remember { mutableStateOf(false) }
+
+    val sampleImages = listOf(
+        R.drawable.image,
+        R.drawable.image,
+        R.drawable.image
+    )
 
     LaunchedEffect(Unit) {
         delay(300)
@@ -60,10 +60,10 @@ fun IntroductionScreen(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF4A85F5),
-                        Color(0xFF7B61FF),
+                        Color(0xFF096A5A),
+                        Color(0xFF44A08D),
+                        Color(0xFF4ECDC4),
                         MaterialTheme.colorScheme.background
-
                     )
                 )
             )
@@ -96,8 +96,7 @@ fun IntroductionScreen(
                     ) + fadeIn(animationSpec = tween(800, delayMillis = 1000))
                 ) {
                     PlayButton(
-                        onClick = onPlayClicked,
-                        showContinueButton = showContinueButton,
+                        onClick = { navController.navigate(Routes.MAIN) },
                         modifier = Modifier.padding(20.dp)
                     )
                 }
@@ -113,7 +112,7 @@ fun IntroductionScreen(
                 item {
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    //Game Preview Card
+                    // Game Banner
                     AnimatedVisibility(
                         visible = isVisible,
                         enter = slideInVertically(
@@ -121,13 +120,13 @@ fun IntroductionScreen(
                             animationSpec = tween(800, easing = FastOutSlowInEasing)
                         ) + fadeIn(animationSpec = tween(800))
                     ) {
-                        GamePreviewCard()
+                        GameBanner()
                     }
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
                 item {
-                    //Game title
+                    // Game Title
                     AnimatedVisibility(
                         visible = isVisible,
                         enter = slideInVertically(
@@ -141,12 +140,11 @@ fun IntroductionScreen(
                     ) {
                         GameTitle()
                     }
-
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
                 item {
-                    //Statistics Row
+                    // Game Description
                     AnimatedVisibility(
                         visible = isVisible,
                         enter = slideInVertically(
@@ -158,13 +156,13 @@ fun IntroductionScreen(
                             )
                         ) + fadeIn(animationSpec = tween(800, delayMillis = 400))
                     ) {
-                        StatisticsRow()
+                        GameDescription()
                     }
                     Spacer(modifier = Modifier.height(32.dp))
                 }
 
                 item {
-                    //Description Section
+                    // Sample Images
                     AnimatedVisibility(
                         visible = isVisible,
                         enter = slideInVertically(
@@ -176,9 +174,9 @@ fun IntroductionScreen(
                             )
                         ) + fadeIn(animationSpec = tween(800, delayMillis = 600))
                     ) {
-                        GameDescriptionCard()
+                        SampleImagesSection(sampleImages)
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
 
                 item {
@@ -190,23 +188,114 @@ fun IntroductionScreen(
 }
 
 @Composable
+private fun GameBanner() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp)
+            .shadow(12.dp, RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.quizzbanner),
+            contentDescription = "Banner Game",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(16.dp))
+        )
+    }
+}
+
+@Composable
 private fun GameTitle() {
-    Text(
-        text = "Word Search Game",
-        style = MaterialTheme.typography.headlineLarge.copy(
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold
-        ),
-        color = Color.White,
-        textAlign = TextAlign.Center,
-        modifier = Modifier.padding(horizontal = 16.dp)
-    )
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Fun Quiz Game",
+            style = MaterialTheme.typography.headlineLarge.copy(
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold
+            ),
+            color = Color.White,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+    }
+}
+
+@Composable
+private fun GameDescription() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(8.dp, RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.95f)
+        )
+    ) {
+        Text(
+            text = "Một hành trình khám phá kiến thức dành cho mọi lứa tuổi. Từ câu hỏi đơn giản đến hóc búa, trò chơi giúp bạn rèn luyện tư duy và tăng vốn hiểu biết mỗi ngày.",
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontSize = 16.sp,
+                lineHeight = 22.sp
+            ),
+            color = Color(0xFF1A237E),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(20.dp)
+        )
+    }
+}
+
+@Composable
+private fun SampleImagesSection(sampleImages: List<Int>) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Game Preview",
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold
+            ),
+            color = Color.White,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(horizontal = 8.dp),
+            modifier = Modifier.height(250.dp)
+        ) {
+            items(sampleImages) { image ->
+                Card(
+                    modifier = Modifier
+                        .width(160.dp)
+                        .fillMaxHeight()
+                        .shadow(8.dp, RoundedCornerShape(16.dp)),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Image(
+                        painter = painterResource(id = image),
+                        contentDescription = "Ảnh mẫu",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(16.dp))
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
 private fun PlayButton(
     onClick: () -> Unit,
-    showContinueButton: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Button(
@@ -216,7 +305,7 @@ private fun PlayButton(
             .height(56.dp)
             .shadow(8.dp, RoundedCornerShape(28.dp)),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Primary
+            containerColor = Color(0xFFEC407A)
         ),
         shape = RoundedCornerShape(28.dp)
     ) {
@@ -228,7 +317,7 @@ private fun PlayButton(
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = if (showContinueButton) "CONTINUE" else "PLAY",
+            text = "START GAME",
             style = MaterialTheme.typography.titleMedium.copy(
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
@@ -240,12 +329,6 @@ private fun PlayButton(
 
 @Preview(showBackground = true)
 @Composable
-fun IntroductionScreenPreview() {
-    WordSearchGameTheme {
-        IntroductionScreen(
-            onPlayClicked = {},
-            onBackPressed = {},
-            showContinueButton = false
-        )
-    }
+fun IntroScreenPreview() {
+    // Preview implementation would need a mock NavController
 }

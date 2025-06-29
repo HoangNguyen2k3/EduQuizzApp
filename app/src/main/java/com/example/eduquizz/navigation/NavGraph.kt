@@ -13,10 +13,10 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.example.eduquizz.features.QuizzTracNhiem.screens.IntroScreen
-import com.example.eduquizz.features.QuizzTracNhiem.screens.MainView
-import com.example.eduquizz.features.QuizzTracNhiem.screens.ResultsScreen
-import com.example.eduquizz.features.QuizzTracNhiem.viewmodel.QuestionViewModel
+import com.example.eduquizz.features.quizzGame.screens.IntroScreen
+import com.example.eduquizz.features.quizzGame.screens.MainView
+import com.example.eduquizz.features.quizzGame.screens.ResultsScreen
+import com.example.eduquizz.features.quizzGame.viewmodel.QuestionViewModel
 import com.example.eduquizz.features.match.screen.GameDescriptionScreen
 
 import com.example.quizapp.screen.WordMatchGameScreen
@@ -25,7 +25,7 @@ import com.example.eduquizz.features.home.screens.SettingScreen
 import com.example.quizapp.ui.main.MainScreen
 import com.example.quizapp.viewmodel.WordMatchGame
 import com.example.quizapp.ui.splash.SplashScreen
-import com.example.wordsearch.ui.screens.IntroductionScreen
+import com.example.eduquizz.features.wordsearch.screens.IntroductionScreen
 import com.example.wordsearch.ui.screens.WordSearchGame
 import com.example.wordsearch.ui.theme.WordSearchGameTheme
 
@@ -34,11 +34,13 @@ object Routes {
     const val MAIN = "main"
     const val RESULT = "result"
     const val INTRO = "intro"
+
     //Danh
     const val MAIN_DANH = "main_danh"
     const val GAME_SCENE = "games_scene_danh"
     const val INTRO_WORD_SEARCH = "intro_word_search"
     const val GAME_WORD_SEARCH = "game_word_search"
+
     //Thong
     const val GAME_THONG = "game_thong"
     const val SETTINGS = "settings"
@@ -95,13 +97,20 @@ fun NavGraph(
         composable(Routes.MAIN) {
             val viewModel: QuestionViewModel = hiltViewModel()
             Box(modifier = Modifier.fillMaxSize()) {
-                MainView(name = "Android",navController=navController, questionViewModel = viewModel)
+                MainView(
+                    name = "Android",
+                    navController = navController,
+                    questionViewModel = viewModel
+                )
             }
         }
 
         composable(Routes.INTRO) {
             Box(modifier = Modifier.fillMaxSize()) {
-                IntroScreen(navController)
+                IntroScreen(
+                    navController,
+                    onBackPressed = { navController.popBackStack() }
+                )
             }
         }
         composable(
@@ -116,14 +125,14 @@ fun NavGraph(
 
             ResultsScreen(navController, correctAnswers = correct, totalQuestions = total)
         }
-        composable(Routes.MAIN_DANH){
+        composable(Routes.MAIN_DANH) {
             MainScreen(
                 onNavigateToEnglish = {
                     navController.navigate(Routes.GAME_SCENE)
                 }
             )
         }
-        composable(Routes.GAME_SCENE){
+        composable(Routes.GAME_SCENE) {
             EnglishGamesScreen(
                 onBackClick = {
                     navController.popBackStack()
@@ -154,25 +163,25 @@ fun NavGraph(
                 subject = "English"
             )
         }
-        composable(Routes.INTRO_WORD_SEARCH){
-         //   val showContinue = intent.getBooleanExtra("showContinue", false)
+        composable(Routes.INTRO_WORD_SEARCH) {
+            //   val showContinue = intent.getBooleanExtra("showContinue", false)
 
-                WordSearchGameTheme {
-                    IntroductionScreen(
-                        onPlayClicked = {
-                          //  finish()
-                            navController.navigate(Routes.GAME_WORD_SEARCH)
-                        },
-                        onBackPressed = {
-                          //  finish()
-                            navController.popBackStack()
-                        },
-                        showContinueButton = false
-                    )
+            WordSearchGameTheme {
+                IntroductionScreen(
+                    onPlayClicked = {
+                        //  finish()
+                        navController.navigate(Routes.GAME_WORD_SEARCH)
+                    },
+                    onBackPressed = {
+                        //  finish()
+                        navController.popBackStack()
+                    },
+                    showContinueButton = false
+                )
 
             }
         }
-        composable(Routes.GAME_WORD_SEARCH){
+        composable(Routes.GAME_WORD_SEARCH) {
             WordSearchGame()
         }
     }

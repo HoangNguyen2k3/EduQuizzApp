@@ -1,4 +1,4 @@
-package com.example.eduquizz.features.QuizzTracNhiem.model
+package com.example.eduquizz.features.quizzGame.model
 
 data class QuestionItem(
     val answer: String ="",

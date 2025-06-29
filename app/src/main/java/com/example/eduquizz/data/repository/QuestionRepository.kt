@@ -1,7 +1,7 @@
 package com.example.eduquizz.data.repository
 
 import com.example.eduquizz.data.models.DataOrException
-import com.example.eduquizz.features.QuizzTracNhiem.model.QuestionItem
+import com.example.eduquizz.features.quizzGame.model.QuestionItem
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase

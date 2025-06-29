@@ -1,11 +1,11 @@
-package com.example.eduquizz.features.QuizzTracNhiem.viewmodel
+package com.example.eduquizz.features.quizzGame.viewmodel
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.eduquizz.data.models.DataOrException
-import com.example.eduquizz.features.QuizzTracNhiem.model.QuestionItem
+import com.example.eduquizz.features.quizzGame.model.QuestionItem
 import com.example.eduquizz.data.repository.QuestionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

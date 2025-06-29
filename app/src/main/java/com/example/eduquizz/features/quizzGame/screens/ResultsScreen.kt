@@ -1,4 +1,4 @@
-package com.example.eduquizz.features.QuizzTracNhiem.screens
+package com.example.eduquizz.features.quizzGame.screens
 
 import GifImage
 import androidx.compose.runtime.Composable
