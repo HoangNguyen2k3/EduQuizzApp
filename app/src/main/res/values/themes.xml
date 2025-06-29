@@ -3,26 +3,25 @@
     <style name="Theme.EduQuizz" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/splash</item>
 
-        <!-- Full screen setup -->
-        <item name="android:windowFullscreen">false</item>
-        <item name="android:fitsSystemWindows">false</item>
-
-        <!-- Status bar trong suốt -->
+        <!-- Transparent Status Bar -->
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowTranslucentStatus">false</item>
         <item name="android:windowLightStatusBar" tools:targetApi="23">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
 
-        <!-- Navigation bar trong suốt -->
+        <!-- Transparent Navigation Bar -->
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowTranslucentNavigation">false</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
 
-        <!-- Hỗ trợ full màn hình kể cả vùng cutout -->
+        <!-- Edge to Edge Support -->
         <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="27">shortEdges</item>
-
-        <!-- Edge to edge support -->
         <item name="android:enforceStatusBarContrast" tools:targetApi="29">false</item>
         <item name="android:enforceNavigationBarContrast" tools:targetApi="29">false</item>
+
+        <!-- Fullscreen Layout -->
+        <item name="android:fitsSystemWindows">false</item>
+        <item name="android:windowFullscreen">false</item>
     </style>
 
     <style name="Theme.EduQuizz.Splash" parent="Theme.EduQuizz">
@@ -38,10 +37,13 @@
         <!-- Tăng tốc độ khởi động -->
         <item name="android:windowDisablePreview">true</item>
 
-        <!-- Kế thừa các thuộc tính full screen -->
+        <!-- Kế thừa transparent status bar -->
         <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar" tools:targetApi="23">true</item>
-        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
+        <item name="android:windowTranslucentNavigation">true</item>
     </style>
+
 </resources>

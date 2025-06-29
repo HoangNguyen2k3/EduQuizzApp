@@ -101,6 +101,7 @@ fun EnglishGamesScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .background(
                 Brush.horizontalGradient(
                     colors = listOf(

@@ -18,9 +18,10 @@ import com.example.eduquizz.features.QuizzTracNhiem.screens.MainView
 import com.example.eduquizz.features.QuizzTracNhiem.screens.ResultsScreen
 import com.example.eduquizz.features.QuizzTracNhiem.viewmodel.QuestionViewModel
 import com.example.eduquizz.features.match.screen.GameDescriptionScreen
-import com.example.quizapp.screen.SettingsScreen
+
 import com.example.quizapp.screen.WordMatchGameScreen
 import com.example.eduquizz.features.home.english.EnglishGamesScreen
+import com.example.eduquizz.features.home.screens.SettingScreen
 import com.example.quizapp.ui.main.MainScreen
 import com.example.quizapp.viewmodel.WordMatchGame
 import com.example.quizapp.ui.splash.SplashScreen
@@ -143,12 +144,14 @@ fun NavGraph(
             WordMatchGameScreen(viewModel = gameViewModel, navController = navController)
         }
         composable(Routes.SETTINGS) {
-            SettingsScreen(navController = navController)
+            SettingScreen()
         }
-        composable(Routes.INTRO_THONG.replace("{subject}", "{subject}")) { backStackEntry ->
-            val subject = backStackEntry.arguments?.getString("subject") ?: ""
+
+        composable(Routes.INTRO_THONG) {
             GameDescriptionScreen(
-                onPlayClick = { navController.navigate(Routes.GAME_THONG) }
+                onPlayClick = { navController.navigate(Routes.GAME_THONG) },
+                onBackPressed = { navController.popBackStack() },
+                subject = "English"
             )
         }
         composable(Routes.INTRO_WORD_SEARCH){

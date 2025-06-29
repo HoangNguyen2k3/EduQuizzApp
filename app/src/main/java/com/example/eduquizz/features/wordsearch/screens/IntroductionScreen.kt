@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
@@ -75,7 +76,7 @@ fun IntroductionScreen(
                     navigationIcon = {
                         IconButton(onClick = onBackPressed) {
                             Icon(
-                                imageVector = Icons.Default.KeyboardArrowLeft,
+                                imageVector = Icons.Default.ArrowBackIosNew,
                                 contentDescription = "Back",
                                 tint = Color.White
                             )
