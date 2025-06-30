@@ -27,6 +27,9 @@ import com.example.quizapp.ui.splash.SplashScreen
 import com.example.wordsearch.ui.screens.IntroductionScreen
 import com.example.wordsearch.ui.screens.WordSearchGame
 import com.example.wordsearch.ui.theme.WordSearchGameTheme
+import com.example.eduquizz.features.bubbleshot.screen.BubbleShotScreen
+import com.example.eduquizz.features.bubbleshot.screen.BubbleShotDescriptionScreen
+import com.example.eduquizz.features.bubbleshot.viewmodel.BubbleShot
 
 object Routes {
     //Hoang
@@ -42,7 +45,9 @@ object Routes {
     const val GAME_THONG = "game_thong"
     const val SETTINGS = "settings"
     const val INTRO_THONG = "game_intro_thong"
-
+    // Bubble Shot
+    const val BUBBLE_SHOT = "bubble_shot"
+    const val BUBBLE_SHOT_INTRO = "bubble_shot_intro"
     //Splash
     const val SPLASH = "splash"
 }
@@ -134,6 +139,7 @@ fun NavGraph(
                         "word_find" -> navController.navigate(Routes.INTRO_WORD_SEARCH)
                         "connect_blocks" -> navController.navigate(Routes.INTRO_THONG)
                         "quiz" -> navController.navigate(Routes.INTRO)
+                        "bubble_shot" -> navController.navigate(Routes.BUBBLE_SHOT_INTRO)
                     }
                 }
             )
@@ -168,6 +174,18 @@ fun NavGraph(
                     )
 
             }
+        }
+        composable(Routes.BUBBLE_SHOT_INTRO) {
+            BubbleShotDescriptionScreen(
+                onPlayClick = { navController.navigate(Routes.BUBBLE_SHOT) },
+                onBackPressed = { navController.popBackStack() },
+                subject = "BubbleShot"
+            )
+        }
+        composable(Routes.BUBBLE_SHOT) {
+            val viewModel: BubbleShot = hiltViewModel()
+            BubbleShotScreen(viewModel = viewModel, navController = navController)
+
         }
         composable(Routes.GAME_WORD_SEARCH){
             WordSearchGame()

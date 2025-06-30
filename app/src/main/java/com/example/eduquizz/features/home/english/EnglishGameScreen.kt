@@ -82,6 +82,19 @@ fun EnglishGamesScreen(
             )
         ),
         Game(
+            id = "bubble_shot",
+            name = "Bubble Shot",
+            iconRes = R.drawable.eng,
+            progress = 20,
+            totalQuestions = 100,
+            completedQuestions = 23,
+            totalLessons = 56,
+            gradientColors = listOf(
+                Color(0xFF00C9FF), // Bright Blue
+                Color(0xFF92FE9D)  // Light Green
+            )
+        ),
+        Game(
             id = "vocabulary",
             name = "Từ vựng",
             iconRes = R.drawable.eng,
@@ -96,7 +109,6 @@ fun EnglishGamesScreen(
             )
         )
     )
-
     Box(
         modifier = Modifier
             .fillMaxSize()
