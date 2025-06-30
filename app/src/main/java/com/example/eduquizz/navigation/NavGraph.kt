@@ -1,6 +1,8 @@
 package com.example.eduquizz.navigation
 
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
@@ -22,6 +24,7 @@ import com.example.eduquizz.features.match.screen.GameDescriptionScreen
 import com.example.quizapp.screen.WordMatchGameScreen
 import com.example.eduquizz.features.home.english.EnglishGamesScreen
 import com.example.eduquizz.features.home.screens.SettingScreen
+import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.quizapp.ui.main.MainScreen
 import com.example.quizapp.viewmodel.WordMatchGame
 import com.example.quizapp.ui.splash.SplashScreen
@@ -59,30 +62,10 @@ fun NavGraph(
         navController = navController,
         startDestination = Routes.SPLASH,
         modifier = modifier,
-        enterTransition = {
-            slideInHorizontally(
-                initialOffsetX = { fullWidth -> fullWidth }, // Slide in from the right
-                animationSpec = tween(300)
-            )
-        },
-        exitTransition = {
-            slideOutHorizontally(
-                targetOffsetX = { fullWidth -> -fullWidth }, // Slide out to the left
-                animationSpec = tween(300)
-            )
-        },
-        popEnterTransition = {
-            slideInHorizontally(
-                initialOffsetX = { fullWidth -> -fullWidth }, // Slide in from the left when popping
-                animationSpec = tween(300)
-            )
-        },
-        popExitTransition = {
-            slideOutHorizontally(
-                targetOffsetX = { fullWidth -> fullWidth }, // Slide out to the right when popping
-                animationSpec = tween(300)
-            )
-        }
+        enterTransition = { fadeIn(animationSpec = tween(200)) },
+        exitTransition = { fadeOut(animationSpec = tween(200)) },
+        popEnterTransition = { fadeIn(animationSpec = tween(200)) },
+        popExitTransition = { fadeOut(animationSpec = tween(200)) }
     ) {
         composable(Routes.SPLASH) {
             SplashScreen(
@@ -138,8 +121,6 @@ fun NavGraph(
                     navController.popBackStack()
                 },
                 onGameClick = { game ->
-                    // Navigate to specific game screen
-                    // navController.navigate("game/${game.id}")
                     when (game.id) {
                         "word_find" -> navController.navigate(Routes.INTRO_WORD_SEARCH)
                         "connect_blocks" -> navController.navigate(Routes.INTRO_THONG)
@@ -164,6 +145,7 @@ fun NavGraph(
             )
         }
         composable(Routes.INTRO_WORD_SEARCH) {
+            val loadingViewModel: LoadingViewModel = hiltViewModel()
             //   val showContinue = intent.getBooleanExtra("showContinue", false)
 
             WordSearchGameTheme {
@@ -176,7 +158,8 @@ fun NavGraph(
                         //  finish()
                         navController.popBackStack()
                     },
-                    showContinueButton = false
+                    showContinueButton = false,
+                    loadingViewModel = loadingViewModel
                 )
 
             }

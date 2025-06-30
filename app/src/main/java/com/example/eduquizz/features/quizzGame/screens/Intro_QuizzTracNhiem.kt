@@ -27,11 +27,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.eduquizz.R
+import com.example.eduquizz.features.home.screens.WithLoading
+import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.eduquizz.navigation.Routes
 import kotlinx.coroutines.delay
 
@@ -39,148 +41,172 @@ import kotlinx.coroutines.delay
 @Composable
 fun IntroScreen(
     navController: NavController,
-    onBackPressed: () -> Unit
+    onBackPressed: () -> Unit,
+    loadingViewModel: LoadingViewModel = viewModel()
 ) {
+    val loadingState by loadingViewModel.loadingState.collectAsState()
     var isVisible by remember { mutableStateOf(false) }
-
-    val sampleImages = listOf(
-        R.drawable.image,
-        R.drawable.image,
-        R.drawable.image
-    )
+    var isDataLoaded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
+        loadingViewModel.showLoading("Đang tải Quiz Game...", showProgress = true)
+
+        loadingViewModel.updateProgress(0.2f, "Đang tải câu hỏi...")
+        delay(800)
+
+        loadingViewModel.updateProgress(0.5f, "Đang chuẩn bị nội dung...")
+        delay(800)
+
+        loadingViewModel.updateProgress(0.8f, "Đang khởi tạo game...")
+        delay(600)
+
+        loadingViewModel.updateProgress(1.0f, "Hoàn thành!")
+        delay(400)
+
+        loadingViewModel.hideLoading()
+        isDataLoaded = true
         delay(300)
         isVisible = true
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF096A5A),
-                        Color(0xFF44A08D),
-                        Color(0xFF4ECDC4),
-                        MaterialTheme.colorScheme.background
-                    )
-                )
-            )
+    WithLoading(
+        isLoading = loadingState.isLoading,
+        isDarkTheme = false,
+        backgroundColors = listOf(
+            Color(0xFF096A5A),
+            Color(0xFF44A08D),
+            Color(0xFF4ECDC4),
+            MaterialTheme.colorScheme.background
+        )
     ) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { },
-                    navigationIcon = {
-                        IconButton(onClick = onBackPressed) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowBackIosNew,
-                                contentDescription = "Back",
-                                tint = Color.White
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF096A5A),
+                            Color(0xFF44A08D),
+                            Color(0xFF4ECDC4),
+                            MaterialTheme.colorScheme.background
+                        )
                     )
                 )
-            },
-            containerColor = Color.Transparent,
-            bottomBar = {
-                AnimatedVisibility(
-                    visible = isVisible,
-                    enter = slideInVertically(
-                        initialOffsetY = { it },
-                        animationSpec = tween(800, delayMillis = 1000, easing = FastOutSlowInEasing)
-                    ) + fadeIn(animationSpec = tween(800, delayMillis = 1000))
-                ) {
-                    PlayButton(
-                        onClick = { navController.navigate(Routes.MAIN) },
-                        modifier = Modifier.padding(20.dp)
+        ) {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = { },
+                        navigationIcon = {
+                            IconButton(onClick = onBackPressed) {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowBackIosNew,
+                                    contentDescription = "Back",
+                                    tint = Color.White
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.Transparent
+                        )
                     )
-                }
-            }
-        ) { paddingValues ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                item {
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Game Banner
+                },
+                containerColor = Color.Transparent,
+                bottomBar = {
                     AnimatedVisibility(
-                        visible = isVisible,
-                        enter = slideInVertically(
-                            initialOffsetY = { -it },
-                            animationSpec = tween(800, easing = FastOutSlowInEasing)
-                        ) + fadeIn(animationSpec = tween(800))
-                    ) {
-                        GameBanner()
-                    }
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-
-                item {
-                    // Game Title
-                    AnimatedVisibility(
-                        visible = isVisible,
+                        visible = isVisible && isDataLoaded,
                         enter = slideInVertically(
                             initialOffsetY = { it },
-                            animationSpec = tween(
-                                800,
-                                delayMillis = 200,
-                                easing = FastOutSlowInEasing
-                            )
-                        ) + fadeIn(animationSpec = tween(800, delayMillis = 200))
+                            animationSpec = tween(800, delayMillis = 1000, easing = FastOutSlowInEasing)
+                        ) + fadeIn(animationSpec = tween(800, delayMillis = 1000))
                     ) {
-                        GameTitle()
+                        PlayButton(
+                            onClick = { navController.navigate(Routes.MAIN) },
+                            modifier = Modifier.padding(20.dp)
+                        )
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
                 }
+            ) { paddingValues ->
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(horizontal = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    item {
+                        Spacer(modifier = Modifier.height(20.dp))
 
-                item {
-                    // Game Description
-                    AnimatedVisibility(
-                        visible = isVisible,
-                        enter = slideInVertically(
-                            initialOffsetY = { it },
-                            animationSpec = tween(
-                                800,
-                                delayMillis = 400,
-                                easing = FastOutSlowInEasing
-                            )
-                        ) + fadeIn(animationSpec = tween(800, delayMillis = 400))
-                    ) {
-                        GameDescription()
+                        // Game Banner
+                        AnimatedVisibility(
+                            visible = isVisible && isDataLoaded,
+                            enter = slideInVertically(
+                                initialOffsetY = { -it },
+                                animationSpec = tween(800, easing = FastOutSlowInEasing)
+                            ) + fadeIn(animationSpec = tween(800))
+                        ) {
+                            GameBanner()
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
                     }
-                    Spacer(modifier = Modifier.height(32.dp))
-                }
 
-                item {
-                    // Sample Images
-                    AnimatedVisibility(
-                        visible = isVisible,
-                        enter = slideInVertically(
-                            initialOffsetY = { it },
-                            animationSpec = tween(
-                                800,
-                                delayMillis = 600,
-                                easing = FastOutSlowInEasing
-                            )
-                        ) + fadeIn(animationSpec = tween(800, delayMillis = 600))
-                    ) {
-                        SampleImagesSection(sampleImages)
+                    item {
+                        // Game Title
+                        AnimatedVisibility(
+                            visible = isVisible && isDataLoaded,
+                            enter = slideInVertically(
+                                initialOffsetY = { it },
+                                animationSpec = tween(
+                                    800,
+                                    delayMillis = 200,
+                                    easing = FastOutSlowInEasing
+                                )
+                            ) + fadeIn(animationSpec = tween(800, delayMillis = 200))
+                        ) {
+                            GameTitle()
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
                     }
-                    Spacer(modifier = Modifier.height(32.dp))
-                }
 
-                item {
-                    Spacer(modifier = Modifier.height(32.dp))
+                    item {
+                        // Game Description
+                        AnimatedVisibility(
+                            visible = isVisible && isDataLoaded,
+                            enter = slideInVertically(
+                                initialOffsetY = { it },
+                                animationSpec = tween(
+                                    800,
+                                    delayMillis = 400,
+                                    easing = FastOutSlowInEasing
+                                )
+                            ) + fadeIn(animationSpec = tween(800, delayMillis = 400))
+                        ) {
+                            GameDescription()
+                        }
+                        Spacer(modifier = Modifier.height(32.dp))
+                    }
+
+                    item {
+                        // Sample Images
+                        AnimatedVisibility(
+                            visible = isVisible && isDataLoaded,
+                            enter = slideInVertically(
+                                initialOffsetY = { it },
+                                animationSpec = tween(
+                                    800,
+                                    delayMillis = 600,
+                                    easing = FastOutSlowInEasing
+                                )
+                            ) + fadeIn(animationSpec = tween(800, delayMillis = 600))
+                        ) {
+                            SampleImagesSection(sampleImages = listOf(R.drawable.image, R.drawable.image, R.drawable.image))
+                        }
+                        Spacer(modifier = Modifier.height(32.dp))
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(32.dp))
+                    }
                 }
             }
         }
@@ -325,10 +351,4 @@ private fun PlayButton(
             color = Color.White
         )
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun IntroScreenPreview() {
-    // Preview implementation would need a mock NavController
 }
