@@ -38,6 +38,7 @@ fun ForceLandscape() {
 }
 @Composable
 fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
+    ForceLandscape()
     val answers = viewModel.answers
     val timer by viewModel.timer
     val question by viewModel.currentQuestion
