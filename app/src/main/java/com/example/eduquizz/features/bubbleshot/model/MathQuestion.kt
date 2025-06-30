@@ -1,7 +1,6 @@
 package com.example.eduquizz.features.bubbleshot.model
 
-data class QuizQuestion(
+data class MathQuestion(
     val question: String,
-    val answers: List<String>,
     val correctAnswer: String
 ) 
