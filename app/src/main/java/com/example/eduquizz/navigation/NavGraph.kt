@@ -29,7 +29,9 @@ import com.example.quizapp.ui.english.EnglishGamesScreen
 import com.example.quizapp.ui.main.MainScreen
 import com.example.quizapp.viewmodel.WordMatchGame
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.eduquizz.DataSave.DataViewModel
 import com.example.eduquizz.MainActivity
+import com.example.eduquizz.navigation.Routes.MAIN_ROUTE
 import com.example.wordsearch.ui.screens.IntroductionScreen
 import com.example.wordsearch.ui.screens.WordSearchGame
 import com.example.wordsearch.ui.theme.WordSearchGameTheme
@@ -39,6 +41,7 @@ object Routes {
     const val MAIN = "main"
     const val RESULT = "result"
     const val INTRO = "intro"
+    const val MAIN_ROUTE = "main/{level}"
     //Danh
     const val MAIN_DANH = "main_danh"
     const val GAME_SCENE = "games_scene_danh"
@@ -84,12 +87,13 @@ fun NavGraph(
             )
         }
     ) {
-
-        composable(Routes.MAIN) {
+        composable( route = "main/{level}",
+            arguments = listOf(navArgument("level") { type = NavType.StringType })) {
+                backStackEntry ->
+            val level = backStackEntry.arguments?.getString("level") ?: ""
             val viewModel: QuestionViewModel = hiltViewModel()
-            Box(modifier = Modifier.fillMaxSize()) {
-                MainView(name = "Android",navController=navController, questionViewModel = viewModel)
-            }
+            val dataViewModel: DataViewModel = hiltViewModel()
+            MainView(currentLevel = level, name = "Android", navController = navController, questionViewModel = viewModel)
         }
 
         composable(Routes.INTRO) {

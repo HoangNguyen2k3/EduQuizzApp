@@ -4,5 +4,6 @@ data class QuestionItem(
     val answer: String ="",
     val category:String ="",
     val choices:List<String> = listOf(),
-    val question:String=""
+    val question:String="",
+    val image: String? = null
 )

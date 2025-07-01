@@ -45,9 +45,11 @@ android {
 }
 
 dependencies {
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
     implementation(libs.hilt.android)
     implementation(libs.firebase.database)
-    implementation(libs.firebase.firestore.ktx) // Updated to use version catalog
+    implementation(libs.firebase.firestore.ktx)
+    implementation(libs.androidx.runtime.livedata) // Updated to use version catalog
     ksp(libs.hilt.compiler) // Updated to use version catalog
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
