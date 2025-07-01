@@ -94,7 +94,7 @@ fun IntroScreen(navController: NavController) {
         }
         Spacer(modifier = Modifier.weight(1f))
         Button(
-            onClick = { navController.navigate(Routes.MAIN) },
+            onClick = { navController.navigate("main/LevelEasy") },
             shape = RoundedCornerShape(30.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEC407A)),
             modifier = Modifier

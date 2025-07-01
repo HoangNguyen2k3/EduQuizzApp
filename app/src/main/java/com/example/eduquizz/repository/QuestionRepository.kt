@@ -1,5 +1,6 @@
 package com.example.eduquizz.repository
 
+import android.util.Log
 import com.example.eduquizz.model.DataOrException
 import com.example.eduquizz.model.QuestionItem
 import com.example.eduquizz.network.QuestionApi
@@ -11,7 +12,7 @@ import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
-
+import kotlinx.coroutines.suspendCancellableCoroutine
 /*
 class QuestionRepository @Inject constructor(private val api:QuestionApi) {
     private val dataOrException= DataOrException<ArrayList<QuestionItem>,Boolean,Exception>()
@@ -58,60 +59,70 @@ class QuestionRepository @Inject constructor(private val api:QuestionApi) {
 }*/
 class QuestionRepository @Inject constructor() {
 
-    private var cachedQuestions: ArrayList<QuestionItem>? = null
+    //private var cachedQuestions: ArrayList<QuestionItem>? = null
 
-    suspend fun getAllQuestion(): DataOrException<ArrayList<QuestionItem>, Boolean, Exception> {
-        val dataOrException = DataOrException<ArrayList<QuestionItem>, Boolean, Exception>()
+    suspend fun getAllQuestionQuizGame(path:String)
+            : DataOrException<ArrayList<QuestionItem>, Boolean, Exception> {
 
-        try {
-            // Nếu đã cache thì trả về luôn, không gọi Firebase nữa
-            cachedQuestions?.let {
-                dataOrException.data = it
-                dataOrException.loading = false
-                return dataOrException
-            }
+        val result = DataOrException<ArrayList<QuestionItem>, Boolean, Exception>()
+        result.loading = true
 
-            dataOrException.loading = true
+        return try {
+            val ref = FirebaseDatabase.getInstance().getReference(path)
 
-            val ref = FirebaseDatabase.getInstance().getReference("Quiz")
-            val questionList = suspendCoroutine<ArrayList<QuestionItem>> { cont ->
+            val questions: ArrayList<QuestionItem> = suspendCancellableCoroutine { cont ->
                 ref.addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
+                       // if (!cont.isActive) return
                         val list = arrayListOf<QuestionItem>()
                         for (child in snapshot.children) {
-                            val question = child.getValue(QuestionItem::class.java)
-                            question?.let { list.add(it) }
+                            val questionText = child.child("question").getValue(String::class.java) ?: ""
+                            val answer      = child.child("answer").getValue(String::class.java) ?: ""
+                            val category    = child.child("category").getValue(String::class.java) ?: ""
+                            val imageUrl    = child.child("image").getValue(String::class.java)       // 🔑 key đúng
+                            val choices     = child.child("choices").children
+                                .mapNotNull { it.getValue(String::class.java) }
+                            list += QuestionItem(
+                                question = questionText,
+                                answer   = answer,
+                                category = category,
+                                image    = imageUrl,
+                                choices  = choices
+                            )
                         }
-                        cont.resume(list)
+                        if (cont.isActive) cont.resume(list)
                     }
 
                     override fun onCancelled(error: DatabaseError) {
-                        cont.resumeWithException(error.toException())
+                        if (cont.isActive) cont.resumeWithException(error.toException())
                     }
                 })
             }
-            val limitedList = questionList.shuffled().take(150)
 
-// Cache 150 câu này
-            cachedQuestions = ArrayList(limitedList)
-            // Cache toàn bộ câu hỏi lấy về
 
-            dataOrException.data = questionList
-            dataOrException.loading = false
+            //val limited = ArrayList(questions.take(150))
+            val limited = ArrayList(questions)
 
-        } catch (exception: Exception) {
-            dataOrException.e = exception
-            dataOrException.loading = false
+          //  cachedQuestions = limited
+
+            result.apply {
+                data = limited
+                loading = false
+            }
+        } catch (e: Exception) {
+            result.apply {
+                this.e = e
+                loading = false
+            }
         }
-
-        return dataOrException
     }
 
-    // Hàm lấy random n câu hỏi từ cache
+
+/*    // Hàm lấy random n câu hỏi từ cache
     fun getRandomQuestions(count: Int): ArrayList<QuestionItem> {
         val cached = cachedQuestions ?: return arrayListOf()
         return cached.shuffled().take(count).let { ArrayList(it) }
-    }
+    }*/
 }
 
 

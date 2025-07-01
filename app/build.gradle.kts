@@ -45,13 +45,15 @@ android {
 }
 
 dependencies {
-    //Dagger Hilt core
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler) // Updated to use version catalog
 
     //Firebase
     implementation(libs.firebase.database)
-    implementation(libs.firebase.firestore.ktx) // Updated to use version catalog
+    implementation(libs.firebase.firestore.ktx)
+    implementation(libs.androidx.runtime.livedata) // Updated to use version catalog
+    ksp(libs.hilt.compiler) // Updated to use version catalog
 
     //Navigation
     implementation("androidx.navigation:navigation-compose:2.7.7")
