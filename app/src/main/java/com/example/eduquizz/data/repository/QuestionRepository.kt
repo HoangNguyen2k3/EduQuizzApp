@@ -1,9 +1,7 @@
-package com.example.eduquizz.repository
+package com.example.eduquizz.data.repository
 
 import com.example.eduquizz.features.quizzGame.model.QuestionItem
 import com.example.eduquizz.data.models.DataOrException
-import com.example.eduquizz.data.models.Subject
-import com.example.eduquizz.data.models.Game
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -11,7 +9,6 @@ import com.google.firebase.database.ValueEventListener
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.suspendCancellableCoroutine
 /*
 class QuestionRepository @Inject constructor(private val api:QuestionApi) {
