@@ -9,6 +9,7 @@ class MainApplication :Application(){
     override fun onCreate() {
         super.onCreate()
         // Bật cache offline cho Firebase Realtime Database
-        FirebaseDatabase.getInstance().setPersistenceEnabled(true)
+       // FirebaseDatabase.getInstance().setPersistenceEnabled(true)
+        FirebaseDatabase.getInstance().setPersistenceEnabled(false)
     }
 }

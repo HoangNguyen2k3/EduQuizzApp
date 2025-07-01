@@ -1,12 +1,16 @@
 package com.example.eduquizz.navigation
 
+import android.content.Intent
+import androidx.activity.compose.setContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat.startActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -22,6 +26,11 @@ import com.example.eduquizz.features.match.screen.SettingsScreen
 import com.example.eduquizz.features.match.screen.WordMatchGameScreen
 import com.example.eduquizz.features.home.english.EnglishGamesScreen
 import com.example.quizapp.ui.main.MainScreen
+import com.example.quizapp.viewmodel.WordMatchGame
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.eduquizz.DataSave.DataViewModel
+import com.example.eduquizz.MainActivity
+import com.example.eduquizz.navigation.Routes.MAIN_ROUTE
 import com.example.eduquizz.features.match.viewmodel.WordMatchGame
 import com.example.quizapp.ui.splash.SplashScreen
 import com.example.wordsearch.ui.screens.IntroductionScreen
@@ -36,6 +45,7 @@ object Routes {
     const val MAIN = "main"
     const val RESULT = "result"
     const val INTRO = "intro"
+    const val MAIN_ROUTE = "main/{level}"
     //Danh
     const val MAIN_DANH = "main_danh"
     const val GAME_SCENE = "games_scene_danh"
@@ -95,12 +105,13 @@ fun NavGraph(
                 }
             )
         }
-
-        composable(Routes.MAIN) {
+        composable( route = "main/{level}",
+            arguments = listOf(navArgument("level") { type = NavType.StringType })) {
+                backStackEntry ->
+            val level = backStackEntry.arguments?.getString("level") ?: ""
             val viewModel: QuestionViewModel = hiltViewModel()
-            Box(modifier = Modifier.fillMaxSize()) {
-                MainView(name = "Android",navController=navController, questionViewModel = viewModel)
-            }
+            val dataViewModel: DataViewModel = hiltViewModel()
+            MainView(currentLevel = level, name = "Android", navController = navController, questionViewModel = viewModel)
         }
 
         composable(Routes.INTRO) {
@@ -139,7 +150,6 @@ fun NavGraph(
                         "word_find" -> navController.navigate(Routes.INTRO_WORD_SEARCH)
                         "connect_blocks" -> navController.navigate(Routes.INTRO_THONG)
                         "quiz" -> navController.navigate(Routes.INTRO)
-                        "bubble_shot" -> navController.navigate(Routes.BUBBLE_SHOT_INTRO)
                     }
                 }
             )

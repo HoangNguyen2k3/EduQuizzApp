@@ -28,13 +28,24 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.layout.ContentScale
 import com.example.eduquizz.navigation.Routes
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.example.eduquizz.DataSave.DataViewModel
+import com.example.eduquizz.DataSave.UserPreferencesManager
 import kotlin.random.Random
 @SuppressLint("SuspiciousIndentation")
 @Composable
-fun MainView(name: String, modifier: Modifier = Modifier,navController: NavController,questionViewModel: QuestionViewModel ) {
+fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,navController: NavController,questionViewModel: QuestionViewModel
+,dataviewModel: DataViewModel = hiltViewModel()) {
+    LaunchedEffect(key1 = true) {
+        questionViewModel.Init(dataviewModel,currentLevel)
+        //questionViewModel.getAllQuestions("English/QuizGame/$currentLevel")
+    }
+/*
     val count = remember { mutableStateOf(0) }
     val score = remember { mutableStateOf(0) }
     val choiceSelected = remember { mutableStateOf("") }
@@ -45,43 +56,45 @@ fun MainView(name: String, modifier: Modifier = Modifier,navController: NavContr
     val usedHelperThisQuestion = remember { mutableStateOf(false) }
     val showExpertDialog = remember { mutableStateOf(false) }
     val choiceAttempts = remember { mutableStateOf(0) }
-    val choiceDetectWrong = remember {mutableStateOf(0)}
+    val gold by dataviewModel.gold.observeAsState(-1)
+*/
 
-/*    LaunchedEffect(questions) {
-        if (questions != null && usedQuestions.isEmpty() && questions.size >= 40) {
-            usedQuestions.clear()
-            reserveQuestions.clear()
-            usedQuestions.addAll(questions.take(20))
-            reserveQuestions.addAll(questions.drop(20))
-        }
-    }*/
+    val count = questionViewModel.count
+    val score = questionViewModel.score
+    val choiceSelected = questionViewModel.choiceSelected
+    val resetTimeTrigger = questionViewModel.resetTimeTrigger
+    val questions = questionViewModel.data.value.data
+    val usedQuestions = questionViewModel.usedQuestions
+    val reserveQuestions = questionViewModel.reserveQuestions
+    val usedHelperThisQuestion = questionViewModel.usedHelperThisQuestion
+    val showExpertDialog = questionViewModel.showExpertDialog
+    val choiceAttempts = questionViewModel.choiceAttempts
+    val gold by dataviewModel.gold.observeAsState(-1)
     LaunchedEffect(questions) {
-        if (questions != null && usedQuestions.isEmpty() && questions.size >= 40) {
+        if (questions != null && usedQuestions.isEmpty() && questions.size >= 20) {
             usedQuestions.clear()
             reserveQuestions.clear()
-
-            // Lấy 40 câu ngẫu nhiên từ questions
             val shuffledQuestions = questions.shuffled()
-
-            usedQuestions.addAll(shuffledQuestions.take(20))
-
-            // Phần còn lại là reserve
-            reserveQuestions.addAll(shuffledQuestions.drop(20))
+            usedQuestions.addAll(shuffledQuestions.take(10))
+            reserveQuestions.addAll(shuffledQuestions.drop(10))
         }
     }
-    val hiddenChoices = remember { mutableStateListOf<String>() }
-    val helperCounts = remember {
-        mutableStateListOf(
-            R.drawable.nammuoi_vip to 15,
-            R.drawable.exchange to 20,
-            R.drawable.chuyengiasmall to 15,
-            R.drawable.time_two to 10
-        )
+    val hiddenChoices = questionViewModel.hiddenChoices
+    val helperCounts = questionViewModel.helperCounts
+    val showResultDialog = questionViewModel.showResultDialog
+    val expertAnswer = questionViewModel.expertAnswer
+    val twoTimeChoice = questionViewModel.twoTimeChoice
+    val coins = questionViewModel.coins
+// Chỉ khởi tạo coins từ gold 1 lần duy nhất
+    LaunchedEffect(gold) {
+        if (gold >-1 && coins.value == -1) {
+            coins.value = gold
+        }
     }
-    val showResultDialog = remember { mutableStateOf(false) }
-    val coins = remember { mutableStateOf(100) }
-    val expertAnswer = remember { mutableStateOf("") }
-    val twoTimeChoice = remember { mutableStateOf(false) }
+/*    fun spendCoins(amount: Int) {
+        coins.value = (coins.value ?: 0) - amount
+        dataviewModel.updateGold(coins.value ?: 0) // <-- chỉ update khi cần
+    }*/
     Scaffold(
         bottomBar = {
             BottomHelperBar(
@@ -90,14 +103,15 @@ fun MainView(name: String, modifier: Modifier = Modifier,navController: NavContr
                 helperCounts = helperCounts,
                 onHelperClick = { index ->
                     if (usedHelperThisQuestion.value) return@BottomHelperBar
-
-                    if(index == 0&&(helperCounts[index].second <= coins.value)&&choiceSelected.value.isEmpty() ){
+                        questionViewModel.ProcessHelperBar(index)
+ /*                   if(index == 0&&(helperCounts[index].second <= coins.value)&&choiceSelected.value.isEmpty() ){
                         val currentQuestion = usedQuestions?.get(count.value)
                         if(currentQuestion!=null){
                             val wrongAnswers = currentQuestion.choices.filter { it != currentQuestion.answer }
                             hiddenChoices.clear()
                             hiddenChoices.addAll(wrongAnswers.shuffled().take(2))
-                            coins.value -= helperCounts[index].second
+                            //coins.value -= helperCounts[index].second
+                            spendCoins(helperCounts[index].second)
                             usedHelperThisQuestion.value = true
                         }
                     }
@@ -110,7 +124,8 @@ fun MainView(name: String, modifier: Modifier = Modifier,navController: NavContr
                             usedQuestions.add(count.value, newQuestion)
 
                             // Reset trạng thái
-                            coins.value -= helperCounts[index].second
+                            //coins.value -= helperCounts[index].second
+                            spendCoins(helperCounts[index].second)
                             hiddenChoices.clear()
                             choiceSelected.value = ""
                             resetTimeTrigger.value++ // cũng có thể reset timer nếu cần
@@ -120,7 +135,8 @@ fun MainView(name: String, modifier: Modifier = Modifier,navController: NavContr
                     else if(index==2&&helperCounts[index].second <= coins.value&& choiceSelected.value.isEmpty())
                     {
                         showExpertDialog.value = true
-                        coins.value -= helperCounts[index].second
+                        //coins.value -= helperCounts[index].second
+                        spendCoins(helperCounts[index].second)
                         val currentQuestion = usedQuestions[count.value]
                         val correctAnswer = currentQuestion.answer
                         val wrongAnswers = currentQuestion.choices.filter { it != correctAnswer }
@@ -143,9 +159,10 @@ fun MainView(name: String, modifier: Modifier = Modifier,navController: NavContr
                         usedHelperThisQuestion.value = true
                     }else if(index == 3&&helperCounts[index].second <= coins.value&& choiceSelected.value.isEmpty()){
                         twoTimeChoice.value = true
-                        coins.value -= helperCounts[index].second
+                        //coins.value -= helperCounts[index].second
+                        spendCoins(helperCounts[index].second)
                         usedHelperThisQuestion.value = true
-                    }
+                    }*/
                 },
                 modifier = Modifier.fillMaxWidth().padding(8.dp)
             )
@@ -174,7 +191,7 @@ fun MainView(name: String, modifier: Modifier = Modifier,navController: NavContr
             )
 
             if (questionViewModel.data.value.loading==false && usedQuestions.isNotEmpty() && count.value < usedQuestions.size) {
-                Spacer(modifier = Modifier.height(30.dp))
+                Spacer(modifier = Modifier.height(20.dp))
                 ScoreScreen(
                     count = count,
                     //totalQuestion = questionViewModel.getTotalQuestionCount(),
@@ -326,7 +343,7 @@ fun BottomHelperBar(
         modifier = modifier
             .fillMaxWidth()
            // .background(Color.White)
-            .padding(12.dp)
+            .padding(2.dp)
     ) {
         // Coins
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -450,17 +467,36 @@ fun TimerProgressBar(
 
 
 
+
 @Composable
 fun QuestionScreen(questionItem: QuestionItem) {
     val scrollState = rememberScrollState()
-    Box(
+    val imageUrl = questionItem.image ?: ""
+
+    Column(
         modifier = Modifier
-            .padding(16.dp)
+            .padding(10.dp)
             .fillMaxWidth()
-            .height(180.dp)
-            .verticalScroll(scrollState), // bật cuộn dọc,
-        contentAlignment = Alignment.Center
+            .verticalScroll(scrollState),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        if (imageUrl.isNotBlank()) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = "Question Image",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .clip(RoundedCornerShape(12.dp)),
+                contentScale = ContentScale.Fit
+//                placeholder = painterResource(id = R.drawable.placeholder), // ảnh tạm
+//                error = painterResource(id = R.drawable.error_image)        // ảnh lỗi
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // ✅ Hiển thị câu hỏi dạng text
         Text(
             text = questionItem.question,
             color = Color(0xFF1A237E),
@@ -490,7 +526,7 @@ fun ChoiceScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(8.dp)
+            .padding(4.dp)
     ) {
         Column(
             modifier = Modifier
@@ -540,7 +576,7 @@ fun ChoiceScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
         }
         val color_btn = when{
             count.value == (totalQuestion-1) ->  ButtonDefaults.buttonColors(containerColor = Color(
@@ -556,7 +592,7 @@ fun ChoiceScreen(
             colors = color_btn,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp)
+                .padding(vertical = 0.dp)
         ) {
             val text_NextQuestion = when {
                 count.value == (totalQuestion-1) -> "Finish Test"
@@ -587,7 +623,7 @@ fun ChoiceButton(
      var backgroundColor = when {
         //isDisabled -> Color(0xFFA9A7A7)
         isSelected && isCorrectAnswer == true -> Color(0xFF4CAF50)
-        isSelected && isCorrectAnswer == false -> Color(0xFFF44336)
+        isSelected && isCorrectAnswer == false -> Color(0xFF9F3E35)
         showAnswer && isCorrectAnswer == true -> Color(0xFF4CAF50)
 
         else -> Color(0xFFF5F5F5)
@@ -620,7 +656,7 @@ fun ChoiceButton(
         colors = ButtonDefaults.buttonColors(
                 containerColor = backgroundColor,
                 contentColor = textColor,
-            disabledContainerColor = Color(0xFFF44336),  // Dùng cùng màu nền khi disable
+            disabledContainerColor = Color(0xFF9F3E35),  // Dùng cùng màu nền khi disable
             disabledContentColor = textColor           // Dùng cùng màu chữ khi disable
         ),
         elevation = ButtonDefaults.buttonElevation(
