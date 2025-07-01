@@ -17,25 +17,28 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.example.eduquizz.Screens.QuizzTracNhiem.IntroScreen
-import com.example.eduquizz.Screens.QuizzTracNhiem.MainView
-import com.example.eduquizz.Screens.QuizzTracNhiem.ResultsScreen
-import com.example.eduquizz.viewmodel.QuestionViewModel
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.quizapp.screen.GameDescriptionScreen
-import com.example.quizapp.screen.SettingsScreen
-import com.example.quizapp.screen.WordMatchGameScreen
-import com.example.quizapp.ui.english.EnglishGamesScreen
+import com.example.eduquizz.features.QuizzTracNhiem.screens.IntroScreen
+import com.example.eduquizz.features.QuizzTracNhiem.screens.MainView
+import com.example.eduquizz.features.QuizzTracNhiem.screens.ResultsScreen
+import com.example.eduquizz.features.QuizzTracNhiem.viewmodel.QuestionViewModel
+import com.example.eduquizz.features.match.screen.GameDescriptionScreen
+import com.example.eduquizz.features.match.screen.SettingsScreen
+import com.example.eduquizz.features.match.screen.WordMatchGameScreen
+import com.example.eduquizz.features.home.english.EnglishGamesScreen
 import com.example.quizapp.ui.main.MainScreen
 import com.example.quizapp.viewmodel.WordMatchGame
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.eduquizz.DataSave.DataViewModel
 import com.example.eduquizz.MainActivity
 import com.example.eduquizz.navigation.Routes.MAIN_ROUTE
+import com.example.eduquizz.features.match.viewmodel.WordMatchGame
 import com.example.quizapp.ui.splash.SplashScreen
 import com.example.wordsearch.ui.screens.IntroductionScreen
 import com.example.wordsearch.ui.screens.WordSearchGame
 import com.example.wordsearch.ui.theme.WordSearchGameTheme
+import com.example.eduquizz.features.bubbleshot.screen.BubbleShotScreen
+import com.example.eduquizz.features.bubbleshot.screen.BubbleShotDescriptionScreen
+import com.example.eduquizz.features.bubbleshot.viewmodel.BubbleShot
 
 object Routes {
     //Hoang
@@ -52,7 +55,9 @@ object Routes {
     const val GAME_THONG = "game_thong"
     const val SETTINGS = "settings"
     const val INTRO_THONG = "game_intro_thong"
-
+    // Bubble Shot
+    const val BUBBLE_SHOT = "bubble_shot"
+    const val BUBBLE_SHOT_INTRO = "bubble_shot_intro"
     //Splash
     const val SPLASH = "splash"
 }
@@ -179,6 +184,18 @@ fun NavGraph(
                     )
 
             }
+        }
+        composable(Routes.BUBBLE_SHOT_INTRO) {
+            BubbleShotDescriptionScreen(
+                onPlayClick = { navController.navigate(Routes.BUBBLE_SHOT) },
+                onBackPressed = { navController.popBackStack() },
+                subject = "BubbleShot"
+            )
+        }
+        composable(Routes.BUBBLE_SHOT) {
+            val viewModel: BubbleShot = hiltViewModel()
+            BubbleShotScreen(viewModel = viewModel, navController = navController)
+
         }
         composable(Routes.GAME_WORD_SEARCH){
             WordSearchGame()

@@ -2,10 +2,31 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <style name="Theme.EduQuizz" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/splash</item>
+
+        <!-- Full screen setup -->
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:fitsSystemWindows">false</item>
+
+        <!-- Status bar trong suốt -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="23">true</item>
+
+        <!-- Navigation bar trong suốt -->
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
+
+        <!-- Hỗ trợ full màn hình kể cả vùng cutout -->
+        <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="27">shortEdges</item>
+
+        <!-- Edge to edge support -->
+        <item name="android:enforceStatusBarContrast" tools:targetApi="29">false</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="29">false</item>
     </style>
 
     <style name="Theme.EduQuizz.Splash" parent="Theme.EduQuizz">
-        <!-- Loại bỏ hoàn toàn splash screen mặc định -->
+        <!-- Splash screen settings -->
         <item name="android:windowBackground">@color/splash</item>
         <item name="android:windowNoTitle">true</item>
 
@@ -16,5 +37,11 @@
 
         <!-- Tăng tốc độ khởi động -->
         <item name="android:windowDisablePreview">true</item>
+
+        <!-- Kế thừa các thuộc tính full screen -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="23">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
     </style>
 </resources>
