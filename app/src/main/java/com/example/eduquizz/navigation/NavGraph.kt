@@ -32,6 +32,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.eduquizz.DataSave.DataViewModel
 import com.example.eduquizz.MainActivity
 import com.example.eduquizz.navigation.Routes.MAIN_ROUTE
+import com.example.quizapp.ui.splash.SplashScreen
 import com.example.wordsearch.ui.screens.IntroductionScreen
 import com.example.wordsearch.ui.screens.WordSearchGame
 import com.example.wordsearch.ui.theme.WordSearchGameTheme
@@ -51,6 +52,9 @@ object Routes {
     const val GAME_THONG = "game_thong"
     const val SETTINGS = "settings"
     const val INTRO_THONG = "game_intro_thong"
+
+    //Splash
+    const val SPLASH = "splash"
 }
 
 @Composable
@@ -60,7 +64,7 @@ fun NavGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Routes.MAIN_DANH,
+        startDestination = Routes.SPLASH,
         modifier = modifier,
         enterTransition = {
             slideInHorizontally(
@@ -87,6 +91,15 @@ fun NavGraph(
             )
         }
     ) {
+        composable(Routes.SPLASH) {
+            SplashScreen(
+                onNavigateToMain = {
+                    navController.navigate(Routes.MAIN_DANH) {
+                        popUpTo(Routes.SPLASH) { inclusive = true }
+                    }
+                }
+            )
+        }
         composable( route = "main/{level}",
             arguments = listOf(navArgument("level") { type = NavType.StringType })) {
                 backStackEntry ->
@@ -160,6 +173,7 @@ fun NavGraph(
                         },
                         onBackPressed = {
                           //  finish()
+                            navController.popBackStack()
                         },
                         showContinueButton = false
                     )

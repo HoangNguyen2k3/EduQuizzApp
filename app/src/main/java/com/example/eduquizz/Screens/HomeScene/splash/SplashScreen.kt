@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.airbnb.lottie.compose.*
 import com.example.eduquizz.R
 import com.example.quizapp.ui.theme.QuizAppTheme
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.delay
 
 @Composable
@@ -22,6 +23,20 @@ fun SplashScreen(onNavigateToMain: () -> Unit = {}) {
     val composition by rememberLottieComposition(
         LottieCompositionSpec.RawRes(R.raw.splash_animation)
     )
+
+    // System UI Controller
+    val systemUiController = rememberSystemUiController()
+
+    LaunchedEffect(Unit) {
+        systemUiController.setStatusBarColor(
+            color = Color(0xFFD6EFFF),
+            darkIcons = true
+        )
+        systemUiController.setNavigationBarColor(
+            color = Color(0xFFD6EFFF),
+            darkIcons = true
+        )
+    }
 
     val progress by animateLottieCompositionAsState(
         composition = composition,
