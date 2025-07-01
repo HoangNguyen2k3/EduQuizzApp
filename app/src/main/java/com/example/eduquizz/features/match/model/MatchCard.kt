@@ -1,4 +1,4 @@
-package com.example.eduquizz.Screens.NoiTu.model
+package com.example.eduquizz.features.match.model
 
 data class MatchCard(
     val id: Int,

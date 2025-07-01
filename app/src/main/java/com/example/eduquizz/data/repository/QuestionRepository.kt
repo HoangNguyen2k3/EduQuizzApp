@@ -1,8 +1,9 @@
 package com.example.eduquizz.repository
 
-import com.example.eduquizz.model.DataOrException
-import com.example.eduquizz.model.QuestionItem
-import com.example.eduquizz.network.QuestionApi
+import com.example.eduquizz.features.quizzGame.model.QuestionItem
+import com.example.eduquizz.data.models.DataOrException
+import com.example.eduquizz.data.models.Subject
+import com.example.eduquizz.data.models.Game
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -58,7 +59,7 @@ class QuestionRepository @Inject constructor(private val api:QuestionApi) {
 }*/
 class QuestionRepository @Inject constructor() {
 
-    //private var cachedQuestions: ArrayList<QuestionItem>? = null
+    private var cachedQuestions: ArrayList<QuestionItem>? = null
 
     suspend fun getAllQuestionQuizGame(path:String)
             : DataOrException<ArrayList<QuestionItem>, Boolean, Exception> {

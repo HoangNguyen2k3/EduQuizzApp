@@ -5,7 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.example.eduquizz.MainActivity
-import com.example.wordsearch.ui.screens.IntroductionScreen
+import com.example.eduquizz.features.wordsearch.screens.IntroductionScreen
 import com.example.wordsearch.ui.theme.WordSearchGameTheme
 
 class IntroductionActivity: ComponentActivity() {

@@ -3,13 +3,13 @@ package com.example.eduquizz.features.match.viewmodel
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
-import com.example.eduquizz.Screens.NoiTu.model.WordPair
+import com.example.eduquizz.features.match.model.WordPair
 
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.example.eduquizz.Screens.NoiTu.model.MatchCard
+import com.example.eduquizz.features.match.model.MatchCard
 // Thẻ cho game matching pairs
 
 class WordMatchGame : ViewModel() {

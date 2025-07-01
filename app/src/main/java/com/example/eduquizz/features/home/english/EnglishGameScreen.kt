@@ -1,5 +1,8 @@
 package com.example.eduquizz.features.home.english
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,6 +24,7 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.example.eduquizz.R
 import com.example.quizapp.ui.theme.QuizAppTheme
 import com.example.eduquizz.data.models.Game
+import kotlinx.coroutines.delay
 
 @Composable
 fun EnglishGamesScreen(
@@ -31,12 +35,26 @@ fun EnglishGamesScreen(
     // System UI Controller for status bar
     val systemUiController = rememberSystemUiController()
 
+    var showRipple by remember { mutableStateOf(false) }
+    var pendingGameClick by remember { mutableStateOf<Game?>(null) }
+
     LaunchedEffect(Unit) {
         systemUiController.setStatusBarColor(
             color = Color(0xFF5A4FCF),
             darkIcons = false
         )
     }
+
+    LaunchedEffect(showRipple) {
+        if (showRipple) {
+            delay(500)
+            pendingGameClick?.let { game ->
+                onGameClick(game)
+            }
+            showRipple = false
+        }
+    }
+
 
     val games = listOf(
         Game(
@@ -112,6 +130,7 @@ fun EnglishGamesScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .background(
                 Brush.horizontalGradient(
                     colors = listOf(
@@ -144,6 +163,35 @@ fun EnglishGamesScreen(
                     )
                 }
             }
+        }
+
+        if (showRipple) {
+            FullscreenRippleEffect()
+        }
+    }
+}
+
+@Composable
+private fun FullscreenRippleEffect(){
+    val radius = remember { Animatable(0f) }
+
+    LaunchedEffect(Unit) {
+        radius.animateTo(
+            targetValue = 2000f,
+            animationSpec = tween(durationMillis = 500)
+        )
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            drawCircle(
+                color = Color(0xFF4A85F5).copy(alpha = 0.6f),
+                radius = radius.value,
+                center = center
+            )
         }
     }
 }

@@ -1,3 +1,4 @@
+/*
 package com.example.eduquizz.features.QuizzTracNhiem.screens
 
 import androidx.compose.foundation.Image
@@ -111,3 +112,4 @@ fun IntroScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(24.dp))
     }
 }
+*/

@@ -21,7 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.example.eduquizz.R
-import com.example.quizapp.data.Subject
+import com.example.eduquizz.data.models.Subject
 
 @Composable
 public fun SubjectCard(

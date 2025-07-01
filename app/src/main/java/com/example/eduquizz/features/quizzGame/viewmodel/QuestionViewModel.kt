@@ -1,23 +1,16 @@
-package com.example.eduquizz.viewmodel
+package com.example.eduquizz.features.quizzGame.viewmodel
 
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.eduquizz.DataSave.DataViewModel
 import com.example.eduquizz.R
-import com.example.eduquizz.model.DataOrException
-import com.example.eduquizz.model.QuestionItem
-import com.example.eduquizz.repository.QuestionRepository
-import com.example.eduquizz.data.models.DataOrException
-import com.example.eduquizz.features.QuizzTracNhiem.model.QuestionItem
 import com.example.eduquizz.data.repository.QuestionRepository
+import com.example.eduquizz.data.models.DataOrException
+import com.example.eduquizz.features.quizzGame.model.QuestionItem
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.random.Random

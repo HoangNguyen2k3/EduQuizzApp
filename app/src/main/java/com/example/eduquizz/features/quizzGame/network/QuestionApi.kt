@@ -1,6 +1,6 @@
-package com.example.eduquizz.features.QuizzTracNhiem.network
+package com.example.eduquizz.features.quizzGame.network
 
-import com.example.eduquizz.features.QuizzTracNhiem.model.Question
+import com.example.eduquizz.features.quizzGame.model.Question
 import retrofit2.http.GET
 
 interface QuestionApi {

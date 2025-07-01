@@ -1,4 +1,4 @@
-package com.example.eduquizz.features.QuizzTracNhiem.screens
+package com.example.eduquizz.features.quizzGame.screens
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -20,8 +20,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.eduquizz.features.QuizzTracNhiem.model.QuestionItem
-import com.example.eduquizz.features.QuizzTracNhiem.viewmodel.QuestionViewModel
+import com.example.eduquizz.features.quizzGame.model.QuestionItem
+import com.example.eduquizz.features.quizzGame.viewmodel.QuestionViewModel
 import kotlinx.coroutines.delay
 import com.example.eduquizz.R
 import androidx.compose.foundation.Image
@@ -31,6 +31,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.ContentScale
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.eduquizz.navigation.Routes
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
