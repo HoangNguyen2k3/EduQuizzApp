@@ -92,7 +92,6 @@ fun NavGraph(
                 backStackEntry ->
             val level = backStackEntry.arguments?.getString("level") ?: ""
             val viewModel: QuestionViewModel = hiltViewModel()
-            val dataViewModel: DataViewModel = hiltViewModel()
             MainView(currentLevel = level, name = "Android", navController = navController, questionViewModel = viewModel)
         }
 
