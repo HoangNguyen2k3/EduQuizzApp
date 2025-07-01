@@ -1,13 +1,10 @@
 package com.example.eduquizz.dI
 
-import com.example.eduquizz.network.QuestionApi
-import com.example.eduquizz.repository.QuestionRepository
+import com.example.eduquizz.data.repository.QuestionRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 
 @Module
