@@ -1,5 +1,4 @@
-
-package com.example.quizapp.screen
+package com.example.eduquizz.features.match.screen
 
 import androidx.compose.runtime.*
 import androidx.compose.foundation.layout.*
@@ -7,21 +6,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.material3.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.Color
-import com.example.quizapp.viewmodel.WordMatchGame
+import com.example.eduquizz.features.match.viewmodel.WordMatchGame
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.navigation.NavHostController
+import androidx.compose.foundation.background
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.animation.core.*
+import androidx.compose.ui.graphics.graphicsLayer
 
 @Composable
 fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostController) {
@@ -33,27 +35,20 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
     val showFinishDialog by viewModel.showFinishDialog
     val canPass by viewModel.canPass
 
-    val wordPairs = viewModel.currentWordPairs
-    val definitions = viewModel.currentDefinitions
-    val connections = viewModel.connections
-    val selectedWordIndex = viewModel.selectedWordIndex
-
-    val wordPositions = remember { mutableStateListOf<Offset>() }
-    val defPositions = remember { mutableStateListOf<Offset>() }
+    val cards = viewModel.cards
+    val selectedIndices = viewModel.selectedIndices
+    val shakingIndices = viewModel.shakingIndices
 
     Column(modifier = Modifier.fillMaxSize()) {
-            IconButton(
-                onClick = {
-                    println("Đa nhan nut Back")
-                    navController.popBackStack()
-                },
-                modifier = Modifier.padding(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back"
-                )
-            }
+        IconButton(
+            onClick = { navController.popBackStack() },
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back"
+            )
+        }
         // Top bar
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -63,104 +58,57 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
             Text("Gold: $gold", color = Color(0xFFFFB800), fontWeight = FontWeight.Bold)
             Text("⏰ $timer", color = if (timer <= 10) Color.Red else Color.Black)
         }
-        // Khu vực nối từ
-        Box(
+        // Lưới thẻ
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2), // 2 cột dọc sát nhau
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .padding(horizontal = 18.dp, vertical = 8.dp)
+                .padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            DrawConnections(
-                connections = connections,
-                wordPositions = wordPositions,
-                defPositions = defPositions,
-                showResult = showResult,
-                wordPairs = wordPairs,
-                definitions = definitions,
-                boxLeftWidth = 140.dp,
-                boxHeight = 60.dp
-            )
-            Row(
-                modifier = Modifier
-                    .width(140.dp + 180.dp + 44.dp) // left + right + gap
-                    .align(Alignment.Center),
-                horizontalArrangement = Arrangement.spacedBy(44.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Word column
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(18.dp),
-                    horizontalAlignment = Alignment.End
-                ) {
-                    wordPairs.forEachIndexed { index, pair ->
-                        val isCorrect = showResult && connections.find { it.wordIndex == index }?.let {
-                            wordPairs[it.wordIndex].definition == definitions[it.definitionIndex]
-                        } == true
-                        val isIncorrect = showResult && connections.any { it.wordIndex == index } && !isCorrect
-
-                        Surface(
-                            modifier = Modifier
-                                .width(140.dp)
-                                .height(60.dp)
-                                .onGloballyPositioned { coordinates ->
-                                    val pos = coordinates.positionInRoot()
-                                    if (wordPositions.size > index) wordPositions[index] = pos else wordPositions.add(pos)
-                                }
-                                .clickable(enabled = !showResult) { viewModel.selectWord(index) },
-                            shape = RoundedCornerShape(16.dp),
-                            shadowElevation = 8.dp,
-                            color = when {
-                                isCorrect -> Color(0xFF7DE699)
-                                isIncorrect -> Color(0xFFEB5353)
-                                selectedWordIndex == index -> Color(0xFFFFF8B3)
-                                else -> Color.White
-                            }
-                        ) {
-                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                Text(pair.word, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                            }
+            itemsIndexed(cards) { idx, card ->
+                if (!card.isMatched) {
+                    val isSelected = selectedIndices.contains(idx)
+                    val isShaking = shakingIndices.contains(idx)
+                    val shakeAnim = remember { Animatable(0f) }
+                    if (isShaking) {
+                        LaunchedEffect(isShaking) {
+                            shakeAnim.snapTo(0f)
+                            shakeAnim.animateTo(
+                                targetValue = 1f,
+                                animationSpec = repeatable(
+                                    iterations = 3,
+                                    animation = tween(50, easing = LinearEasing),
+                                    repeatMode = RepeatMode.Reverse
+                                )
+                            )
+                            shakeAnim.snapTo(0f)
                         }
                     }
-                }
-                // Definition column
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(18.dp),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    definitions.forEachIndexed { index, definition ->
-                        val isCorrect = showResult && connections.find { it.definitionIndex == index }?.let {
-                            wordPairs[it.wordIndex].definition == definitions[it.definitionIndex]
-                        } == true
-                        val isIncorrect = showResult && connections.any { it.definitionIndex == index } && !isCorrect
-
-                        Surface(
-                            modifier = Modifier
-                                .width(180.dp)
-                                .height(60.dp)
-                                .onGloballyPositioned { coordinates ->
-                                    val pos = coordinates.positionInRoot()
-                                    if (defPositions.size > index) defPositions[index] = pos else defPositions.add(pos)
-                                }
-                                .clickable(enabled = !showResult) {
-                                    viewModel.connectToDefinition(index)
-                                },
-                            shape = RoundedCornerShape(16.dp),
-                            shadowElevation = 8.dp,
-                            color = when {
-                                isCorrect -> Color(0xFF7DE699)
-                                isIncorrect -> Color(0xFFEB5353)
-                                else -> Color(0xFFE3F1FF)
-                            }
-                        ) {
-                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                Text(definition, fontSize = 15.sp, textAlign = TextAlign.Center)
-                            }
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(80.dp)
+                            .graphicsLayer (
+                                translationX = if (isShaking) shakeAnim.value * 16f else 0f
+                            )
+                            .background(if (isSelected) Color(0xFFFFF8B3) else Color.White)
+                            .clickable(enabled = !showResult && !isSelected) {
+                                viewModel.onCardClick(idx)
+                            },
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            Text(card.text, fontSize = 18.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                         }
                     }
                 }
             }
         }
-        // Next/Check/Hint/Skip
+        // Hint/Skip/Next
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -182,14 +130,13 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
                 Text("Skip (-100)", color = Color.White)
             }
             Button(
-                onClick = { if (showResult) viewModel.nextLevel() else viewModel.checkResultAndReward() },
-                enabled = connections.size == 5,
+                onClick = { viewModel.nextLevel() },
+                enabled = cards.all { it.isMatched },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A))
             ) {
-                Text(if (showResult) "Next" else "Check", color = Color.White)
+                Text("Next", color = Color.White)
             }
         }
-
         // Dialog hết vàng
         if (showBuyGoldDialog) {
             AlertDialog(
@@ -208,7 +155,6 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
                 }
             )
         }
-
         // Dialog kết thúc game
         if (showFinishDialog) {
             AlertDialog(

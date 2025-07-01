@@ -1,4 +1,4 @@
-package com.example.quizapp.model
+package com.example.eduquizz.features.match.model
 
 data class WordPair (
     val word: String,

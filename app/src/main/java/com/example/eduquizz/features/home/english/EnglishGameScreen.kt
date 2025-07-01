@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -101,6 +100,19 @@ fun EnglishGamesScreen(
             )
         ),
         Game(
+            id = "bubble_shot",
+            name = "Bubble Shot",
+            iconRes = R.drawable.eng,
+            progress = 20,
+            totalQuestions = 100,
+            completedQuestions = 23,
+            totalLessons = 56,
+            gradientColors = listOf(
+                Color(0xFF00C9FF), // Bright Blue
+                Color(0xFF92FE9D)  // Light Green
+            )
+        ),
+        Game(
             id = "vocabulary",
             name = "Từ vựng",
             iconRes = R.drawable.eng,
@@ -115,7 +127,6 @@ fun EnglishGamesScreen(
             )
         )
     )
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -214,7 +225,7 @@ private fun EnglishGamesHeader(
                 .size(48.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.ArrowBackIosNew,
+                imageVector = Icons.Default.ArrowBack,
                 contentDescription = "Quay lại",
                 tint = Color.White,
                 modifier = Modifier.size(24.dp)

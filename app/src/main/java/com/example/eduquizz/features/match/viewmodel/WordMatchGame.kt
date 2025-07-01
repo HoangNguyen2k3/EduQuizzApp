@@ -1,19 +1,18 @@
-package com.example.quizapp.viewmodel
+package com.example.eduquizz.features.match.viewmodel
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
-import com.example.quizapp.model.WordPair
-import com.example.quizapp.model.Connection
+import com.example.eduquizz.features.match.model.WordPair
 
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.example.eduquizz.features.match.model.MatchCard
+// Thẻ cho game matching pairs
 
-class WordMatchGame: ViewModel() {
+class WordMatchGame : ViewModel() {
     private val _allWordPairs = listOf(
         WordPair("Apple", "A kind of fruit"),
         WordPair("Dog", "A domestic animal"),
@@ -47,10 +46,9 @@ class WordMatchGame: ViewModel() {
     val canPass = mutableStateOf(false)
 
     // Dữ liệu cho từng vòng
-    var currentWordPairs = mutableStateListOf<WordPair>()
-    var currentDefinitions = mutableStateListOf<String>()
-    var connections = mutableStateListOf<Connection>()
-    var selectedWordIndex by mutableStateOf<Int?>(null)
+    var cards = mutableStateListOf<MatchCard>()
+    var selectedIndices = mutableStateListOf<Int>() // chỉ số trong cards
+    var shakingIndices = mutableStateListOf<Int>() // chỉ số đang rung
 
     // Timer
     private var timerJob: Job? = null
@@ -63,12 +61,17 @@ class WordMatchGame: ViewModel() {
         currentLevel.value = level
         val start = level * 5
         val end = (level + 1) * 5
-        currentWordPairs.clear()
-        currentWordPairs.addAll(_allWordPairs.subList(start, end))
-        currentDefinitions.clear()
-        currentDefinitions.addAll(currentWordPairs.map { it.definition }.shuffled())
-        connections.clear()
-        selectedWordIndex = null
+        val wordPairs = _allWordPairs.subList(start, end)
+        // Tạo 10 thẻ (5 từ, 5 nghĩa), mỗi cặp có cùng pairId
+        val newCards = mutableListOf<MatchCard>()
+        wordPairs.forEachIndexed { idx, pair ->
+            newCards.add(MatchCard(id = idx * 2, text = pair.word, pairId = idx))
+            newCards.add(MatchCard(id = idx * 2 + 1, text = pair.definition, pairId = idx))
+        }
+        cards.clear()
+        cards.addAll(newCards.shuffled())
+        selectedIndices.clear()
+        shakingIndices.clear()
         showResult.value = false
         startTimer()
     }
@@ -87,29 +90,29 @@ class WordMatchGame: ViewModel() {
         }
     }
 
-    fun connectToDefinition(defIndex: Int) {
-        selectedWordIndex?.let { wIdx ->
-            if (connections.none { it.wordIndex == wIdx }) {
-                connections.add(Connection(wIdx, defIndex))
-                selectedWordIndex = null
+    fun onCardClick(index: Int) {
+        if (cards[index].isMatched || selectedIndices.contains(index) || selectedIndices.size == 2) return
+        selectedIndices.add(index)
+        if (selectedIndices.size == 2) {
+            val first = cards[selectedIndices[0]]
+            val second = cards[selectedIndices[1]]
+            if (first.pairId == second.pairId && first.id != second.id) {
+                // Đúng, ẩn 2 thẻ
+                cards[selectedIndices[0]] = cards[selectedIndices[0]].copy(isMatched = true)
+                cards[selectedIndices[1]] = cards[selectedIndices[1]].copy(isMatched = true)
+                gold.value += 5
+                totalRight.value += 1
+                selectedIndices.clear()
+            } else {
+                // Sai, rung 2 thẻ
+                shakingIndices.addAll(selectedIndices)
+                viewModelScope.launch {
+                    delay(300)
+                    shakingIndices.clear()
+                    selectedIndices.clear()
+                }
             }
         }
-    }
-
-    fun selectWord(index: Int) {
-        selectedWordIndex = index
-    }
-
-    fun checkResultAndReward() {
-        showResult.value = true
-        var roundRight = 0
-        connections.forEach {
-            val correct = currentWordPairs[it.wordIndex].definition == currentDefinitions[it.definitionIndex]
-            if (correct) roundRight++
-        }
-        gold.value += roundRight * 5
-        if (roundRight == 5) gold.value += 20 // Thưởng thêm nếu đúng cả 5
-        totalRight.value += roundRight
     }
 
     fun nextLevel() {
@@ -123,14 +126,14 @@ class WordMatchGame: ViewModel() {
     fun useHint() {
         if (gold.value >= 20) {
             gold.value -= 20
-            // Tự động nối đúng 1 cặp còn lại chưa nối
-            val available = (0..4).filter { wi ->
-                connections.none { it.wordIndex == wi }
-            }
-            if (available.isNotEmpty()) {
-                val idx = available.random()
-                val defIdx = currentDefinitions.indexOf(currentWordPairs[idx].definition)
-                connections.add(Connection(idx, defIdx))
+            // Tự động mở đúng 1 cặp chưa matched
+            val unmatched = cards.withIndex().filter { !it.value.isMatched }
+            val pairs = unmatched.groupBy { it.value.pairId }.values.filter { it.size == 2 }
+            if (pairs.isNotEmpty()) {
+                val pair = pairs.random()
+                cards[pair[0].index] = cards[pair[0].index].copy(isMatched = true)
+                cards[pair[1].index] = cards[pair[1].index].copy(isMatched = true)
+                totalRight.value += 1
             }
         } else showBuyGoldDialog.value = true
     }
@@ -138,12 +141,9 @@ class WordMatchGame: ViewModel() {
     fun skipLevel() {
         if (gold.value >= 100) {
             gold.value -= 100
-            // Nối toàn bộ còn lại đúng hết, showResult true
-            (0..4).forEach { wi ->
-                if (connections.none { it.wordIndex == wi }) {
-                    val defIdx = currentDefinitions.indexOf(currentWordPairs[wi].definition)
-                    connections.add(Connection(wi, defIdx))
-                }
+            // Mở toàn bộ cặp còn lại
+            cards.forEachIndexed { i, c ->
+                if (!c.isMatched) cards[i] = c.copy(isMatched = true)
             }
             showResult.value = true
         } else showBuyGoldDialog.value = true
