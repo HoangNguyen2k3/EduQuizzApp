@@ -66,7 +66,7 @@ class BubbleShot : ViewModel() {
         MathQuestion("75 - 28 = ?", "47")
     )
     var currentQuestion = mutableStateOf(allQuestions.random())
-    var answers = mutableStateListOf<String>()
+    var answers = mutableStateListOf<String?>()
     var timer = mutableStateOf(5)
     var score = mutableStateOf(0)
     var job: Job? = null
@@ -85,7 +85,7 @@ class BubbleShot : ViewModel() {
             answerPool[Random.nextInt(12)] = currentQuestion.value.correctAnswer
         }
         answers.clear()
-        answers.addAll(answerPool)
+        answers.addAll(answerPool.map { it as String? }) // cast để nullable
     }
 
     fun onAnswerSelected(index: Int) {
@@ -97,7 +97,7 @@ class BubbleShot : ViewModel() {
         if (isCorrect) {
             score.value += 1
         }
-        answers.removeAt(index) // Xóa theo vị trí, không dồn bóng
+        answers[index] = null
         viewModelScope.launch {
             delay(700)
             selectedAnswer.value = null
@@ -105,36 +105,86 @@ class BubbleShot : ViewModel() {
             nextQuestion()
         }
     }
+fun nextQuestion() {
+    // Chọn câu mới
+    currentQuestion.value = allQuestions.random()
+    val correctAnswer = currentQuestion.value.correctAnswer
 
-    fun nextQuestion() {
-        currentQuestion.value = allQuestions.random()
-        // Nếu chưa có đáp án đúng trong lưới thì thêm vào vị trí random
-        if (!answers.contains(currentQuestion.value.correctAnswer)) {
-            val insertIdx = if (answers.isEmpty()) 0 else Random.nextInt(0, answers.size + 1)
-            answers.add(insertIdx, currentQuestion.value.correctAnswer)
+    // 1. Nếu đã có đáp án đúng trong lưới (non-null), giữ nguyên hoàn toàn
+    if (!answers.filterNotNull().contains(correctAnswer)) {
+        // 2. Nếu chưa có, shuffle lại non-null và chèn đáp án
+        val nonNulls = answers.filterNotNull().toMutableList()
+        nonNulls.add(correctAnswer)
+        //nonNulls.shuffle()
+        val swapCount = Random.nextInt(2, 4)
+        repeat(swapCount) {
+            val i = Random.nextInt(nonNulls.size)
+            val j = Random.nextInt(nonNulls.size)
+            val tmp = nonNulls[i]
+            nonNulls[i] = nonNulls[j]
+            nonNulls[j] = tmp
         }
-        // Đảm bảo đủ số bóng tối thiểu
-        while (answers.size < 8) {
-            val pool = allQuestions.map { it.correctAnswer }.filter { it !in answers }
-            if (pool.isNotEmpty()) {
-                val insertIdx = if (answers.isEmpty()) 0 else Random.nextInt(0, answers.size + 1)
-                answers.add(insertIdx, pool.random())
-            } else {
-                break
+        // Gán ngược trở lại, giữ nguyên các vị trí null
+        var idxNonNull = 0
+        for (i in answers.indices) {
+            if (answers[i] != null) {
+                answers[i] = nonNulls[idxNonNull++]
             }
         }
-        val targetBubbleCount = (12..15).random()
-        while (answers.size < targetBubbleCount) {
-            val randomAnswer = (1..100).random().toString()
-            if (randomAnswer !in answers) {
-                val insertIdx = if (answers.isEmpty()) 0 else Random.nextInt(0, answers.size + 1)
-                answers.add(insertIdx, randomAnswer)
-            }
-        }
-        // KHÔNG shuffle lại answers ở đây!
-        timer.value = 5
-        startTimer()
     }
+
+    // 3. Đảm bảo có ít nhất 8 bóng (non-null)
+    val existing = answers.filterNotNull().toMutableList()
+    if (existing.size < 8) {
+        // pool đáp án chưa có
+        val pool = allQuestions.map { it.correctAnswer }
+            .filter { it !in existing }
+            .toMutableList()
+
+        // Fill vào các vị trí null trước
+        for (i in answers.indices) {
+            if (existing.size >= 8) break
+            if (answers[i] == null && pool.isNotEmpty()) {
+                val pick = pool.random()
+                pool.remove(pick)
+                answers[i] = pick
+                existing.add(pick)
+            }
+        }
+    }
+
+    // 4. Đảm bảo đủ targetCount (12..15) bóng
+        val targetCount = (12..15).random()
+        val allExisting = answers.filterNotNull().toMutableSet()
+
+    // Trước tiên, điền vào các vị trí null đã có
+        for (i in answers.indices) {
+            if (answers.count { it != null } >= targetCount) break
+            if (answers[i] == null) {
+                var rand: String
+                do {
+                    rand = (1..100).random().toString()
+                } while (rand in allExisting)
+
+                answers[i] = rand
+                allExisting.add(rand)
+            }
+        }
+
+    // Nếu vẫn chưa đủ, thêm mới vào cuối
+        while (answers.count { it != null } < targetCount) {
+            var rand: String
+            do {
+                rand = (1..100).random().toString()
+            } while (rand in allExisting)
+
+            answers.add(rand)
+            allExisting.add(rand)
+        }
+    // Reset timer và start lại
+    timer.value = 5
+    startTimer()
+}
 
     private fun startTimer(continueTimer: Boolean = false) {
         job?.cancel()
@@ -151,4 +201,4 @@ class BubbleShot : ViewModel() {
             }
         }
     }
-} 
+}

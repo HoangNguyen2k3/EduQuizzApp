@@ -79,6 +79,10 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
             ) {
                 items(answers.size) { idx ->
                     val answer = answers[idx]
+                    if (answer == null) {
+                        Spacer(modifier = Modifier.size(40.dp))
+                    }
+                    else {
                     val selectedAnswer = viewModel.selectedAnswer.value
                     val isCorrect = viewModel.isCorrectAnswer.value
                     val backgroundColor = when {
@@ -104,6 +108,7 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
                                 fontSize = 16.sp
                             )
                         }
+                    }
                     }
                 }
             }
