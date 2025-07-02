@@ -22,7 +22,124 @@ import androidx.compose.material.icons.filled.ArrowBack
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.graphics.colorspace.Rgb
+import androidx.compose.ui.input.pointer.motionEventSpy
+import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.zIndex
+
+@Composable
+fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
+//    ForceLandscape()
+    val answers = viewModel.answers
+    val timer by viewModel.timer
+    val question by viewModel.currentQuestion
+    val score by viewModel.score
+
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFE3F2FD))) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .zIndex(1f),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color(0xFF000000)
+                )
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text("⏰ $timer", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Score: $score", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+
+        // Phần nội dung chính
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 60.dp)
+        ) {
+            // Lưới bóng bay
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(6.dp),
+                verticalArrangement = Arrangement.spacedBy(40.dp),
+                horizontalArrangement = Arrangement.spacedBy(40.dp)
+            ) {
+                items(answers.size) { idx ->
+                    val answer = answers[idx]
+                    if (answer == null) {
+                        Spacer(modifier = Modifier.size(40.dp))
+                    }
+                    else {
+                    val selectedAnswer = viewModel.selectedAnswer.value
+                    val isCorrect = viewModel.isCorrectAnswer.value
+                    val backgroundColor = when {
+                        selectedAnswer == answer && isCorrect == true -> Color(0xFF4CAF50) // Green
+                        selectedAnswer == answer && isCorrect == false -> Color(0xFFF44336) // Red
+                        else -> Color(0xFFB3E5FC)
+                    }
+                    Card(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .then(
+                                if (selectedAnswer == null) Modifier.clickable { viewModel.onAnswerSelected(idx) } else Modifier
+                            ),
+                        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+                        elevation = CardDefaults.cardElevation(2.dp)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Text(
+                                answer, fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+                        }
+                    }
+                    }
+                }
+            }
+
+            // Phần dưới cùng với cannon và câu hỏi
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp)
+            ) {
+                Box(
+                    Modifier
+                        .size(80.dp)
+                        .align(Alignment.TopCenter)
+                        .background(Color.Gray, shape = MaterialTheme.shapes.large)
+                )
+                Text(
+                    question.question,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
+            }
+        }
+    }
+}
+@Preview(showBackground = true)
+@Composable
+fun BubbleShotScreenPreview() {
+    BubbleShotScreen(BubbleShot(), NavHostController(LocalContext.current))
+}
 
 @Composable
 fun ForceLandscape() {
@@ -33,88 +150,6 @@ fun ForceLandscape() {
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         onDispose {
             activity?.requestedOrientation = oldOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        }
-    }
-}
-@Composable
-fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
-    ForceLandscape()
-    val answers = viewModel.answers
-    val timer by viewModel.timer
-    val question by viewModel.currentQuestion
-    val score by viewModel.score
-
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFE3F2FD))) {
-        // Nút quay lại
-        IconButton(
-            onClick = { navController.popBackStack() },
-            modifier = Modifier.padding(8.dp).align(Alignment.TopStart)
-        ) {
-            Icon(
-                imageVector = Icons.Default.ArrowBack,
-                contentDescription = "Back",
-                tint = Color(0xFF1976D2)
-            )
-        }
-        Row(Modifier.fillMaxSize()) {
-            // Lưới bóng bay
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(4),
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(answers.size) { idx ->
-                    val answer = answers[idx]
-                    Card(
-                        modifier = Modifier
-                            .size(60.dp)
-                            .clickable { viewModel.onAnswerSelected(answer) },
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFB3E5FC)),
-                        elevation = CardDefaults.cardElevation(2.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(answer, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            }
-            // Bên phải: Timer, điểm
-            Column(
-                Modifier
-                    .fillMaxHeight()
-                    .width(80.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("⏰ $timer", fontSize = 32.sp)
-                Spacer(Modifier.height(32.dp))
-                Text("Score: $score", fontSize = 24.sp)
-            }
-        }
-        // Dưới cùng: Trụ cannon + câu hỏi
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(120.dp)
-                .align(Alignment.BottomCenter)
-        ) {
-            // Cannon (sau này thay bằng hình)
-            Box(
-                Modifier
-                    .size(80.dp)
-                    .align(Alignment.TopCenter)
-                    .background(Color.Gray, shape = MaterialTheme.shapes.large)
-            )
-            // Câu hỏi
-            Text(
-                question.question,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
         }
     }
 }

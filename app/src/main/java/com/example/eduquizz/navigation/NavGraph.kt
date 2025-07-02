@@ -26,19 +26,12 @@ import com.example.eduquizz.features.quizzGame.screens.MainView
 import com.example.eduquizz.features.quizzGame.screens.ResultsScreen
 import com.example.eduquizz.features.quizzGame.viewmodel.QuestionViewModel
 import com.example.eduquizz.features.match.screen.GameDescriptionScreen
-import com.example.eduquizz.features.match.screen.SettingsScreen
-import com.example.eduquizz.features.match.screen.WordMatchGameScreen
-
 import com.example.eduquizz.features.match.screen.WordMatchGameScreen
 import com.example.eduquizz.features.home.english.EnglishGamesScreen
 import com.example.eduquizz.features.home.screens.SettingScreen
 import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.quizapp.ui.main.MainScreen
 import com.example.eduquizz.features.match.viewmodel.WordMatchGame
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.eduquizz.DataSave.DataViewModel
-import com.example.eduquizz.MainActivity
-import com.example.eduquizz.navigation.Routes.MAIN
 import com.example.quizapp.ui.splash.SplashScreen
 import com.example.eduquizz.features.wordsearch.screens.IntroductionScreen
 import com.example.wordsearch.ui.screens.WordSearchGame
@@ -137,6 +130,10 @@ fun NavGraph(
                         "word_find" -> navController.navigate(Routes.INTRO_WORD_SEARCH)
                         "connect_blocks" -> navController.navigate(Routes.INTRO_THONG)
                         "quiz" -> navController.navigate(Routes.INTRO)
+                        "bubble_shot" -> navController.navigate(Routes.BUBBLE_SHOT_INTRO)
+                        else -> {
+                            // Handle other games or show an error
+                        }
                     }
                 }
             )

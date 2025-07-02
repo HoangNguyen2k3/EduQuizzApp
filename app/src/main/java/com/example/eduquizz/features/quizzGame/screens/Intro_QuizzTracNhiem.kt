@@ -121,7 +121,7 @@ fun IntroScreen(
                         ) + fadeIn(animationSpec = tween(800, delayMillis = 1000))
                     ) {
                         PlayButton(
-                            onClick = { navController.navigate(Routes.MAIN) },
+                            onClick = { navController.navigate("main/levelEasy") },
                             modifier = Modifier.padding(20.dp)
                         )
                     }
