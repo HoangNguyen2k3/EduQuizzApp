@@ -110,12 +110,40 @@ fun nextQuestion() {
     currentQuestion.value = allQuestions.random()
     val correctAnswer = currentQuestion.value.correctAnswer
 
-    // 1. Nếu đã có đáp án đúng trong lưới (non-null), giữ nguyên hoàn toàn
+//    // 1. Nếu đã có đáp án đúng trong lưới (non-null), giữ nguyên hoàn toàn
+//    if (!answers.filterNotNull().contains(correctAnswer)) {
+//        // 2. Nếu chưa có, shuffle lại non-null và chèn đáp án
+//        val nonNulls = answers.filterNotNull().toMutableList()
+//        nonNulls.add(correctAnswer)
+//        val swapCount = Random.nextInt(2, 4)
+//        repeat(swapCount) {
+//            val i = Random.nextInt(nonNulls.size)
+//            val j = Random.nextInt(nonNulls.size)
+//            val tmp = nonNulls[i]
+//            nonNulls[i] = nonNulls[j]
+//            nonNulls[j] = tmp
+//        }
+//        // Gán ngược trở lại, giữ nguyên các vị trí null
+//        var idxNonNull = 0
+//        for (i in answers.indices) {
+//            if (answers[i] != null) {
+//                answers[i] = nonNulls[idxNonNull++]
+//            }
+//        }
+//    }
+    val nonNullIndices = answers.mapIndexedNotNull { idx, v -> if (v != null) idx else null }
+    // 2. Nếu đáp án mới chưa có, thay thế một non-null ngẫu nhiên bằng đáp án mới
     if (!answers.filterNotNull().contains(correctAnswer)) {
-        // 2. Nếu chưa có, shuffle lại non-null và chèn đáp án
-        val nonNulls = answers.filterNotNull().toMutableList()
-        nonNulls.add(correctAnswer)
-        //nonNulls.shuffle()
+        if (nonNullIndices.isNotEmpty()) {
+            // Chọn ngẫu nhiên 1 index của non-null để thay thế
+            val replaceIdx = nonNullIndices.random()
+            answers[replaceIdx] = correctAnswer
+        } else {
+            // Nếu không có non-null nào (toàn null), thêm vào đầu
+            answers.add(0, correctAnswer)
+        }
+    } else {
+        val nonNulls = nonNullIndices.map { answers[it]!! }.toMutableList()
         val swapCount = Random.nextInt(2, 4)
         repeat(swapCount) {
             val i = Random.nextInt(nonNulls.size)
@@ -124,12 +152,9 @@ fun nextQuestion() {
             nonNulls[i] = nonNulls[j]
             nonNulls[j] = tmp
         }
-        // Gán ngược trở lại, giữ nguyên các vị trí null
-        var idxNonNull = 0
-        for (i in answers.indices) {
-            if (answers[i] != null) {
-                answers[i] = nonNulls[idxNonNull++]
-            }
+        // Gán ngược về các vị trí non-null ban đầu (giữ vị trí null y nguyên)
+        nonNullIndices.forEachIndexed { order, idx ->
+            answers[idx] = nonNulls[order]
         }
     }
 
