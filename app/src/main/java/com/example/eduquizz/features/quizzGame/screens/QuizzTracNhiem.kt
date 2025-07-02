@@ -44,22 +44,7 @@ fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,nav
 ,dataviewModel: DataViewModel = hiltViewModel()) {
     LaunchedEffect(key1 = true) {
         questionViewModel.Init(dataviewModel,currentLevel)
-        //questionViewModel.getAllQuestions("English/QuizGame/$currentLevel")
     }
-/*
-    val count = remember { mutableStateOf(0) }
-    val score = remember { mutableStateOf(0) }
-    val choiceSelected = remember { mutableStateOf("") }
-    val resetTimeTrigger = remember { mutableStateOf(0) }
-    val questions = questionViewModel.data.value.data
-    val usedQuestions = remember { mutableStateListOf<QuestionItem>() }
-    val reserveQuestions = remember { mutableStateListOf<QuestionItem>() }
-    val usedHelperThisQuestion = remember { mutableStateOf(false) }
-    val showExpertDialog = remember { mutableStateOf(false) }
-    val choiceAttempts = remember { mutableStateOf(0) }
-    val gold by dataviewModel.gold.observeAsState(-1)
-*/
-
     val count = questionViewModel.count
     val score = questionViewModel.score
     val choiceSelected = questionViewModel.choiceSelected
@@ -72,12 +57,13 @@ fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,nav
     val choiceAttempts = questionViewModel.choiceAttempts
     val gold by dataviewModel.gold.observeAsState(-1)
     LaunchedEffect(questions) {
-        if (questions != null && usedQuestions.isEmpty() && questions.size >= 20) {
+       // if (questions != null && usedQuestions.isEmpty() && questions.size >= 20) {
+        if (questions != null && usedQuestions.isEmpty()) {
             usedQuestions.clear()
             reserveQuestions.clear()
             val shuffledQuestions = questions.shuffled()
-            usedQuestions.addAll(shuffledQuestions.take(10))
-            reserveQuestions.addAll(shuffledQuestions.drop(10))
+            usedQuestions.addAll(shuffledQuestions.take(questions.size/2))
+            reserveQuestions.addAll(shuffledQuestions.drop(questions.size/2))
         }
     }
     val hiddenChoices = questionViewModel.hiddenChoices
@@ -86,16 +72,11 @@ fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,nav
     val expertAnswer = questionViewModel.expertAnswer
     val twoTimeChoice = questionViewModel.twoTimeChoice
     val coins = questionViewModel.coins
-// Chỉ khởi tạo coins từ gold 1 lần duy nhất
     LaunchedEffect(gold) {
         if (gold >-1 && coins.value == -1) {
             coins.value = gold
         }
     }
-/*    fun spendCoins(amount: Int) {
-        coins.value = (coins.value ?: 0) - amount
-        dataviewModel.updateGold(coins.value ?: 0) // <-- chỉ update khi cần
-    }*/
     Scaffold(
         bottomBar = {
             BottomHelperBar(
@@ -105,65 +86,6 @@ fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,nav
                 onHelperClick = { index ->
                     if (usedHelperThisQuestion.value) return@BottomHelperBar
                         questionViewModel.ProcessHelperBar(index)
- /*                   if(index == 0&&(helperCounts[index].second <= coins.value)&&choiceSelected.value.isEmpty() ){
-                        val currentQuestion = usedQuestions?.get(count.value)
-                        if(currentQuestion!=null){
-                            val wrongAnswers = currentQuestion.choices.filter { it != currentQuestion.answer }
-                            hiddenChoices.clear()
-                            hiddenChoices.addAll(wrongAnswers.shuffled().take(2))
-                            //coins.value -= helperCounts[index].second
-                            spendCoins(helperCounts[index].second)
-                            usedHelperThisQuestion.value = true
-                        }
-                    }
-                    else if (index == 1 && helperCounts[index].second <= coins.value && choiceSelected.value.isEmpty()) {
-                        if (count.value < usedQuestions.size && reserveQuestions.isNotEmpty()) {
-                            val newQuestion = reserveQuestions.removeAt(0)
-
-                            // Thay thế câu hỏi hiện tại
-                            usedQuestions.removeAt(count.value)
-                            usedQuestions.add(count.value, newQuestion)
-
-                            // Reset trạng thái
-                            //coins.value -= helperCounts[index].second
-                            spendCoins(helperCounts[index].second)
-                            hiddenChoices.clear()
-                            choiceSelected.value = ""
-                            resetTimeTrigger.value++ // cũng có thể reset timer nếu cần
-                            usedHelperThisQuestion.value = true
-                        }
-                    }
-                    else if(index==2&&helperCounts[index].second <= coins.value&& choiceSelected.value.isEmpty())
-                    {
-                        showExpertDialog.value = true
-                        //coins.value -= helperCounts[index].second
-                        spendCoins(helperCounts[index].second)
-                        val currentQuestion = usedQuestions[count.value]
-                        val correctAnswer = currentQuestion.answer
-                        val wrongAnswers = currentQuestion.choices.filter { it != correctAnswer }
-                        // Lấy kí hiệu đáp án (A, B, C, D)
-                        fun getLetter(index: Int): String {
-                            return when(index) {
-                                0 -> "A"
-                                1 -> "B"
-                                2 -> "C"
-                                3 -> "D"
-                                else -> "?"
-                            }
-                        }
-                        expertAnswer.value = if (Random.nextFloat() < 0.9f) {
-                            getLetter(currentQuestion.choices.indexOf(correctAnswer))
-                        } else {
-                            getLetter(currentQuestion.choices.indexOf(wrongAnswers.random()))
-                        }
-                        showExpertDialog.value = true
-                        usedHelperThisQuestion.value = true
-                    }else if(index == 3&&helperCounts[index].second <= coins.value&& choiceSelected.value.isEmpty()){
-                        twoTimeChoice.value = true
-                        //coins.value -= helperCounts[index].second
-                        spendCoins(helperCounts[index].second)
-                        usedHelperThisQuestion.value = true
-                    }*/
                 },
                 modifier = Modifier.fillMaxWidth().padding(8.dp)
             )

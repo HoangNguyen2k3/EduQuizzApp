@@ -46,6 +46,7 @@ import com.example.wordsearch.ui.theme.WordSearchGameTheme
 import com.example.eduquizz.features.bubbleshot.screen.BubbleShotScreen
 import com.example.eduquizz.features.bubbleshot.screen.BubbleShotDescriptionScreen
 import com.example.eduquizz.features.bubbleshot.viewmodel.BubbleShot
+import com.example.eduquizz.features.quizzGame.screens.LevelChoice
 
 object Routes {
     //Hoang
@@ -53,6 +54,7 @@ object Routes {
     const val RESULT = "result"
     const val INTRO = "intro"
     const val MAIN_ROUTE = "main/{level}"
+    const val QUIZ_LEVEL = "quiz_level"
     //Danh
     const val MAIN_DANH = "main_danh"
     const val GAME_SCENE = "games_scene_danh"
@@ -140,6 +142,21 @@ fun NavGraph(
                     }
                 }
             )
+        }
+        composable (Routes.QUIZ_LEVEL){
+            LevelChoice(
+                onBackClick = {navController.navigate(Routes.INTRO)},
+                onGameClick = {
+                    game ->{
+                        when(game.id){
+                            "level_easy"->navController.navigate("main/LevelEasy")
+                            "level_normal"->navController.navigate("main/LevelNormal")
+                            "level_hard"->navController.navigate("main/LevelHard")
+                            "level_image"->navController.navigate("main/LevelImage")
+                        }
+                }
+                }
+                )
         }
         composable(Routes.GAME_THONG) {
             val gameViewModel: WordMatchGame = hiltViewModel()

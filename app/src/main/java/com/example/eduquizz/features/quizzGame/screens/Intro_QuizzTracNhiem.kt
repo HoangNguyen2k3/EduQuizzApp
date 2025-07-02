@@ -27,14 +27,18 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.eduquizz.R
+import com.example.eduquizz.features.home.english.EnglishGamesScreen
 import com.example.eduquizz.features.home.screens.WithLoading
 import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.eduquizz.navigation.Routes
+import com.example.quizapp.ui.theme.QuizAppTheme
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -121,7 +125,7 @@ fun IntroScreen(
                         ) + fadeIn(animationSpec = tween(800, delayMillis = 1000))
                     ) {
                         PlayButton(
-                            onClick = { navController.navigate(Routes.MAIN) },
+                            onClick = { navController.navigate(Routes.QUIZ_LEVEL) },
                             modifier = Modifier.padding(20.dp)
                         )
                     }
@@ -224,9 +228,9 @@ private fun GameBanner() {
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Image(
-            painter = painterResource(id = R.drawable.quizzbanner),
+            painter = painterResource(id = R.drawable.bannerquiz),
             contentDescription = "Banner Game",
-            contentScale = ContentScale.Crop,
+            contentScale = ContentScale.Fit,
             modifier = Modifier
                 .fillMaxSize()
                 .clip(RoundedCornerShape(16.dp))
@@ -350,5 +354,12 @@ private fun PlayButton(
             ),
             color = Color.White
         )
+    }
+}
+@Preview(showBackground = true)
+@Composable
+fun Intro_Preview() {
+    QuizAppTheme {
+        IntroScreen(navController = rememberNavController(), onBackPressed = {})
     }
 }

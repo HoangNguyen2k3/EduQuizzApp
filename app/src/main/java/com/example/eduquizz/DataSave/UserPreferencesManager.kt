@@ -25,7 +25,11 @@ class UserPreferencesManager(private val context: Context) {
         .map { preferences ->
             preferences[UserPreferencesKeys.CURRENT_LEVEL] ?: 1
         }
-
+    val firstTimeInGame: Flow<Boolean> =context.dataStore.data
+        .map {
+            preferences ->
+            preferences[UserPreferencesKeys.FIRST_TIME] ?: false
+        }
     suspend fun savePlayerName(name: String) {
         context.dataStore.edit { preferences ->
             preferences[UserPreferencesKeys.PLAYER_NAME] = name

@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -19,6 +20,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.eduquizz.DataSave.DataViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.example.eduquizz.R
 import com.example.eduquizz.data.models.Subject
@@ -30,7 +33,8 @@ import com.example.eduquizz.features.home.screens.ProfileScreen
 
 @Composable
 fun MainScreen(
-    onNavigateToEnglish:() -> Unit = {}
+    onNavigateToEnglish:() -> Unit = {},
+    dataviewModel: DataViewModel = hiltViewModel()
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
 
@@ -96,7 +100,7 @@ fun MainScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            HeaderSection()
+            HeaderSection(dataviewModel)
         },
         bottomBar = {
             BottomNavigationBar(
@@ -203,7 +207,7 @@ private fun BottomNavigationBar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HeaderSection() {
+private fun HeaderSection(dataviewModel: DataViewModel) {
     TopAppBar(
         title = {},
         actions = {
@@ -272,8 +276,9 @@ private fun HeaderSection() {
                         modifier = Modifier.size(dimensionResource(id = R.dimen.icon_medium))
                     )
                     Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.spacing_small)))
+                    val gold by dataviewModel.gold.observeAsState(initial = 0)
                     Text(
-                        text = stringResource(id = R.string.coins_value),
+                        text = "$gold",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = dimensionResource(id = R.dimen.text_medium).value.sp
