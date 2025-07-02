@@ -46,6 +46,7 @@ import com.example.wordsearch.ui.theme.WordSearchGameTheme
 import com.example.eduquizz.features.bubbleshot.screen.BubbleShotScreen
 import com.example.eduquizz.features.bubbleshot.screen.BubbleShotDescriptionScreen
 import com.example.eduquizz.features.bubbleshot.viewmodel.BubbleShot
+import com.example.eduquizz.features.home.screens.ReadyScreen
 import com.example.eduquizz.features.quizzGame.screens.LevelChoice
 
 object Routes {
@@ -69,6 +70,8 @@ object Routes {
     const val BUBBLE_SHOT_INTRO = "bubble_shot_intro"
     //Splash
     const val SPLASH = "splash"
+
+    const val READY ="ready"
 }
 
 @Composable
@@ -88,12 +91,22 @@ fun NavGraph(
         composable(Routes.SPLASH) {
             SplashScreen(
                 onNavigateToMain = {
-                    navController.navigate(Routes.MAIN_DANH) {
+                    navController.navigate(Routes.READY) {
                         popUpTo(Routes.SPLASH) { inclusive = true }
                     }
                 }
             )
         }
+        composable(Routes.READY) {
+            ReadyScreen(
+                onStartClick = { userName ->
+                    navController.navigate(Routes.MAIN_DANH) {
+                        popUpTo(Routes.READY) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable( route = "main/{level}",
             arguments = listOf(navArgument("level") { type = NavType.StringType })) {
                 backStackEntry ->
