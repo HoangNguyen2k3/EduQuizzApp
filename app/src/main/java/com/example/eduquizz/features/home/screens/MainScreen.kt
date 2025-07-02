@@ -276,6 +276,7 @@ private fun HeaderSection(dataviewModel: DataViewModel) {
                         modifier = Modifier.size(dimensionResource(id = R.dimen.icon_medium))
                     )
                     Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.spacing_small)))
+                    dataviewModel.updateGold(1000)
                     val gold by dataviewModel.gold.observeAsState(initial = 0)
                     Text(
                         text = "$gold",
