@@ -1,5 +1,6 @@
 package com.example.quizapp.ui.main
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,9 +17,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.eduquizz.DataSave.DataViewModel
@@ -236,11 +239,10 @@ private fun HeaderSection(dataviewModel: DataViewModel) {
                             vertical = dimensionResource(id = R.dimen.badge_vertical_padding)
                         )
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = stringResource(id = R.string.star_icon_desc),
-                        tint = Color.White,
-                        modifier = Modifier.size(dimensionResource(id = R.dimen.icon_medium))
+                    Image(
+                        painter = painterResource(id = R.drawable.coinimg),
+                        contentDescription = "Ảnh PNG",
+                        modifier = Modifier.size(30.dp)
                     )
                     Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.spacing_small)))
                     Text(

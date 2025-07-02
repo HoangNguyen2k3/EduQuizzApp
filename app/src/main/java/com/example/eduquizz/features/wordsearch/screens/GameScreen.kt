@@ -111,9 +111,9 @@ fun WordSearchGame(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_coin),
+                            painter = painterResource(id = R.drawable.coinimg),
                             contentDescription = "Coins",
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(30.dp),
                             tint = Color.Unspecified
                         )
                         Spacer(modifier = Modifier.width(8.dp))

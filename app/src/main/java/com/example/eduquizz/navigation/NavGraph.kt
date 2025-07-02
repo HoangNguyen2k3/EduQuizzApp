@@ -147,14 +147,14 @@ fun NavGraph(
             LevelChoice(
                 onBackClick = {navController.navigate(Routes.INTRO)},
                 onGameClick = {
-                    game ->{
+                    game ->
                         when(game.id){
                             "level_easy"->navController.navigate("main/LevelEasy")
                             "level_normal"->navController.navigate("main/LevelNormal")
                             "level_hard"->navController.navigate("main/LevelHard")
                             "level_image"->navController.navigate("main/LevelImage")
                         }
-                }
+
                 }
                 )
         }
