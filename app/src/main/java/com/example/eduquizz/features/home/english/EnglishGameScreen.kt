@@ -94,9 +94,9 @@ fun EnglishGamesScreen(
             completedQuestions = 23,
             totalLessons = 12,
             gradientColors = listOf(
-                Color(0xFF4ECDC4), // Turquoise
-                Color(0xFF44A08D), // Teal
-                Color(0xFF096A5A)  // Dark Teal
+                Color(0xFF4ECDC4),
+                Color(0xFF44A08D),
+                Color(0xFF096A5A)
             )
         ),
         Game(
@@ -108,8 +108,8 @@ fun EnglishGamesScreen(
             completedQuestions = 23,
             totalLessons = 56,
             gradientColors = listOf(
-                Color(0xFF00C9FF), // Bright Blue
-                Color(0xFF92FE9D)  // Light Green
+                Color(0xFF00C9FF),
+                Color(0xFF92FE9D)
             )
         ),
         Game(
@@ -121,9 +121,9 @@ fun EnglishGamesScreen(
             completedQuestions = 15,
             totalLessons = 10,
             gradientColors = listOf(
-                Color(0xFFFF6B9D), // Vibrant Pink
-                Color(0xFFFF8E9E), // Light Pink
-                Color(0xFFFFB4A2)  // Peach
+                Color(0xFFFF6B9D),
+                Color(0xFFFF8E9E),
+                Color(0xFFFFB4A2)
             )
         )
     )
@@ -275,7 +275,6 @@ private fun EnhancedGameCard(
                     )
                 )
         ) {
-            // Add subtle overlay pattern
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -296,7 +295,6 @@ private fun EnhancedGameCard(
                     .padding(24.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Game icon with modern background
                 Box(
                     modifier = Modifier
                         .size(70.dp)
@@ -306,7 +304,6 @@ private fun EnhancedGameCard(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    // You can replace this with actual game icon
                     Text(
                         text = game.name.first().toString(),
                         fontSize = 32.sp,
