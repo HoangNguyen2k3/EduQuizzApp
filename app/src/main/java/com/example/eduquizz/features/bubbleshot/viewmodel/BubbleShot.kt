@@ -8,9 +8,7 @@ import com.example.eduquizz.features.bubbleshot.model.MathQuestion
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.compareTo
 import kotlin.random.Random
-import kotlin.text.contains
 
 class BubbleShot : ViewModel() {
     private val allQuestions = listOf(
@@ -97,49 +95,24 @@ class BubbleShot : ViewModel() {
         if (isCorrect) {
             score.value += 1
         }
-        answers[index] = null
         viewModelScope.launch {
-            delay(700)
+            delay(500)
+            answers[index] = null
+            delay(200)
             selectedAnswer.value = null
             isCorrectAnswer.value = null
             nextQuestion()
         }
     }
 fun nextQuestion() {
-    // Chọn câu mới
     currentQuestion.value = allQuestions.random()
     val correctAnswer = currentQuestion.value.correctAnswer
-
-//    // 1. Nếu đã có đáp án đúng trong lưới (non-null), giữ nguyên hoàn toàn
-//    if (!answers.filterNotNull().contains(correctAnswer)) {
-//        // 2. Nếu chưa có, shuffle lại non-null và chèn đáp án
-//        val nonNulls = answers.filterNotNull().toMutableList()
-//        nonNulls.add(correctAnswer)
-//        val swapCount = Random.nextInt(2, 4)
-//        repeat(swapCount) {
-//            val i = Random.nextInt(nonNulls.size)
-//            val j = Random.nextInt(nonNulls.size)
-//            val tmp = nonNulls[i]
-//            nonNulls[i] = nonNulls[j]
-//            nonNulls[j] = tmp
-//        }
-//        // Gán ngược trở lại, giữ nguyên các vị trí null
-//        var idxNonNull = 0
-//        for (i in answers.indices) {
-//            if (answers[i] != null) {
-//                answers[i] = nonNulls[idxNonNull++]
-//            }
-//        }
-//    }
     val nonNullIndices = answers.mapIndexedNotNull { idx, v -> if (v != null) idx else null }
-    // 2. Nếu đáp án mới chưa có, thay thế một non-null ngẫu nhiên bằng đáp án mới
     if (!answers.filterNotNull().contains(correctAnswer)) {
         if (nonNullIndices.isNotEmpty()) {
-            // Chọn ngẫu nhiên 1 index của non-null để thay thế
             val replaceIdx = nonNullIndices.random()
             answers[replaceIdx] = correctAnswer
         } else {
-            // Nếu không có non-null nào (toàn null), thêm vào đầu
             answers.add(0, correctAnswer)
         }
     } else {
@@ -152,21 +125,17 @@ fun nextQuestion() {
             nonNulls[i] = nonNulls[j]
             nonNulls[j] = tmp
         }
-        // Gán ngược về các vị trí non-null ban đầu (giữ vị trí null y nguyên)
         nonNullIndices.forEachIndexed { order, idx ->
             answers[idx] = nonNulls[order]
         }
     }
 
-    // 3. Đảm bảo có ít nhất 8 bóng (non-null)
     val existing = answers.filterNotNull().toMutableList()
     if (existing.size < 8) {
-        // pool đáp án chưa có
         val pool = allQuestions.map { it.correctAnswer }
             .filter { it !in existing }
             .toMutableList()
 
-        // Fill vào các vị trí null trước
         for (i in answers.indices) {
             if (existing.size >= 8) break
             if (answers[i] == null && pool.isNotEmpty()) {
@@ -178,11 +147,8 @@ fun nextQuestion() {
         }
     }
 
-    // 4. Đảm bảo đủ targetCount (12..15) bóng
         val targetCount = (12..15).random()
         val allExisting = answers.filterNotNull().toMutableSet()
-
-    // Trước tiên, điền vào các vị trí null đã có
         for (i in answers.indices) {
             if (answers.count { it != null } >= targetCount) break
             if (answers[i] == null) {
@@ -196,7 +162,6 @@ fun nextQuestion() {
             }
         }
 
-    // Nếu vẫn chưa đủ, thêm mới vào cuối
         while (answers.count { it != null } < targetCount) {
             var rand: String
             do {
@@ -206,7 +171,6 @@ fun nextQuestion() {
             answers.add(rand)
             allExisting.add(rand)
         }
-    // Reset timer và start lại
     timer.value = 5
     startTimer()
 }
