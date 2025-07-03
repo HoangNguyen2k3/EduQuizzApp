@@ -171,7 +171,7 @@ fun nextQuestion() {
             answers.add(rand)
             allExisting.add(rand)
         }
-    timer.value = 5
+    timer.value = 10
     startTimer()
 }
 
@@ -179,7 +179,7 @@ fun nextQuestion() {
         job?.cancel()
         job = viewModelScope.launch {
             if (continueTimer) {
-                timer.value = 5
+                timer.value = 10
             }
             while (timer.value > 0) {
                 delay(1000)

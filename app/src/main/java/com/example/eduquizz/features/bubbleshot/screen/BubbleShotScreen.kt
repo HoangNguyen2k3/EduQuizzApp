@@ -28,7 +28,11 @@ import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.zIndex
-
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
+import com.example.eduquizz.R
 @Composable
 fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
 //    ForceLandscape()
@@ -37,7 +41,13 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
     val question by viewModel.currentQuestion
     val score by viewModel.score
 
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFE3F2FD))) {
+    Box(modifier = Modifier.fillMaxSize().background(
+        Brush.verticalGradient(
+        colors = listOf(
+            Color(0xFFFF5722),
+            Color(0xFFFF9800),
+            Color(0xFFFFC107),
+            MaterialTheme.colorScheme.background)))) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -90,24 +100,25 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
                         selectedAnswer == answer && isCorrect == false -> Color(0xFFF44336) // Red
                         else -> Color(0xFFB3E5FC)
                     }
-                    Card(
+                    Box(
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(64.dp)
                             .then(
                                 if (selectedAnswer == null) Modifier.clickable { viewModel.onAnswerSelected(idx) } else Modifier
                             ),
-                        colors = CardDefaults.cardColors(containerColor = backgroundColor),
-                        elevation = CardDefaults.cardElevation(2.dp)
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Text(
-                                answer, fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
-                            )
-                        }
+                        Image(
+                            painter = painterResource(R.drawable.balloon),
+                            contentDescription = "Balloon",
+                        )
+                        Text(
+                            answer,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = Color.Yellow,
+                            modifier = Modifier.offset(y = (-8).dp)
+                        )
                     }
                     }
                 }
@@ -119,11 +130,14 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
                     .fillMaxWidth()
                     .height(150.dp)
             ) {
-                Box(
-                    Modifier
+                Image(
+                    painter = painterResource(R.drawable.cannon),
+                    contentDescription = "Cannon",
+                    modifier = Modifier
                         .size(80.dp)
                         .align(Alignment.TopCenter)
-                        .background(Color.Gray, shape = MaterialTheme.shapes.large)
+                        .rotate(270f)
+                        .offset(x = -30.dp)
                 )
                 Text(
                     question.question,
@@ -132,6 +146,7 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
                     modifier = Modifier.align(Alignment.BottomCenter)
                 )
             }
+            Spacer(modifier = Modifier.height(30.dp))
         }
     }
 }
