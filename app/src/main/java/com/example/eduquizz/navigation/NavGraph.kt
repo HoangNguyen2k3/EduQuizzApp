@@ -38,6 +38,7 @@ import com.example.eduquizz.features.match.viewmodel.WordMatchGame
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.eduquizz.DataSave.DataViewModel
 import com.example.eduquizz.MainActivity
+import com.example.eduquizz.features.BatChu.screens.Main_BatChu
 import com.example.eduquizz.navigation.Routes.MAIN
 import com.example.quizapp.ui.splash.SplashScreen
 import com.example.eduquizz.features.wordsearch.screens.IntroductionScreen
@@ -69,6 +70,8 @@ object Routes {
     const val BUBBLE_SHOT_INTRO = "bubble_shot_intro"
     //Splash
     const val SPLASH = "splash"
+    //BatChu
+    const val BatChu = "batchu"
 }
 
 @Composable
@@ -139,9 +142,13 @@ fun NavGraph(
                         "word_find" -> navController.navigate(Routes.INTRO_WORD_SEARCH)
                         "connect_blocks" -> navController.navigate(Routes.INTRO_THONG)
                         "quiz" -> navController.navigate(Routes.INTRO)
+                        "batchu" -> navController.navigate(Routes.BatChu)
                     }
                 }
             )
+        }
+        composable(Routes.BatChu) {
+            Main_BatChu(navController = navController)
         }
         composable (Routes.QUIZ_LEVEL){
             LevelChoice(

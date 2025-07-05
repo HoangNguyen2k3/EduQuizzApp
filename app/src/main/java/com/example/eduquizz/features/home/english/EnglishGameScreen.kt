@@ -113,7 +113,7 @@ fun EnglishGamesScreen(
             )
         ),
         Game(
-            id = "vocabulary",
+            id = "batchu",
             name = "Bắt Chữ",
             iconRes = R.drawable.eng,
             progress = 15,
