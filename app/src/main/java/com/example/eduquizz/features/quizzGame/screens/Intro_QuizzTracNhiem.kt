@@ -222,10 +222,10 @@ private fun GameBanner() {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp)
-            .shadow(12.dp, RoundedCornerShape(16.dp)),
+            .height(170.dp),
+            //.shadow(12.dp, RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
         Image(
             painter = painterResource(id = R.drawable.bannerquiz),
