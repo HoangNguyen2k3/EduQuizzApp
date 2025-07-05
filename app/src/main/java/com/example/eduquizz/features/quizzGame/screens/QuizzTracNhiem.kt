@@ -35,9 +35,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.eduquizz.navigation.Routes
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.eduquizz.DataSave.DataViewModel
-import com.example.eduquizz.DataSave.UserPreferencesManager
-import kotlin.random.Random
+import com.example.eduquizz.data_save.DataViewModel
+
 @SuppressLint("SuspiciousIndentation")
 @Composable
 fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,navController: NavController,questionViewModel: QuestionViewModel

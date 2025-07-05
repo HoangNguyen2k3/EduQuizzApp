@@ -3,7 +3,7 @@ package com.example.wordsearch.ui.utils
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import com.example.wordsearch.model.Cell
+import com.example.eduquizz.features.wordsearch.model.Cell
 import kotlin.collections.iterator
 import kotlin.math.sqrt
 

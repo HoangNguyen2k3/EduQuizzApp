@@ -1,4 +1,4 @@
-package com.example.eduquizz.DataSave
+package com.example.eduquizz.data_save
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit

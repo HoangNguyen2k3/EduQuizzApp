@@ -27,8 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.wordsearch.model.Cell
-import com.example.wordsearch.model.Word
+import com.example.eduquizz.features.wordsearch.model.Cell
+import com.example.eduquizz.features.wordsearch.model.Word
 import com.example.wordsearch.ui.theme.*
 import kotlin.math.sqrt
 
