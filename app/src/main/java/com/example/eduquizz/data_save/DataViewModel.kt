@@ -1,4 +1,4 @@
-package com.example.eduquizz.DataSave
+package com.example.eduquizz.data_save
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData

@@ -1,4 +1,4 @@
-package com.example.wordsearch.ui.screens
+package com.example.eduquizz.features.wordsearch.screens
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -8,7 +8,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -23,25 +22,27 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.wordsearch.ui.components.*
 import com.example.wordsearch.ui.theme.*
 import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
 import com.example.eduquizz.R
 
-/**
- * Main Screen
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WordSearchGame(
-    viewModel: WordSearchViewModel = viewModel(),
+    topicId: String? = null,
+    viewModel: WordSearchViewModel = hiltViewModel(),
     onBackToIntroduction: (() -> Unit)? = null
 ) {
     val coins by viewModel.coins
     val hintCell by viewModel.hintCell
+    val isLoading by viewModel.isLoading
+    val error by viewModel.error
+    val currentTopic by viewModel.currentTopic
     val grid by remember { mutableStateOf(viewModel.grid) }
     val wordsToFind by remember { mutableStateOf(viewModel.wordsToFind) }
     val selectedCells by remember { mutableStateOf(viewModel.selectedCells) }
@@ -49,6 +50,21 @@ fun WordSearchGame(
     val foundWordsCount = wordsToFind.count { it.isFound }
     val totalWords = wordsToFind.size
     val context = LocalContext.current
+
+    LaunchedEffect(topicId) {
+        if (topicId != null) {
+            viewModel.loadWordsFromFirebase(topicId)
+        } else {
+            viewModel.restartGame()
+        }
+    }
+
+    LaunchedEffect(error) {
+        error?.let { errorMessage ->
+            Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+            viewModel.clearError()
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -67,7 +83,7 @@ fun WordSearchGame(
                 TopAppBar(
                     title = {
                         Text(
-                            text = "Word Search",
+                            text = if (topicId != null) "Word Search - ${topicId.replaceFirstChar { it.uppercase() }}" else "Word Search",
                             style = MaterialTheme.typography.titleLarge
                         )
                     },
@@ -95,152 +111,207 @@ fun WordSearchGame(
                 )
             }
         ) { paddingValues ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.coinimg),
-                            contentDescription = "Coins",
-                            modifier = Modifier.size(30.dp),
-                            tint = Color.Unspecified
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(48.dp),
+                            color = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "$coins",
-                            style = MaterialTheme.typography.titleSmall
+                            text = "Loading words...",
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center
                         )
                     }
-
-                    Button(
-                        onClick = {
-                            if (!viewModel.revealHint()) {
-                                Toast.makeText(context, "Not enough coins!", Toast.LENGTH_SHORT)
-                                    .show()
+                }
+            } else if (wordsToFind.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "No words available",
+                            style = MaterialTheme.typography.headlineSmall,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = {
+                                if (topicId != null) {
+                                    viewModel.loadWordsFromFirebase(topicId)
+                                } else {
+                                    viewModel.restartGame()
+                                }
                             }
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        ),
-                        shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Retry")
+                        }
+                    }
+                }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(horizontal = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.ic_hint),
-                                contentDescription = "Hint",
-                                modifier = Modifier.size(24.dp),
+                                painter = painterResource(id = R.drawable.coinimg),
+                                contentDescription = "Coins",
+                                modifier = Modifier.size(30.dp),
                                 tint = Color.Unspecified
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Hint")
+                            Text(
+                                text = "$coins",
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                if (!viewModel.revealHint()) {
+                                    Toast.makeText(context, "Not enough coins!", Toast.LENGTH_SHORT)
+                                        .show()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_hint),
+                                    contentDescription = "Hint",
+                                    modifier = Modifier.size(24.dp),
+                                    tint = Color.Unspecified
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Hint")
+                            }
                         }
                     }
-                }
 
-                GameProgressBar(
-                    foundWords = foundWordsCount,
-                    totalWords = totalWords,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                )
-
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .padding(8.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = GridBackground
-                    ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 4.dp
-                    )
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(8.dp)
-                    ) {
-                        ModernWordGrid(
-                            grid = grid,
-                            selectedCells = selectedCells,
-                            hintCell = hintCell,
-                            onCellSelected = { viewModel.onCellSelected(it) }
-                        )
-                    }
-                }
-
-                AnimatedVisibility(
-                    visible = selectedWord.isNotEmpty(),
-                    enter = fadeIn(animationSpec = tween(200, easing = FastOutSlowInEasing)),
-                    exit = fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing))
-                ) {
-                    ModernSelectedWordDisplay(
-                        selectedWord = selectedWord,
-                        onClearSelection = { viewModel.resetSelection() },
+                    GameProgressBar(
+                        foundWords = foundWordsCount,
+                        totalWords = totalWords,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 16.dp)
+                            .padding(bottom = 16.dp)
                     )
-                }
 
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(8.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = CardBackground
-                    ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 2.dp
-                    )
-                ) {
-                    ModernWordsToFindList(
-                        wordsToFind = wordsToFind,
+                    Card(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp)
-                    )
-                }
-
-                Button(
-                    onClick = { viewModel.restartGame() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = ButtonPrimary
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "New Game",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold
+                            .fillMaxWidth()
+                            .aspectRatio(1f)
+                            .padding(8.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = GridBackground
+                        ),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = 4.dp
                         )
-                    )
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(8.dp)
+                        ) {
+                            ModernWordGrid(
+                                grid = grid,
+                                selectedCells = selectedCells,
+                                hintCell = hintCell,
+                                onCellSelected = { viewModel.onCellSelected(it) }
+                            )
+                        }
+                    }
+
+                    AnimatedVisibility(
+                        visible = selectedWord.isNotEmpty(),
+                        enter = fadeIn(animationSpec = tween(200, easing = FastOutSlowInEasing)),
+                        exit = fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing))
+                    ) {
+                        ModernSelectedWordDisplay(
+                            selectedWord = selectedWord,
+                            onClearSelection = { viewModel.resetSelection() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp)
+                        )
+                    }
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(8.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = CardBackground
+                        ),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = 2.dp
+                        )
+                    ) {
+                        ModernWordsToFindList(
+                            wordsToFind = wordsToFind,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp)
+                        )
+                    }
+
+                    Button(
+                        onClick = { viewModel.restartGame() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = ButtonPrimary
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "New Game",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                    }
                 }
             }
         }

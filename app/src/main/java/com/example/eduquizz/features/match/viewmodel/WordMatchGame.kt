@@ -14,7 +14,7 @@ import com.example.eduquizz.features.match.model.MatchCard
 
 class WordMatchGame : ViewModel() {
     private val _allWordPairs = listOf(
-        WordPair("Apple", "A kind of fruit"),
+        WordPair("Apple", "a round fruit with firm, white flesh and a green, red, or yellow skin"),
         WordPair("Dog", "A domestic animal"),
         WordPair("Sun", "The star at the center of our solar system"),
         WordPair("Book", "A collection of pages"),
