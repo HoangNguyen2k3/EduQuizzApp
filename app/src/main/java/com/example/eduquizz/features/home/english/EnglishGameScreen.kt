@@ -114,7 +114,7 @@ fun EnglishGamesScreen(
         ),
         Game(
             id = "vocabulary",
-            name = "Từ vựng",
+            name = "Bắt Chữ",
             iconRes = R.drawable.eng,
             progress = 15,
             totalQuestions = 620,
