@@ -356,10 +356,3 @@ private fun PlayButton(
         )
     }
 }
-@Preview(showBackground = true)
-@Composable
-fun Intro_Preview() {
-    QuizAppTheme {
-        IntroScreen(navController = rememberNavController(), onBackPressed = {})
-    }
-}

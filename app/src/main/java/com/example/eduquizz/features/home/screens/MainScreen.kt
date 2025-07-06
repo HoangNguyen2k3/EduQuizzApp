@@ -1,4 +1,4 @@
-package com.example.quizapp.ui.main
+package com.example.eduquizz.features.home.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -29,14 +29,11 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.example.eduquizz.R
 import com.example.eduquizz.data.models.Subject
 import com.example.quizapp.ui.theme.QuizAppTheme
-import com.example.eduquizz.features.home.screens.HomeScreen
-import com.example.eduquizz.features.home.screens.CoursesScreen
-import com.example.eduquizz.features.home.screens.SettingScreen
-import com.example.eduquizz.features.home.screens.ProfileScreen
 
 @Composable
 fun MainScreen(
     onNavigateToEnglish:() -> Unit = {},
+    onNavigateToMath:() -> Unit = {},
     dataviewModel: DataViewModel = hiltViewModel()
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -139,6 +136,9 @@ fun MainScreen(
                             onSubjectClick = {subject ->
                                 if(subject.id == "english"){
                                     onNavigateToEnglish()
+                                }
+                                if(subject.id == "math"){
+                                    onNavigateToMath()
                                 }
                             }
                         )

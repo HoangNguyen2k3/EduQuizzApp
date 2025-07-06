@@ -20,17 +20,13 @@ import com.example.eduquizz.features.quizzGame.screens.ResultsScreen
 import com.example.eduquizz.features.quizzGame.viewmodel.QuestionViewModel
 import com.example.eduquizz.features.match.screen.GameDescriptionScreen
 import com.example.eduquizz.features.match.screen.WordMatchGameScreen
-
+import com.example.eduquizz.features.home.math.MathGamesScreen
 import com.example.eduquizz.features.home.english.EnglishGamesScreen
 import com.example.eduquizz.features.home.screens.SettingScreen
 import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
-import com.example.quizapp.ui.main.MainScreen
+import com.example.eduquizz.features.home.screens.MainScreen
 import com.example.eduquizz.features.match.viewmodel.WordMatchGame
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.eduquizz.DataSave.DataViewModel
-import com.example.eduquizz.MainActivity
 import com.example.eduquizz.features.BatChu.screens.Main_BatChu
-import com.example.eduquizz.navigation.Routes.MAIN
 import com.example.quizapp.ui.splash.SplashScreen
 import com.example.eduquizz.features.wordsearch.screens.IntroductionScreen
 import com.example.eduquizz.features.wordsearch.screens.WordSearchGame
@@ -44,6 +40,9 @@ import com.example.eduquizz.features.wordsearch.screens.TopicSelectionScreen
 import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
 
 object Routes {
+    //Main
+    const val ENGLISH_GAMES_SCENE = "english_games_scene"
+    const val MATH_GAMES_SCENE = "math_games_scene"
     //Hoang
     const val MAIN = "main"
     const val RESULT = "result"
@@ -133,11 +132,14 @@ fun NavGraph(
         composable(Routes.MAIN_DANH) {
             MainScreen(
                 onNavigateToEnglish = {
-                    navController.navigate(Routes.GAME_SCENE)
+                    navController.navigate(Routes.ENGLISH_GAMES_SCENE)
+                },
+                onNavigateToMath = {
+                    navController.navigate(Routes.MATH_GAMES_SCENE)
                 }
             )
         }
-        composable(Routes.GAME_SCENE) {
+        composable(Routes.ENGLISH_GAMES_SCENE) {
             EnglishGamesScreen(
                 onBackClick = {
                     navController.popBackStack()
@@ -149,6 +151,24 @@ fun NavGraph(
                         "quiz" -> navController.navigate(Routes.INTRO)
                         "bubble_shot" -> navController.navigate(Routes.BUBBLE_SHOT_INTRO)
                         "batchu" -> navController.navigate(Routes.BatChu)
+                        else -> {
+                            // Handle other games or show an error
+                        }
+
+                    }
+                }
+            )
+        }
+        composable(Routes.MATH_GAMES_SCENE) {
+            MathGamesScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onGameClick = { game ->
+                    when (game.id) {
+                        "connect_blocks" -> navController.navigate(Routes.INTRO_THONG)
+                        "quiz" -> navController.navigate(Routes.INTRO)
+                        "bubble_shot" -> navController.navigate(Routes.BUBBLE_SHOT_INTRO)
                         else -> {
                             // Handle other games or show an error
                         }

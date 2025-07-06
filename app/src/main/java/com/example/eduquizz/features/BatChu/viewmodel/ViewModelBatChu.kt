@@ -2,7 +2,7 @@ package com.example.eduquizz.features.BatChu.viewmodel
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import com.example.eduquizz.DataSave.DataViewModel
+import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.features.BatChu.model.DataBatChu
 
 class ViewModelBatChu: ViewModel() {

@@ -175,12 +175,10 @@ fun nextQuestion() {
     startTimer()
 }
 
-    private fun startTimer(continueTimer: Boolean = false) {
+    private fun startTimer() {
         job?.cancel()
         job = viewModelScope.launch {
-            if (continueTimer) {
                 timer.value = 10
-            }
             while (timer.value > 0) {
                 delay(1000)
                 timer.value--

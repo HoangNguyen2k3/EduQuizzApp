@@ -43,14 +43,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
-import com.example.eduquizz.DataSave.DataViewModel
+import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.R
 import com.example.eduquizz.features.BatChu.model.DataBatChu
 import com.example.eduquizz.features.BatChu.viewmodel.ViewModelBatChu
 import com.example.eduquizz.features.quizzGame.screens.BottomHelperBar
 import com.example.eduquizz.features.quizzGame.screens.TimerProgressBar
 import com.example.quizapp.ui.theme.QuizAppTheme
-import com.example.wordsearch.model.Cell
+import com.example.eduquizz.features.wordsearch.model.Cell
 import kotlin.math.sqrt
 
 val CardBackground = Color(0xFFE3F2FD)
