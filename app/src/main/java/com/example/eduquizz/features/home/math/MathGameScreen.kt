@@ -1,4 +1,4 @@
-package com.example.eduquizz.features.home.english
+package com.example.eduquizz.features.home.math
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -27,7 +27,7 @@ import com.example.eduquizz.data.models.Game
 import kotlinx.coroutines.delay
 
 @Composable
-fun EnglishGamesScreen(
+fun MathGamesScreen(
     onBackClick: () -> Unit = {},
     onGameClick: (Game) -> Unit = {}
 ) {
@@ -57,20 +57,6 @@ fun EnglishGamesScreen(
 
 
     val games = listOf(
-        Game(
-            id = "word_find",
-            name = "Word Search",
-            iconRes = R.drawable.eng,
-            progress = 8,
-            totalQuestions = 550,
-            completedQuestions = 8,
-            totalLessons = 11,
-            gradientColors = listOf(
-                Color(0xFF4A85F5),
-                Color(0xFF7B61FF),
-                Color(0xFF7B61FF)
-            )
-        ),
         Game(
             id = "connect_blocks",
             name = "Match Game",
@@ -111,20 +97,6 @@ fun EnglishGamesScreen(
                 Color(0xFF00C9FF),
                 Color(0xFF92FE9D)
             )
-        ),
-        Game(
-            id = "batchu",
-            name = "Bắt Chữ",
-            iconRes = R.drawable.eng,
-            progress = 15,
-            totalQuestions = 620,
-            completedQuestions = 15,
-            totalLessons = 10,
-            gradientColors = listOf(
-                Color(0xFFFF6B9D),
-                Color(0xFFFF8E9E),
-                Color(0xFFFFB4A2)
-            )
         )
     )
     Box(
@@ -144,7 +116,7 @@ fun EnglishGamesScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             // Header with modern gradient background
-            EnglishGamesHeader(
+            MathGamesHeader(
                 onBackClick = onBackClick
             )
 
@@ -197,7 +169,7 @@ private fun FullscreenRippleEffect(){
 }
 
 @Composable
-private fun EnglishGamesHeader(
+private fun MathGamesHeader(
     onBackClick: () -> Unit
 ) {
     Row(
@@ -402,8 +374,8 @@ private fun EnhancedGameCard(
 
 @Preview(showBackground = true)
 @Composable
-fun EnglishGamesScreenPreview() {
+fun MathGamesScreenPreview() {
     QuizAppTheme {
-        EnglishGamesScreen()
+        MathGamesScreen()
     }
 }

@@ -1,17 +1,38 @@
-package com.example.eduquizz.features.home.english
+package com.example.eduquizz.features.quizzGame.screens
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -20,18 +41,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.example.eduquizz.R
-import com.example.quizapp.ui.theme.QuizAppTheme
 import com.example.eduquizz.data.models.Game
+import com.example.eduquizz.features.home.english.EnglishGamesScreen
+import com.example.quizapp.ui.theme.QuizAppTheme
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.delay
 
 @Composable
-fun EnglishGamesScreen(
-    onBackClick: () -> Unit = {},
-    onGameClick: (Game) -> Unit = {}
-) {
-
+fun LevelChoice(    onBackClick: () -> Unit = {},
+                    onGameClick: (Game) -> Unit = {}
+){
     // System UI Controller for status bar
     val systemUiController = rememberSystemUiController()
 
@@ -44,7 +64,6 @@ fun EnglishGamesScreen(
             darkIcons = false
         )
     }
-
     LaunchedEffect(showRipple) {
         if (showRipple) {
             delay(500)
@@ -54,15 +73,13 @@ fun EnglishGamesScreen(
             showRipple = false
         }
     }
-
-
     val games = listOf(
         Game(
-            id = "word_find",
-            name = "Word Search",
+            id = "level_easy",
+            name = "Easy",
             iconRes = R.drawable.eng,
             progress = 8,
-            totalQuestions = 550,
+            totalQuestions = 20,
             completedQuestions = 8,
             totalLessons = 11,
             gradientColors = listOf(
@@ -72,58 +89,44 @@ fun EnglishGamesScreen(
             )
         ),
         Game(
-            id = "connect_blocks",
-            name = "Match Game",
-            iconRes = R.drawable.eng,
-            progress = 3,
-            totalQuestions = 400,
-            completedQuestions = 3,
-            totalLessons = 8,
-            gradientColors = listOf(
-                Color(0xFFFF5722),
-                Color(0xFFFF9800),
-                Color(0xFFFFC107)
-            )
-        ),
-        Game(
-            id = "quiz",
-            name = "Quiz",
-            iconRes = R.drawable.eng,
-            progress = 23,
-            totalQuestions = 875,
-            completedQuestions = 23,
-            totalLessons = 12,
-            gradientColors = listOf(
-                Color(0xFF4ECDC4),
-                Color(0xFF44A08D),
-                Color(0xFF096A5A)
-            )
-        ),
-        Game(
-            id = "bubble_shot",
-            name = "Bubble Shot",
+            id = "level_normal",
+            name = "Normal",
             iconRes = R.drawable.eng,
             progress = 20,
-            totalQuestions = 100,
+            totalQuestions = 25,
             completedQuestions = 23,
             totalLessons = 56,
             gradientColors = listOf(
-                Color(0xFF00C9FF),
-                Color(0xFF92FE9D)
+                Color(0xFF00C9FF), // Bright Blue
+                Color(0xFF92FE9D)  // Light Green
             )
         ),
         Game(
-            id = "batchu",
-            name = "Bắt Chữ",
+            id = "level_hard",
+            name = "Hard",
             iconRes = R.drawable.eng,
             progress = 15,
-            totalQuestions = 620,
+            totalQuestions = 30,
             completedQuestions = 15,
             totalLessons = 10,
             gradientColors = listOf(
-                Color(0xFFFF6B9D),
-                Color(0xFFFF8E9E),
-                Color(0xFFFFB4A2)
+                Color(0xFFFF6B9D), // Vibrant Pink
+                Color(0xFFFF8E9E), // Light Pink
+                Color(0xFFFFB4A2)  // Peach
+            )
+        ),
+        Game(
+            id = "level_image",
+            name = "Quiz Image",
+            iconRes = R.drawable.eng,
+            progress = 15,
+            totalQuestions = 25,
+            completedQuestions = 15,
+            totalLessons = 10,
+            gradientColors = listOf(
+                Color(0xFF8BC34A),
+                Color(0xFFFF9800),
+                Color(0xFFFFC107)
             )
         )
     )
@@ -170,7 +173,6 @@ fun EnglishGamesScreen(
         }
     }
 }
-
 @Composable
 private fun FullscreenRippleEffect(){
     val radius = remember { Animatable(0f) }
@@ -236,7 +238,7 @@ private fun EnglishGamesHeader(
 
         Column {
             Text(
-                text = "Tiếng Anh",
+                text = "Quiz Game",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
@@ -275,6 +277,7 @@ private fun EnhancedGameCard(
                     )
                 )
         ) {
+            // Add subtle overlay pattern
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -295,6 +298,7 @@ private fun EnhancedGameCard(
                     .padding(24.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Game icon with modern background
                 Box(
                     modifier = Modifier
                         .size(70.dp)
@@ -304,6 +308,7 @@ private fun EnhancedGameCard(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
+                    // You can replace this with actual game icon
                     Text(
                         text = game.name.first().toString(),
                         fontSize = 32.sp,
@@ -399,11 +404,10 @@ private fun EnhancedGameCard(
         }
     }
 }
-
 @Preview(showBackground = true)
 @Composable
 fun EnglishGamesScreenPreview() {
     QuizAppTheme {
-        EnglishGamesScreen()
+        LevelChoice()
     }
 }

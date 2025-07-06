@@ -4,26 +4,34 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import com.example.wordsearch.model.Cell
-import com.example.wordsearch.model.Direction
-import com.example.wordsearch.model.Word
+import androidx.lifecycle.viewModelScope
+import com.example.eduquizz.features.wordsearch.model.Cell
+import com.example.eduquizz.features.wordsearch.model.Direction
+import com.example.eduquizz.features.wordsearch.model.Word
+import com.example.eduquizz.features.wordsearch.repository.WordSearchRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 import kotlin.math.abs
 
-/**
- * ViewModel quản lý state và logic của game Word Search
- */
-class WordSearchViewModel : ViewModel() {
-    private val gridSize = 8
+@HiltViewModel
+class WordSearchViewModel @Inject constructor(
+    private val repository: WordSearchRepository
+) : ViewModel() {
 
-    private val _wordsToFind = mutableStateListOf(
-        Word("ANDROID"),
-        Word("KOTLIN"),
-        Word("COMPOSE"),
-        Word("JETPACK"),
-        Word("MOBILE"),
-        Word("APP"),
-        Word("GAME")
-    )
+    private var _gridSize = mutableStateOf(8)
+    val gridSize: State<Int> get() = _gridSize
+
+    private val _isLoading = mutableStateOf(false)
+    val isLoading: State<Boolean> get() = _isLoading
+
+    private val _error = mutableStateOf<String?>(null)
+    val error: State<String?> get() = _error
+
+    private val _currentTopic = mutableStateOf<String?>(null)
+    val currentTopic: State<String?> get() = _currentTopic
+
+    private val _wordsToFind = mutableStateListOf<Word>()
     val wordsToFind: List<Word> get() = _wordsToFind
 
     private val _grid = mutableStateListOf<Cell>()
@@ -40,29 +48,74 @@ class WordSearchViewModel : ViewModel() {
     private var _hintCell = mutableStateOf<Cell?>(null)
     val hintCell: State<Cell?> get() = _hintCell
 
-    init {
+    fun loadWordsFromFirebase(topicId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+            _currentTopic.value = topicId
+
+            try {
+                val result = repository.getWordsByTopic(topicId)
+                result.onSuccess { wordSearchData ->
+                    _gridSize.value = wordSearchData.gridSize
+                    _wordsToFind.clear()
+                    _wordsToFind.addAll(wordSearchData.words.map { Word(it) })
+
+                    // Khởi tạo lưới sau khi có dữ liệu
+                    initializeGrid()
+
+                }.onFailure { exception ->
+                    _error.value = "Failed to load words: ${exception.message}"
+                    // Fallback to default words if Firebase fails
+                    initializeDefaultWords()
+                }
+            } catch (e: Exception) {
+                _error.value = "Unexpected error: ${e.message}"
+                initializeDefaultWords()
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun initializeWithTopic(topicId: String) {
+        if (_currentTopic.value != topicId) {
+            loadWordsFromFirebase(topicId)
+        }
+    }
+
+    private fun initializeDefaultWords() {
+        _wordsToFind.clear()
+        _wordsToFind.addAll(listOf(
+            Word("ANDROID"),
+            Word("KOTLIN"),
+            Word("COMPOSE"),
+            Word("JETPACK"),
+            Word("MOBILE"),
+            Word("APP"),
+            Word("GAME")
+        ))
         initializeGrid()
     }
 
-    /**
-     * initializeGrid: khoi tao grid chu cai ngau nhien va dat cac tu can tim vao grid
-     */
     private fun initializeGrid() {
-        val emptyGrid = Array(gridSize) { row ->
-            Array(gridSize) { col ->
+        val currentGridSize = _gridSize.value
+        val emptyGrid = Array(currentGridSize) { row ->
+            Array(currentGridSize) { col ->
                 Cell(row, col, ' ')
             }
         }
+
         _wordsToFind.forEach { word ->
-            if(!placeWordInGrid(word.word, emptyGrid)){
+            if (!placeWordInGrid(word.word, emptyGrid)) {
                 println("Failed to place word: ${word.word}. Retrying grid initialization.")
                 initializeGrid()
                 return
             }
         }
 
-        for (row in 0 until gridSize){
-            for (col in 0 until gridSize) {
+        for (row in 0 until currentGridSize) {
+            for (col in 0 until currentGridSize) {
                 if (emptyGrid[row][col].char == ' ') {
                     emptyGrid[row][col] = Cell(row, col, ('A'..'Z').random())
                 }
@@ -77,19 +130,21 @@ class WordSearchViewModel : ViewModel() {
         }
     }
 
-    /**
-     * plactoWordInGrid dat 1 tu vao grid theo huong ngau nhien
-     */
     private fun placeWordInGrid(word: String, grid: Array<Array<Cell>>): Boolean {
+        val currentGridSize = _gridSize.value
         val directions = Direction.values()
         val maxAttempts = 100
         var attempts = 0
+
+        if (word.length > currentGridSize) {
+            println("Skip word: $word because it exceeds grid size $currentGridSize")
+            return false
+        }
 
         while (attempts < maxAttempts) {
             attempts++
 
             val direction = directions.random()
-
             val startRow: Int
             val startCol: Int
             val rowIncrement: Int
@@ -97,34 +152,31 @@ class WordSearchViewModel : ViewModel() {
 
             when (direction) {
                 Direction.HORIZONTAL -> {
-                    startRow = (0 until gridSize).random()
-                    startCol = (0..gridSize - word.length).random()
-                    rowIncrement = 0;
-                    colIncrement = 1;
+                    startRow = (0 until currentGridSize).random()
+                    startCol = (0..currentGridSize - word.length).random()
+                    rowIncrement = 0
+                    colIncrement = 1
                 }
-
                 Direction.VERTICAL -> {
-                    startRow = (0..gridSize - word.length).random()
-                    startCol = (0 until gridSize).random()
+                    startRow = (0..currentGridSize - word.length).random()
+                    startCol = (0 until currentGridSize).random()
                     rowIncrement = 1
                     colIncrement = 0
                 }
-
                 Direction.DIAGONAL_DOWN -> {
-                    startRow = (0..gridSize - word.length).random()
-                    startCol = (0..gridSize - word.length).random()
+                    startRow = (0..currentGridSize - word.length).random()
+                    startCol = (0..currentGridSize - word.length).random()
                     rowIncrement = 1
                     colIncrement = 1
                 }
-
                 Direction.DIAGONAL_UP -> {
-                    startRow = (word.length - 1 until gridSize).random()
-                    startCol = (0..gridSize - word.length).random()
+                    startRow = (word.length - 1 until currentGridSize).random()
+                    startCol = (0..currentGridSize - word.length).random()
                     rowIncrement = -1
                     colIncrement = 1
                 }
             }
-            // Kiem tra tu co dat duoc khong
+
             if (canPlaceWord(word, startRow, startCol, rowIncrement, colIncrement, grid)) {
                 for (i in word.indices) {
                     val row = startRow + i * rowIncrement
@@ -138,9 +190,6 @@ class WordSearchViewModel : ViewModel() {
         return false
     }
 
-    /**
-     * Kiem tra xem tu do co the dat vao vi tri cu the trong grid khong
-     */
     private fun canPlaceWord(
         word: String,
         startRow: Int,
@@ -149,11 +198,12 @@ class WordSearchViewModel : ViewModel() {
         colIncrement: Int,
         grid: Array<Array<Cell>>
     ): Boolean {
+        val currentGridSize = _gridSize.value
         for (i in word.indices) {
             val row = startRow + i * rowIncrement
             val col = startCol + i * colIncrement
 
-            if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) {
+            if (row < 0 || row >= currentGridSize || col < 0 || col >= currentGridSize) {
                 return false
             }
             if (grid[row][col].char != ' ' && grid[row][col].char != word[i]) {
@@ -163,13 +213,9 @@ class WordSearchViewModel : ViewModel() {
         return true
     }
 
-    /**
-     * Khi người chơi chọn 1 ô
-     */
     fun onCellSelected(cell: Cell) {
         if (_selectedCells.isNotEmpty()) {
-            val lastCell = _selectedCells.last();
-
+            val lastCell = _selectedCells.last()
             val isAdjacent = isAdjacent(lastCell, cell)
 
             if (lastCell.row == cell.row && lastCell.col == cell.col) {
@@ -194,23 +240,15 @@ class WordSearchViewModel : ViewModel() {
         }
         _selectedCells.add(cell)
         updateSelectionState()
-
         checkForMatch()
     }
 
-    /**
-     * Kiểm tra 2 ô có kề nhau không
-     */
     private fun isAdjacent(cell1: Cell, cell2: Cell): Boolean {
         val rowDiff = abs(cell1.row - cell2.row)
         val colDiff = abs(cell1.col - cell2.col)
-
         return rowDiff <= 1 && colDiff <= 1 && !(rowDiff == 0 && colDiff == 0)
     }
 
-    /**
-     * Update section trang thai
-     */
     private fun updateSelectionState() {
         for (cell in _grid) {
             cell.isSelected = _selectedCells.any {
@@ -219,26 +257,19 @@ class WordSearchViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Kiểm tra từ chọn có khớp với 1 trong các từ cần tìm không
-     */
     private fun checkForMatch() {
         val selectedWord = selectedWord
-
         val foundWordIndex = _wordsToFind.indexOfFirst {
             !it.isFound && (it.word == selectedWord || it.word == selectedWord.reversed())
         }
 
-
         if (foundWordIndex >= 0) {
             _wordsToFind[foundWordIndex] = _wordsToFind[foundWordIndex].copy(isFound = true)
-
             val cellsToMark = _selectedCells.toList()
 
             for (cell in cellsToMark) {
                 val index = _grid.indexOfFirst { it.row == cell.row && it.col == cell.col }
                 if (index >= 0) {
-                    // Cập nhật ô trong grid bằng copy với thuộc tính đã thay đổi
                     _grid[index] = _grid[index].copy(belongsToFoundWord = true)
                 }
             }
@@ -246,35 +277,28 @@ class WordSearchViewModel : ViewModel() {
             _selectedCells.clear()
         }
     }
-    /**
-     *  Su dung hint
-     */
-    fun useHint(): Boolean{
+
+    fun useHint(): Boolean {
         val hintCost = 10
-        return if(_coins.value >= hintCost){
+        return if (_coins.value >= hintCost) {
             _coins.value -= hintCost
             true
-        }else{
+        } else {
             false
         }
     }
 
-    fun revealHint(): Boolean{
-        if(!useHint()){
+    fun revealHint(): Boolean {
+        if (!useHint()) {
             return false
         }
 
         val unfoundWord = _wordsToFind.firstOrNull { !it.isFound } ?: return false
         val hintLetter = unfoundWord.word.random()
-
         _hintCell.value = _grid.firstOrNull { it.char == hintLetter && !it.belongsToFoundWord }
-
         return true
     }
 
-    /**
-     * reset lua chon
-     */
     fun resetSelection() {
         _selectedCells.clear()
         updateSelectionState()
@@ -284,5 +308,9 @@ class WordSearchViewModel : ViewModel() {
         _selectedCells.clear()
         _wordsToFind.replaceAll { it.copy(isFound = false) }
         initializeGrid()
+    }
+
+    fun clearError() {
+        _error.value = null
     }
 }

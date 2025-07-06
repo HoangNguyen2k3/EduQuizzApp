@@ -1,4 +1,4 @@
-package com.example.wordsearch.model
+package com.example.eduquizz.features.wordsearch.model
 
 data class Cell(
     val row: Int,

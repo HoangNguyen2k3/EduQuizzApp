@@ -1,7 +1,6 @@
-package com.example.eduquizz.DataSave
+package com.example.eduquizz.data_save
 
 import android.content.Context
-import com.example.eduquizz.DataSave.UserPreferencesManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
