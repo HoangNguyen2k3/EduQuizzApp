@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.eduquizz.DataSave.DataViewModel
+import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.R
 import com.example.eduquizz.data.repository.QuestionRepository
 import com.example.eduquizz.data.models.DataOrException
