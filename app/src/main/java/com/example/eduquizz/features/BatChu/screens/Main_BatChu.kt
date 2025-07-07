@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.SubdirectoryArrowLeft
 import androidx.compose.material3.*
 import androidx.compose.material3.MaterialTheme
+import com.example.eduquizz.R
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -44,7 +45,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.eduquizz.data_save.DataViewModel
-import com.example.eduquizz.R
 import com.example.eduquizz.features.BatChu.model.DataBatChu
 import com.example.eduquizz.features.BatChu.viewmodel.ViewModelBatChu
 import com.example.eduquizz.features.quizzGame.screens.BottomHelperBar
@@ -376,7 +376,7 @@ fun Booster(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Image(
-                painter = painterResource(id = R.drawable.coinimg),
+                painter = painterResource(id = R.drawable.coinimg ),
                 contentDescription = "Coin",
                 modifier = Modifier.size(24.dp)
             )
