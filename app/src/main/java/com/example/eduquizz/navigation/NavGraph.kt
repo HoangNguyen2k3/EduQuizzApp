@@ -26,6 +26,11 @@ import com.example.eduquizz.features.home.screens.SettingScreen
 import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.eduquizz.features.home.screens.MainScreen
 import com.example.eduquizz.features.match.viewmodel.WordMatchGame
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.eduquizz.DataSave.DataViewModel
+import com.example.eduquizz.MainActivity
+import com.example.eduquizz.features.BatChu.screens.Main_BatChu
+import com.example.eduquizz.navigation.Routes.MAIN
 import com.example.quizapp.ui.splash.SplashScreen
 import com.example.eduquizz.features.wordsearch.screens.IntroductionScreen
 import com.example.eduquizz.features.wordsearch.screens.WordSearchGame
@@ -60,7 +65,9 @@ object Routes {
     const val BUBBLE_SHOT_INTRO = "bubble_shot_intro"
     //Splash
     const val SPLASH = "splash"
-    const val READY = "ready"
+    const val READY ="ready"
+    //BatChu
+    const val BatChu = "batchu"
 }
 
 @Composable
@@ -130,7 +137,6 @@ fun NavGraph(
                 )
             }
         }
-
         composable(
             "result/{correct}/{total}",
             arguments = listOf(
@@ -155,9 +161,13 @@ fun NavGraph(
                         "connect_blocks" -> navController.navigate(Routes.INTRO_THONG)
                         "quiz" -> navController.navigate(Routes.INTRO)
                         "bubble_shot" -> navController.navigate(Routes.BUBBLE_SHOT_INTRO)
+                        "batchu" -> navController.navigate(Routes.BatChu)
                     }
                 }
             )
+        }
+        composable(Routes.BatChu) {
+            Main_BatChu(navController = navController)
         }
 
         composable(Routes.QUIZ_LEVEL) {
@@ -171,14 +181,12 @@ fun NavGraph(
                         "level_image" -> navController.navigate("main/LevelImage")
                     }
                 }
-            )
+                )
         }
-
         composable(Routes.GAME_THONG) {
             val gameViewModel: WordMatchGame = hiltViewModel()
             WordMatchGameScreen(viewModel = gameViewModel, navController = navController)
         }
-
         composable(Routes.SETTINGS) {
             SettingScreen()
         }
@@ -190,7 +198,6 @@ fun NavGraph(
                 subject = "English"
             )
         }
-
         composable(Routes.INTRO_WORD_SEARCH) {
             val loadingViewModel: LoadingViewModel = hiltViewModel()
             WordSearchGameTheme {
@@ -242,12 +249,11 @@ fun NavGraph(
                 subject = "BubbleShot"
             )
         }
-
         composable(Routes.BUBBLE_SHOT) {
             val viewModel: BubbleShot = hiltViewModel()
             BubbleShotScreen(viewModel = viewModel, navController = navController)
-        }
 
+        }
         composable(Routes.GAME_WORD_SEARCH) {
             WordSearchGame()
         }
