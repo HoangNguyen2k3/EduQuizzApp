@@ -24,7 +24,7 @@ import com.example.eduquizz.features.match.screen.WordMatchGameScreen
 import com.example.eduquizz.features.home.english.EnglishGamesScreen
 import com.example.eduquizz.features.home.screens.SettingScreen
 import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
-import com.example.quizapp.ui.main.MainScreen
+import com.example.eduquizz.features.home.screens.MainScreen
 import com.example.eduquizz.features.match.viewmodel.WordMatchGame
 import com.example.quizapp.ui.splash.SplashScreen
 import com.example.eduquizz.features.wordsearch.screens.IntroductionScreen
@@ -37,6 +37,7 @@ import com.example.eduquizz.features.home.screens.ReadyScreen
 import com.example.eduquizz.features.quizzGame.screens.LevelChoice
 import com.example.eduquizz.features.wordsearch.screens.TopicSelectionScreen
 import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
+import com.example.eduquizz.data.local.UserViewModel
 
 object Routes {
     //Hoang
@@ -59,8 +60,7 @@ object Routes {
     const val BUBBLE_SHOT_INTRO = "bubble_shot_intro"
     //Splash
     const val SPLASH = "splash"
-
-    const val READY ="ready"
+    const val READY = "ready"
 }
 
 @Composable
@@ -68,6 +68,8 @@ fun NavGraph(
     navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
+    val userViewModel: UserViewModel = hiltViewModel()
+
     NavHost(
         navController = navController,
         startDestination = Routes.SPLASH,
@@ -86,13 +88,24 @@ fun NavGraph(
                 }
             )
         }
+
         composable(Routes.READY) {
             ReadyScreen(
                 onStartClick = { userName ->
                     navController.navigate(Routes.MAIN_DANH) {
                         popUpTo(Routes.READY) { inclusive = true }
                     }
-                }
+                },
+                userViewModel = userViewModel
+            )
+        }
+
+        composable(Routes.MAIN_DANH) {
+            MainScreen(
+                onNavigateToEnglish = {
+                    navController.navigate(Routes.GAME_SCENE)
+                },
+                userViewModel = userViewModel
             )
         }
 
@@ -100,8 +113,13 @@ fun NavGraph(
             arguments = listOf(navArgument("level") { type = NavType.StringType })) {
                 backStackEntry ->
             val level = backStackEntry.arguments?.getString("level") ?: ""
-            val viewModel: QuestionViewModel = hiltViewModel()
-            MainView(currentLevel = level, name = "Android", navController = navController, questionViewModel = viewModel)
+            val questionViewModel: QuestionViewModel = hiltViewModel()
+            MainView(
+                currentLevel = level,
+                name = "Android",
+                navController = navController,
+                questionViewModel = questionViewModel
+            )
         }
 
         composable(Routes.INTRO) {
@@ -112,6 +130,7 @@ fun NavGraph(
                 )
             }
         }
+
         composable(
             "result/{correct}/{total}",
             arguments = listOf(
@@ -124,13 +143,7 @@ fun NavGraph(
 
             ResultsScreen(navController, correctAnswers = correct, totalQuestions = total)
         }
-        composable(Routes.MAIN_DANH) {
-            MainScreen(
-                onNavigateToEnglish = {
-                    navController.navigate(Routes.GAME_SCENE)
-                }
-            )
-        }
+
         composable(Routes.GAME_SCENE) {
             EnglishGamesScreen(
                 onBackClick = {
@@ -141,29 +154,31 @@ fun NavGraph(
                         "word_find" -> navController.navigate(Routes.INTRO_WORD_SEARCH)
                         "connect_blocks" -> navController.navigate(Routes.INTRO_THONG)
                         "quiz" -> navController.navigate(Routes.INTRO)
+                        "bubble_shot" -> navController.navigate(Routes.BUBBLE_SHOT_INTRO)
                     }
                 }
             )
         }
-        composable (Routes.QUIZ_LEVEL){
-            LevelChoice(
-                onBackClick = {navController.navigate(Routes.INTRO)},
-                onGameClick = {
-                    game ->
-                        when(game.id){
-                            "level_easy"->navController.navigate("main/LevelEasy")
-                            "level_normal"->navController.navigate("main/LevelNormal")
-                            "level_hard"->navController.navigate("main/LevelHard")
-                            "level_image"->navController.navigate("main/LevelImage")
-                        }
 
+        composable(Routes.QUIZ_LEVEL) {
+            LevelChoice(
+                onBackClick = { navController.navigate(Routes.INTRO) },
+                onGameClick = { game ->
+                    when(game.id) {
+                        "level_easy" -> navController.navigate("main/LevelEasy")
+                        "level_normal" -> navController.navigate("main/LevelNormal")
+                        "level_hard" -> navController.navigate("main/LevelHard")
+                        "level_image" -> navController.navigate("main/LevelImage")
+                    }
                 }
-                )
+            )
         }
+
         composable(Routes.GAME_THONG) {
             val gameViewModel: WordMatchGame = hiltViewModel()
             WordMatchGameScreen(viewModel = gameViewModel, navController = navController)
         }
+
         composable(Routes.SETTINGS) {
             SettingScreen()
         }
@@ -175,6 +190,7 @@ fun NavGraph(
                 subject = "English"
             )
         }
+
         composable(Routes.INTRO_WORD_SEARCH) {
             val loadingViewModel: LoadingViewModel = hiltViewModel()
             WordSearchGameTheme {
@@ -226,11 +242,12 @@ fun NavGraph(
                 subject = "BubbleShot"
             )
         }
+
         composable(Routes.BUBBLE_SHOT) {
             val viewModel: BubbleShot = hiltViewModel()
             BubbleShotScreen(viewModel = viewModel, navController = navController)
-
         }
+
         composable(Routes.GAME_WORD_SEARCH) {
             WordSearchGame()
         }
