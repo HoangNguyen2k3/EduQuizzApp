@@ -43,14 +43,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
-import com.example.eduquizz.DataSave.DataViewModel
 import com.example.eduquizz.R
+import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.features.BatChu.model.DataBatChu
 import com.example.eduquizz.features.BatChu.viewmodel.ViewModelBatChu
 import com.example.eduquizz.features.quizzGame.screens.BottomHelperBar
 import com.example.eduquizz.features.quizzGame.screens.TimerProgressBar
+import com.example.eduquizz.features.wordsearch.model.Cell
 import com.example.quizapp.ui.theme.QuizAppTheme
-import com.example.wordsearch.model.Cell
 import kotlin.math.sqrt
 
 val CardBackground = Color(0xFFE3F2FD)
@@ -73,13 +73,20 @@ fun Main_BatChu(navController: NavController,
     val question = viewModelBatChu.sampleQuestions[currentQuestionIndex]
     val answerLength = question.answer.length
 
-    val selectedLetters = remember { mutableStateListOf<Char?>(*Array(answerLength) { null }) }
-    val usedIndices = remember { mutableStateListOf<Pair<Int, Char>>() }
+    val selectedLetters = remember(question) {
+        mutableStateListOf<Char?>(*Array(question.answer.length) { null })
+    }
+
+    val usedIndices = remember(question) { mutableStateListOf<Pair<Int, Char>>() }
+
+    var hintUsedForCurrentQuestion by remember(question) { mutableStateOf(false) }
+
+
 
     val gold by dataviewModel.gold.observeAsState(-1)
     val coins = viewModelBatChu.coins
     var showHintDialog by remember { mutableStateOf(false) }
-    var hintUsedForCurrentQuestion by remember { mutableStateOf(false) }
+   // var hintUsedForCurrentQuestion by remember { mutableStateOf(false) }
 
     // Reset coin ban đầu
     LaunchedEffect(gold) {
@@ -88,7 +95,7 @@ fun Main_BatChu(navController: NavController,
         }
     }
 
-    // Reset khi đổi câu
+/*    // Reset khi đổi câu
     LaunchedEffect(question) {
         hintUsedForCurrentQuestion = false
         selectedLetters.clear()
@@ -96,7 +103,7 @@ fun Main_BatChu(navController: NavController,
         repeat(answerLength) {
             selectedLetters.add(null)
         }
-    }
+    }*/
 
     // Nội dung UI
     Box(modifier = Modifier.fillMaxSize().background(
