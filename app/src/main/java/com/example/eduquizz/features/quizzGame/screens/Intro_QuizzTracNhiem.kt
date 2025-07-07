@@ -32,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.eduquizz.R
 import com.example.eduquizz.features.home.english.EnglishGamesScreen
 import com.example.eduquizz.features.home.screens.WithLoading
@@ -125,6 +124,7 @@ fun IntroScreen(
                         ) + fadeIn(animationSpec = tween(800, delayMillis = 1000))
                     ) {
                         PlayButton(
+                           // onClick = { navController.navigate("main/levelEasy") },
                             onClick = { navController.navigate(Routes.QUIZ_LEVEL) },
                             modifier = Modifier.padding(20.dp)
                         )
@@ -354,12 +354,5 @@ private fun PlayButton(
             ),
             color = Color.White
         )
-    }
-}
-@Preview(showBackground = true)
-@Composable
-fun Intro_Preview() {
-    QuizAppTheme {
-        IntroScreen(navController = rememberNavController(), onBackPressed = {})
     }
 }

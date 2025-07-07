@@ -42,6 +42,7 @@ class WordMatchGame : ViewModel() {
     val showResult = mutableStateOf(false)
     val showBuyGoldDialog = mutableStateOf(false)
     val showFinishDialog = mutableStateOf(false)
+    val showTimeOutDialog = mutableStateOf(false)
     val totalRight = mutableStateOf(0)
     val canPass = mutableStateOf(false)
 
@@ -49,6 +50,8 @@ class WordMatchGame : ViewModel() {
     var cards = mutableStateListOf<MatchCard>()
     var selectedIndices = mutableStateListOf<Int>() // chỉ số trong cards
     var shakingIndices = mutableStateListOf<Int>() // chỉ số đang rung
+    var correctIndices = mutableStateListOf<Int>() // chỉ số đúng (màu xanh)
+    var wrongIndices = mutableStateListOf<Int>() // chỉ số sai (màu đỏ)
 
     // Timer
     private var timerJob: Job? = null
@@ -72,6 +75,8 @@ class WordMatchGame : ViewModel() {
         cards.addAll(newCards.shuffled())
         selectedIndices.clear()
         shakingIndices.clear()
+        correctIndices.clear()
+        wrongIndices.clear()
         showResult.value = false
         startTimer()
     }
@@ -85,7 +90,7 @@ class WordMatchGame : ViewModel() {
                 timerSeconds.value--
             }
             if (timerSeconds.value == 0 && !showResult.value) {
-                showResult.value = true
+                onTimeOut()
             }
         }
     }
@@ -97,19 +102,37 @@ class WordMatchGame : ViewModel() {
             val first = cards[selectedIndices[0]]
             val second = cards[selectedIndices[1]]
             if (first.pairId == second.pairId && first.id != second.id) {
-                // Đúng, ẩn 2 thẻ
+                // Đúng, thêm vào danh sách đúng và đánh dấu đã match
                 cards[selectedIndices[0]] = cards[selectedIndices[0]].copy(isMatched = true)
                 cards[selectedIndices[1]] = cards[selectedIndices[1]].copy(isMatched = true)
+                correctIndices.addAll(selectedIndices)
                 gold.value += 5
                 totalRight.value += 1
                 selectedIndices.clear()
+                
+                // Kiểm tra nếu đã hoàn thành tất cả cặp (5 cặp = 10 card)
+                if (cards.count { it.isMatched } == 10) {
+                    // Tự động chuyển level sau 1 giây
+                    viewModelScope.launch {
+                        delay(1000)
+                        if (currentLevel.value < 3) {
+                            nextLevel()
+                        } else {
+                            finishGame()
+                        }
+                    }
+                }
             } else {
-                // Sai, rung 2 thẻ
+                // Sai, rung 2 thẻ và thêm vào danh sách sai
                 shakingIndices.addAll(selectedIndices)
+                wrongIndices.addAll(selectedIndices)
                 viewModelScope.launch {
                     delay(300)
                     shakingIndices.clear()
                     selectedIndices.clear()
+                    // Xóa màu đỏ sau 1 giây
+                    delay(1000)
+                    wrongIndices.clear()
                 }
             }
         }
@@ -133,7 +156,21 @@ class WordMatchGame : ViewModel() {
                 val pair = pairs.random()
                 cards[pair[0].index] = cards[pair[0].index].copy(isMatched = true)
                 cards[pair[1].index] = cards[pair[1].index].copy(isMatched = true)
+                correctIndices.add(pair[0].index)
+                correctIndices.add(pair[1].index)
                 totalRight.value += 1
+                
+                // Kiểm tra nếu đã hoàn thành tất cả cặp
+                if (cards.count { it.isMatched } == 10) {
+                    viewModelScope.launch {
+                        delay(1000)
+                        if (currentLevel.value < 3) {
+                            nextLevel()
+                        } else {
+                            finishGame()
+                        }
+                    }
+                }
             }
         } else showBuyGoldDialog.value = true
     }
@@ -141,11 +178,32 @@ class WordMatchGame : ViewModel() {
     fun skipLevel() {
         if (gold.value >= 100) {
             gold.value -= 100
+            // Đếm số cặp chưa match để cộng vào totalRight
+            val unmatchedCount = cards.count { !it.isMatched }
+            val pairsToAdd = unmatchedCount / 2 // Mỗi cặp = 2 card
+            
             // Mở toàn bộ cặp còn lại
             cards.forEachIndexed { i, c ->
-                if (!c.isMatched) cards[i] = c.copy(isMatched = true)
+                if (!c.isMatched) {
+                    cards[i] = c.copy(isMatched = true)
+                    correctIndices.add(i)
+                }
             }
+            
+            // Cộng số cặp đúng vào totalRight (không cộng vàng)
+            totalRight.value += pairsToAdd
+            
             showResult.value = true
+            
+            // Tự động chuyển level sau 1 giây
+            viewModelScope.launch {
+                delay(1000)
+                if (currentLevel.value < 3) {
+                    nextLevel()
+                } else {
+                    finishGame()
+                }
+            }
         } else showBuyGoldDialog.value = true
     }
 
@@ -163,8 +221,29 @@ class WordMatchGame : ViewModel() {
     fun resetAll() {
         totalRight.value = 0
         gold.value = 200
+        correctIndices.clear()
+        wrongIndices.clear()
         startLevel(0)
         showFinishDialog.value = false
+    }
+
+    fun onTimeOut() {
+        showResult.value = true
+        timerJob?.cancel()
+        showTimeOutDialog.value = true
+        
+        // Khi hết thời gian, hiển thị kết quả và reset về level đầu
+        viewModelScope.launch {
+            delay(5000) // Hiển thị dialog 3 giây
+            showTimeOutDialog.value = false
+            // Reset về level đầu thay vì kết thúc game
+            totalRight.value = 0
+            gold.value = 200
+            correctIndices.clear()
+            wrongIndices.clear()
+            startLevel(0)
+            showFinishDialog.value = false
+        }
     }
 }
 
