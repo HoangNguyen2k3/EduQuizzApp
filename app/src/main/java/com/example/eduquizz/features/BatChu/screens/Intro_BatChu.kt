@@ -122,10 +122,10 @@ fun IntroScreenBatChu(
                             animationSpec = tween(800, delayMillis = 1000, easing = FastOutSlowInEasing)
                         ) + fadeIn(animationSpec = tween(800, delayMillis = 1000))
                     ) {
-                        PlayButton(
-                            onClick = { navController.navigate(Routes.LevelBatChu) },
-                            modifier = Modifier.padding(20.dp)
-                        )
+//                        PlayButton(
+//                            onClick = { navController.navigate(Routes.LevelBatChu) },
+//                            modifier = Modifier.padding(20.dp)
+//                        )
                     }
                 }
             ) { paddingValues ->
