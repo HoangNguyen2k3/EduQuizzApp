@@ -30,7 +30,7 @@ import com.example.quizapp.ui.theme.QuizAppTheme
 @Composable
 fun SettingScreen() {
     var isBgmEnabled by remember { mutableStateOf(true) }
-    var sfxVolume by remember { mutableFloatStateOf(1f) }
+    var isSfxEnabled by remember { mutableStateOf(true) }
     var selectedLanguage by remember { mutableStateOf("Tiếng Việt") }
     var showLanguageDialog by remember { mutableStateOf(false) }
 
@@ -84,14 +84,14 @@ fun SettingScreen() {
 
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_medium)))
 
-                // SFX Volume
-                SettingSliderItem(
+                // SFX Toggle
+                SettingToggleItem(
                     icon = R.drawable.volumeup,
                     title = stringResource(id = R.string.sound_effects),
-                    value = sfxVolume,
-                    onValueChange = {
-                        sfxVolume = it
-                        AudioManager.setSfxVolume(it)
+                    checked = isSfxEnabled,
+                    onCheckedChange = {
+                        isSfxEnabled = it
+                        AudioManager.setSfxVolume(if (it) 1f else 0f)
                     }
                 )
             }
@@ -422,11 +422,4 @@ private fun SettingSliderItem(
 @Composable
 fun SettingScreenPreview() {
     SettingScreen()
-=======
-@Preview
-@Composable
-fun SettingScreenPreview(){
-    QuizAppTheme {
-        SettingScreen()
-    }
 }

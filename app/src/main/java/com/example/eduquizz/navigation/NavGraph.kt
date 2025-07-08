@@ -52,10 +52,7 @@ object Routes {
     const val ENGLISH_GAMES_SCENE = "english_games_scene"
     const val MATH_GAMES_SCENE = "math_games_scene"
     //Hoang
-    const val MAIN = "main"
-    const val RESULT = "result"
     const val INTRO = "intro"
-    const val MAIN_ROUTE = "main/{level}"
     const val QUIZ_LEVEL = "quiz_level"
     //Danh
     const val MAIN_DANH = "main_danh"
@@ -143,14 +140,6 @@ fun NavGraph(
             )
         }
 
-        composable(Routes.INTRO) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                IntroScreen(
-                    navController,
-                    onBackPressed = { navController.navigate(Routes.ENGLISH_GAMES_SCENE) }
-                )
-            }
-        }
         composable(
             "result/{correct}/{total}/{route_back}/{route_again}",
             arguments = listOf(
@@ -180,16 +169,15 @@ fun NavGraph(
         composable(Routes.ENGLISH_GAMES_SCENE) {
             EnglishGamesScreen(
                 onBackClick = {
-                    navController.popBackStack()
+                    navController.navigate(Routes.MAIN_DANH)
                 },
                 onGameClick = { game ->
                     when (game.id) {
-                        "word_find" -> navController.navigate(Routes.INTRO_WORD_SEARCH)
-                        "connect_blocks" -> navController.navigate(Routes.INTRO_THONG)
-                        "quiz" -> navController.navigate(Routes.INTRO)
-                        "bubble_shot" -> navController.navigate(Routes.BUBBLE_SHOT_INTRO)
-
-                        "batchu" -> navController.navigate(Routes.IntroBatChu)
+                        "word_find" -> navController.navigate("${Routes.INTRO_WORD_SEARCH}?from=${Routes.ENGLISH_GAMES_SCENE}")
+                        "connect_blocks" -> navController.navigate("${Routes.INTRO_THONG}?from=${Routes.ENGLISH_GAMES_SCENE}")
+                        "quiz" -> navController.navigate("${Routes.INTRO}?from=${Routes.ENGLISH_GAMES_SCENE}")
+                        "bubble_shot" -> navController.navigate("${Routes.BUBBLE_SHOT_INTRO}?from=${Routes.ENGLISH_GAMES_SCENE}")
+                        "batchu" -> navController.navigate("${Routes.IntroBatChu}?from=${Routes.ENGLISH_GAMES_SCENE}")
                         else -> {
                             // Handle other games or show an error
                         }
@@ -201,19 +189,32 @@ fun NavGraph(
         composable(Routes.MATH_GAMES_SCENE) {
             MathGamesScreen(
                 onBackClick = {
-                    navController.popBackStack()
+                    navController.navigate(Routes.MAIN_DANH)
                 },
                 onGameClick = { game ->
                     when (game.id) {
-                        "connect_blocks" -> navController.navigate(Routes.INTRO_THONG)
-                        "quiz" -> navController.navigate(Routes.INTRO)
-                        "bubble_shot" -> navController.navigate(Routes.BUBBLE_SHOT_INTRO)
+                        "connect_blocks" -> navController.navigate("${Routes.INTRO_THONG}?from=${Routes.MATH_GAMES_SCENE}")
+                        "quiz" -> navController.navigate("${Routes.INTRO}?from=${Routes.MATH_GAMES_SCENE}")
+                        "bubble_shot" -> navController.navigate("${Routes.BUBBLE_SHOT_INTRO}?from=${Routes.MATH_GAMES_SCENE}")
                         else -> {
                             // Handle other games or show an error
                         }
                     }
                 }
             )
+        }
+
+        composable(
+            route = "${Routes.IntroBatChu}?from={from}",
+            arguments = listOf(navArgument("from") { defaultValue = Routes.ENGLISH_GAMES_SCENE; type = NavType.StringType })
+        ) { backStackEntry ->
+            val from = backStackEntry.arguments?.getString("from") ?: Routes.ENGLISH_GAMES_SCENE
+            Box(modifier = Modifier.fillMaxSize()) {
+                IntroScreenBatChu(
+                    navController,
+                    onBackPressed = { navController.navigate(from) }
+                )
+            }
         }
         composable("batchu/{level}",
             arguments = listOf(
@@ -223,15 +224,6 @@ fun NavGraph(
                 backStackEntry ->
             val level = backStackEntry.arguments?.getString("level")?:""
             Main_BatChu(navController, currentLevel = level)
-
-        }
-        composable(Routes.IntroBatChu) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                IntroScreenBatChu(
-                    navController,
-                    onBackPressed = { navController.navigate(Routes.ENGLISH_GAMES_SCENE) }
-                )
-            }
         }
         composable(Routes.LevelBatChu) {
             LevelChoiceBatChu(
@@ -246,20 +238,20 @@ fun NavGraph(
                 }
             )
         }
-        composable (Routes.QUIZ_LEVEL){
-            LevelChoice(
-                onBackClick = {navController.navigate(Routes.INTRO)},
-                onGameClick = {
-                        game ->
-                    when(game.id){
-                        "level_easy"->navController.navigate("main/LevelEasy")
-                        "level_normal"->navController.navigate("main/LevelNormal")
-                        "level_hard"->navController.navigate("main/LevelHard")
-                        "level_image"->navController.navigate("main/LevelImage")
-                    }
-                })
-        }
 
+        //Intro Quiz
+        composable(
+            route = "${Routes.INTRO}?from={from}",
+            arguments = listOf(navArgument("from") { defaultValue = Routes.ENGLISH_GAMES_SCENE; type = NavType.StringType })
+        ) { backStackEntry ->
+            val from = backStackEntry.arguments?.getString("from") ?: Routes.ENGLISH_GAMES_SCENE
+            Box(modifier = Modifier.fillMaxSize()) {
+                IntroScreen(
+                    navController,
+                    onBackPressed = { navController.navigate(from) }
+                )
+            }
+        }
         composable(Routes.QUIZ_LEVEL) {
             LevelChoice(
                 onBackClick = { navController.navigate(Routes.INTRO) },
@@ -273,46 +265,59 @@ fun NavGraph(
                 }
             )
         }
+
         composable(Routes.GAME_THONG) {
             val gameViewModel: WordMatchGame = hiltViewModel()
             WordMatchGameScreen(viewModel = gameViewModel, navController = navController)
         }
-        composable(Routes.SETTINGS) {
-            SettingScreen()
-        }
-
-        composable(Routes.INTRO_THONG) {
+        composable(
+            route = "${Routes.INTRO_THONG}?from={from}",
+            arguments = listOf(navArgument("from") { defaultValue = Routes.ENGLISH_GAMES_SCENE; type = NavType.StringType })
+        ) { backStackEntry ->
+            val from = backStackEntry.arguments?.getString("from") ?: Routes.ENGLISH_GAMES_SCENE
             GameDescriptionScreen(
                 onPlayClick = { navController.navigate(Routes.GAME_THONG) },
-                onBackPressed = { navController.navigate(Routes.ENGLISH_GAMES_SCENE) },
+                onBackPressed = { navController.navigate(from) },
                 subject = "English"
             )
         }
-        composable(Routes.INTRO_WORD_SEARCH) {
+      
+        composable(
+            route = "${Routes.BUBBLE_SHOT_INTRO}?from={from}",
+            arguments = listOf(navArgument("from") { defaultValue = Routes.ENGLISH_GAMES_SCENE; type = NavType.StringType })
+        ) { backStackEntry ->
+            val from = backStackEntry.arguments?.getString("from") ?: Routes.ENGLISH_GAMES_SCENE
+            BubbleShotDescriptionScreen(
+                onPlayClick = { navController.navigate(Routes.BUBBLE_SHOT) },
+                onBackPressed = { navController.navigate(from) },
+                subject = "BubbleShot"
+            )
+        }
+        composable(Routes.BUBBLE_SHOT) {
+            val viewModel: BubbleShot = hiltViewModel()
+            BubbleShotScreen(viewModel = viewModel, navController = navController)
+        }
+
+        composable(
+            route = "${Routes.INTRO_WORD_SEARCH}?from={from}",
+            arguments = listOf(navArgument("from") { defaultValue = Routes.ENGLISH_GAMES_SCENE; type = NavType.StringType })
+        ) { backStackEntry ->
+            val from = backStackEntry.arguments?.getString("from") ?: Routes.ENGLISH_GAMES_SCENE
             val loadingViewModel: LoadingViewModel = hiltViewModel()
             WordSearchGameTheme {
                 IntroductionScreen(
                     onPlayClicked = {
                         navController.navigate("topic_selection")
                     },
-                    onBackPressed = { navController.navigate(Routes.ENGLISH_GAMES_SCENE) },
+                    onBackPressed = { navController.navigate(from) },
                     showContinueButton = false,
                     loadingViewModel = loadingViewModel
                 )
             }
         }
-
-        composable("topic_selection") {
-            val loadingViewModel: LoadingViewModel = hiltViewModel()
-            TopicSelectionScreen(
-                onTopicSelected = { topicId ->
-                    navController.navigate("word_search_game/$topicId")
-                },
-                onBackPressed = { navController.navigate(Routes.INTRO_WORD_SEARCH) },
-           //     loadingViewModel = loadingViewModel
-            )
+        composable(Routes.GAME_WORD_SEARCH) {
+            WordSearchGame(navController = navController)
         }
-
         composable(
             route = "word_search_game/{topicId}",
             arguments = listOf(navArgument("topicId") { type = NavType.StringType })
@@ -330,21 +335,19 @@ fun NavGraph(
                 navController = navController
             )
         }
-
-        composable(Routes.BUBBLE_SHOT_INTRO) {
-            BubbleShotDescriptionScreen(
-                onPlayClick = { navController.navigate(Routes.BUBBLE_SHOT) },
-                onBackPressed = { navController.popBackStack() },
-                subject = "BubbleShot"
+        composable("topic_selection") {
+            val loadingViewModel: LoadingViewModel = hiltViewModel()
+            TopicSelectionScreen(
+                onTopicSelected = { topicId ->
+                    navController.navigate("word_search_game/$topicId")
+                },
+                onBackPressed = { navController.navigate(Routes.INTRO_WORD_SEARCH) },
+           //     loadingViewModel = loadingViewModel
             )
         }
-        composable(Routes.BUBBLE_SHOT) {
-            val viewModel: BubbleShot = hiltViewModel()
-            BubbleShotScreen(viewModel = viewModel, navController = navController)
 
-        }
-        composable(Routes.GAME_WORD_SEARCH) {
-            WordSearchGame(navController = navController)
+        composable(Routes.SETTINGS) {
+            SettingScreen()
         }
     }
 }
