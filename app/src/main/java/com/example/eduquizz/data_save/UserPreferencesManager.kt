@@ -49,7 +49,10 @@ class UserPreferencesManager(private val context: Context) {
 
     val numCorrectBelow50PercentFlow: Flow<Int> = context.dataStore.data
         .map { it[UserPreferencesKeys.NUM_CORRECT_BELOW_50_PERCENT_QUES] ?: 0 }
-
+    val boolMusicFlow: Flow<Boolean> =context.dataStore.data
+        .map { it[UserPreferencesKeys.music] ?: true }
+    val boolSfxFlow: Flow<Boolean> =context.dataStore.data
+        .map { it[UserPreferencesKeys.sfx] ?: true }
     // --- Lưu thông tin người chơi ---
     suspend fun firstTimeInPlayGame(){
         context.dataStore.edit {
@@ -91,7 +94,16 @@ class UserPreferencesManager(private val context: Context) {
             it[UserPreferencesKeys.FIRST_TIME] = flag
         }
     }
-
+    suspend fun editmusic(flag: Boolean){
+        context.dataStore.edit {
+            it[UserPreferencesKeys.music] = flag
+        }
+    }
+    suspend fun sfxmusic(flag: Boolean){
+        context.dataStore.edit {
+            it[UserPreferencesKeys.sfx] = flag
+        }
+    }
     suspend fun addGold(amount: Int) {
         val currentGold = goldFlow.first()
         saveGold(currentGold + amount)
