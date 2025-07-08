@@ -139,6 +139,9 @@ fun MainScreen(
                                 if(subject.id == "english"){
                                     onNavigateToEnglish()
                                 }
+                                if(subject.id == "math"){
+                                    onNavigateToMath()
+                                }
                             }
                         )
                     }
@@ -285,7 +288,7 @@ private fun HeaderSection(dataviewModel: DataViewModel, userViewModel: UserViewM
                         modifier = Modifier.size(30.dp)
                     )
                     Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.spacing_small)))
-                    dataviewModel.updateGold(1000)
+                    //dataviewModel.updateGold(1000)
                     val gold by dataviewModel.gold.observeAsState(initial = 0)
                     Text(
                         text = "$gold",

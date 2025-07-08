@@ -135,7 +135,7 @@ fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,nav
                             //showResultDialog.value = true
                             val temp :Int = usedQuestions.size
                             val score_temp = score.value
-                            navController.navigate("result/$score_temp/$temp")
+                            navController.navigate("result/$score_temp/$temp/${Routes.INTRO}/${Routes.QUIZ_LEVEL}")
                         } else {
                             count.value++
                             choiceSelected.value = ""

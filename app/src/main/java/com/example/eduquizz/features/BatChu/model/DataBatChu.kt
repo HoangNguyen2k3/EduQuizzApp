@@ -1,6 +1,7 @@
 package com.example.eduquizz.features.BatChu.model
 
 data class DataBatChu(
+    val question:String = "",
     val imageUrl: String,
     val answer: String,
     val suggestion: String = "", // Optional
