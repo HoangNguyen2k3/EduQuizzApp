@@ -208,7 +208,7 @@ private fun MathGamesHeader(
 
         Column {
             Text(
-                text = "Tiếng Anh",
+                text = "Toán học",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White

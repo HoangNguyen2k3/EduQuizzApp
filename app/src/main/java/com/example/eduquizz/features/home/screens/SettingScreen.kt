@@ -24,12 +24,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.eduquizz.R
+import com.example.eduquizz.data_save.AudioManager
 import com.example.quizapp.ui.theme.QuizAppTheme
 
 @Composable
 fun SettingScreen() {
-    var bgmVolume by remember { mutableFloatStateOf(0.7f) }
-    var sfxVolume by remember { mutableFloatStateOf(1f) }
+    var isBgmEnabled by remember { mutableStateOf(true) }
+    var isSfxEnabled by remember { mutableStateOf(true) }
     var selectedLanguage by remember { mutableStateOf("Tiếng Việt") }
     var showLanguageDialog by remember { mutableStateOf(false) }
 
@@ -70,28 +71,34 @@ fun SettingScreen() {
                     colorResource(id = R.color.english_coral)
                 )
             ) {
-                // Background Music Slider
-                SettingSliderItem(
+                // Background Music Toggle
+                SettingToggleItem(
                     icon = R.drawable.musicnote,
                     title = stringResource(id = R.string.background_music),
-                    value = bgmVolume,
-                    onValueChange = { bgmVolume = it }
+                    checked = isBgmEnabled,
+                    onCheckedChange = {
+                        isBgmEnabled = it
+                        AudioManager.setBgmEnabled(it)
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_medium)))
 
-                // Sound Effects Slider
-                SettingSliderItem(
+                // SFX Toggle
+                SettingToggleItem(
                     icon = R.drawable.volumeup,
                     title = stringResource(id = R.string.sound_effects),
-                    value = sfxVolume,
-                    onValueChange = { sfxVolume = it }
+                    checked = isSfxEnabled,
+                    onCheckedChange = {
+                        isSfxEnabled = it
+                        AudioManager.setSfxVolume(if (it) 1f else 0f)
+                    }
                 )
             }
 
             Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_xl)))
 
-            // Language Section
+            // Language 
             SettingsSection(
                 title = stringResource(id = R.string.language_title),
                 icon = Icons.Default.Language,
@@ -249,11 +256,11 @@ private fun SettingsSection(
 }
 
 @Composable
-private fun SettingSliderItem(
+private fun SettingToggleItem(
     icon: Int,
     title: String,
-    value: Float,
-    onValueChange: (Float) -> Unit
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -275,14 +282,12 @@ private fun SettingSliderItem(
             color = colorResource(id = R.color.text_primary_dark)
         )
 
-        Slider(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier.width(120.dp),
-            colors = SliderDefaults.colors(
-                thumbColor = colorResource(id = R.color.english_red),
-                activeTrackColor = colorResource(id = R.color.english_coral),
-                inactiveTrackColor = colorResource(id = R.color.bg_light_gray)
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = colorResource(id = R.color.english_red),
+                uncheckedThumbColor = colorResource(id = R.color.bg_light_gray)
             )
         )
     }
@@ -373,10 +378,48 @@ private fun LanguageOption(
     }
 }
 
-@Preview
+
 @Composable
-fun SettingScreenPreview(){
-    QuizAppTheme {
-        SettingScreen()
+private fun SettingSliderItem(
+    icon: Int,
+    title: String,
+    value: Float,
+    onValueChange: (Float) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(id = icon),
+            contentDescription = title,
+            modifier = Modifier.size(dimensionResource(id = R.dimen.icon_medium)),
+            tint = colorResource(id = R.color.text_secondary_gray)
+        )
+
+        Text(
+            text = title,
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = dimensionResource(id = R.dimen.spacing_large)),
+            fontSize = dimensionResource(id = R.dimen.text_normal).value.sp,
+            color = colorResource(id = R.color.text_primary_dark)
+        )
+
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.width(120.dp),
+            colors = SliderDefaults.colors(
+                thumbColor = colorResource(id = R.color.english_red),
+                activeTrackColor = colorResource(id = R.color.english_coral),
+                inactiveTrackColor = colorResource(id = R.color.bg_light_gray)
+            )
+        )
     }
+}
+@Preview(showBackground = true)
+@Composable
+fun SettingScreenPreview() {
+    SettingScreen()
 }
