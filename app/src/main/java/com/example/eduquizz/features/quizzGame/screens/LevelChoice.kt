@@ -47,6 +47,7 @@ import com.example.eduquizz.features.home.english.EnglishGamesScreen
 import com.example.quizapp.ui.theme.QuizAppTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.delay
+import com.example.eduquizz.data_save.AudioManager
 
 @Composable
 fun LevelChoice(    onBackClick: () -> Unit = {},
@@ -162,7 +163,10 @@ fun LevelChoice(    onBackClick: () -> Unit = {},
                 items(games) { game ->
                     EnhancedGameCard(
                         game = game,
-                        onClick = { onGameClick(game) }
+                        onClick = {
+                            AudioManager.playClickSfx()
+                            onGameClick(game)
+                        }
                     )
                 }
             }

@@ -34,6 +34,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.navigation.Routes
 import kotlinx.coroutines.delay
+import com.example.eduquizz.data_save.AudioManager
+import androidx.compose.runtime.DisposableEffect
 
 @Composable
 fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostController,
@@ -54,9 +56,22 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
     val shakingIndices = viewModel.shakingIndices
     val correctIndices = viewModel.correctIndices
     val wrongIndices = viewModel.wrongIndices
+
+
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        AudioManager.setBgmEnabled(true)
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            AudioManager.setBgmEnabled(false)
+        }
+    }
+
     LaunchedEffect(key1 = true) {
         viewModel.Init(dataviewModel)
     }
+
     Column(modifier = Modifier.fillMaxSize()) {
         IconButton(
             onClick = { navController.popBackStack() },
@@ -161,6 +176,7 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
                         )
                         .background(backgroundColor)
                         .clickable(enabled = !showResult && !isSelected && !isCorrect && !isWrong && !card.isMatched) {
+                            AudioManager.playClickSfx()
                             viewModel.onCardClick(idx)
                         },
                     shape = RoundedCornerShape(16.dp),
@@ -186,7 +202,10 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             Button(
-                onClick = { viewModel.useHint() },
+                onClick = {
+                    AudioManager.playClickSfx()
+                    viewModel.useHint()
+                },
                 enabled = gold >= 20 && !showResult,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB0A9F8)),
                 modifier = Modifier.weight(1f).padding(end = 8.dp)
@@ -194,7 +213,10 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
                 Text("Hint (-20)", color = Color.White)
             }
             Button(
-                onClick = { viewModel.skipLevel() },
+                onClick = {
+                    AudioManager.playClickSfx()
+                    viewModel.skipLevel()
+                },
                 enabled = gold >= 100 && !showResult,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF7C873)),
                 modifier = Modifier.weight(1f).padding(start = 8.dp)

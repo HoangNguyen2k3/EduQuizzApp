@@ -51,6 +51,8 @@ import com.example.eduquizz.navigation.Routes
 import com.example.quizapp.ui.theme.QuizAppTheme
 import kotlinx.coroutines.delay
 import kotlin.math.sqrt
+import com.example.eduquizz.data_save.AudioManager
+import androidx.compose.runtime.DisposableEffect
 
 val CardBackground = Color(0xFFE3F2FD)
 val ButtonPrimary = Color(0xFF1976D2)
@@ -68,6 +70,14 @@ fun Main_BatChu(navController: NavController,
     val viewModelBatChu: ViewModelBatChu = hiltViewModel()
 
     val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        AudioManager.setBgmEnabled(true)
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            AudioManager.setBgmEnabled(false)
+        }
+    }
     var currentQuestionIndex by remember { mutableStateOf(0) }
 
 
@@ -451,7 +461,10 @@ fun ModernGridCell(cell: Cell, onCellSelected: () -> Unit) {
             .scale(scale)
             .clip(RoundedCornerShape(6.dp))
             .background(backgroundColor)
-            .clickable(onClick = onCellSelected)
+            .clickable(onClick = {
+                AudioManager.playClickSfx()
+                onCellSelected()
+            })
     ) {
         Text(text = cell.char.toString(), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
     }
@@ -480,7 +493,10 @@ fun ModernWordGrid(
             } else {
                 ModernGridCell(
                     cell = cell,
-                    onCellSelected = { onCellSelected(cell) }
+                    onCellSelected = {
+                        AudioManager.playClickSfx()
+                        onCellSelected(cell)
+                    }
                 )
             }
         }

@@ -19,12 +19,15 @@ import com.example.eduquizz.Screens.WordSearch.ui.theme.EduQuizzTheme
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.database.FirebaseDatabase
+import com.example.eduquizz.data_save.AudioManager
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseDatabase.getInstance().setPersistenceEnabled(true)
+        AudioManager.init(this)
+        //AudioManager.setBgmEnabled(true)
 
 
         enableEdgeToEdge()
@@ -49,5 +52,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        AudioManager.release()
     }
 }

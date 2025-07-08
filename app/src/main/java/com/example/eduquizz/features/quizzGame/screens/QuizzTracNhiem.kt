@@ -36,6 +36,8 @@ import com.example.eduquizz.navigation.Routes
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.eduquizz.data_save.DataViewModel
+import com.example.eduquizz.data_save.AudioManager
+import androidx.compose.runtime.DisposableEffect
 
 @SuppressLint("SuspiciousIndentation")
 @Composable
@@ -168,7 +170,10 @@ fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,nav
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = { showExpertDialog.value = false }) {
+                    TextButton(onClick = {
+                        AudioManager.playClickSfx()
+                        showExpertDialog.value = false
+                    }) {
                         Text("Đóng")
                     }
                 }
@@ -509,6 +514,7 @@ fun ChoiceScreen(
         }
         Button(
             onClick = {
+                AudioManager.playClickSfx()
                 onNext() },
             shape = RoundedCornerShape(20.dp),
             colors = color_btn,
@@ -566,7 +572,9 @@ fun ChoiceButton(
     } else Modifier
 
     Button(
-        onClick = onClick,
+        onClick = {
+            AudioManager.playClickSfx()
+            onClick() },
         enabled = (!isDisabled),
         modifier = Modifier
             .fillMaxWidth()

@@ -35,6 +35,7 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.eduquizz.R
 import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.navigation.Routes
+import com.example.eduquizz.data_save.AudioManager
 import com.example.quizapp.ui.theme.QuizAppTheme
 import kotlinx.coroutines.delay
 
@@ -118,18 +119,26 @@ fun ResultsScreen(
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+
+                Button(
+                    onClick = {
+                        AudioManager.playClickSfx()
+                        // 🔁 Chơi lại: navigate lại đến màn quiz
+                        navController.navigate(Routes.MAIN)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                 Text(
                     text = "🎯 Kết Quả",
                     fontSize = 40.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF1E88E5)
                 )
-
                 Card(
                     shape = RoundedCornerShape(20.dp),
                     elevation = CardDefaults.cardElevation(8.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
                     modifier = Modifier.fillMaxWidth()
+
                 ) {
                     Column(
                         modifier = Modifier
@@ -169,8 +178,16 @@ fun ResultsScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
 
+                Button(
+                    onClick = {
+                        AudioManager.playClickSfx()
+                        // 🔙 Quay lại: ví dụ về quay về màn hình chọn chế độ chơi
+                        navController.navigate(Routes.INTRO)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+
+                Spacer(modifier = Modifier.height(24.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
