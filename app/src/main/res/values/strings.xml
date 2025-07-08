@@ -4,8 +4,8 @@
 
     <!-- Navigation Labels -->
     <string name="nav_home">Trang chủ</string>
-    <string name="nav_courses">Khóa học</string>
-    <string name="nav_statistics">Thống kê</string>
+    <string name="nav_courses">Thống kê</string>
+    <string name="nav_statistics">Cài đặt</string>
     <string name="nav_profile">Hồ sơ</string>
 
     <!-- Subject Names -->

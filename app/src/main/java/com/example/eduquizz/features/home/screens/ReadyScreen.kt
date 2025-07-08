@@ -39,15 +39,7 @@ import com.example.eduquizz.R
 import com.example.eduquizz.data.local.UserViewModel
 import com.example.eduquizz.data_save.DataViewModel
 import com.example.quizapp.ui.theme.QuizAppTheme
-
-import com.google.firebase.database.FirebaseDatabase
-
-fun saveUserNameToFirebase(userName: String) {
-    val database = FirebaseDatabase.getInstance()
-    val usersRef = database.getReference("users")
-
-    usersRef.push().setValue(userName)
-}
+import kotlinx.coroutines.launch
 
 @Composable
 fun ReadyScreen(
@@ -58,7 +50,19 @@ fun ReadyScreen(
 ) {
     var userName by remember { mutableStateOf("") }
     var isError by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    // Kiểm tra xem đã có tên được lưu chưa
+    val existingUserName by userViewModel.userName.collectAsState()
+
+    // Nếu đã có tên được lưu, chuyển thẳng đến màn hình chính
+    LaunchedEffect(existingUserName) {
+        if (existingUserName.isNotEmpty()) {
+            onStartClick(existingUserName)
+        }
+    }
 
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.welcome_learn))
     val progress by animateLottieCompositionAsState(
@@ -120,164 +124,184 @@ fun ReadyScreen(
                 .blur(50.dp)
         )
 
-        Box(
-            modifier = Modifier
-                .size(150.dp)
-                .offset(x = 250.dp, y = 200.dp + (animatedOffset * -15).dp)
-                .background(
-                    colorResource(id = R.color.english_coral).copy(alpha = 0.2f),
-                    CircleShape
-                )
-                .blur(40.dp)
-        )
+            // Lưu tên vào local storage
+            userViewModel.setUserName(userName.trim())
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(modifier = Modifier.height(60.dp))
-
-            Card(
-                modifier = Modifier
-                    .size(260.dp)
-                    .offset(y = floatingOffset.dp)
-                    .shadow(
-                        elevation = 20.dp,
-                        shape = CircleShape,
-                        ambientColor = colorResource(id = R.color.english_coral),
-                        spotColor = colorResource(id = R.color.english_coral)
-                    ),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White.copy(alpha = 0.95f)
-                ),
-                shape = CircleShape,
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    LottieAnimation(
-                        composition = composition,
-                        progress = { progress },
-                        modifier = Modifier.size(250.dp)
-                    )
-                }
+            // Simulate a short delay for better UX
+            kotlinx.coroutines.GlobalScope.launch {
+                kotlinx.coroutines.delay(500)
+                isLoading = false
+                onStartClick(userName.trim())
             }
+        } else {
+            isError = true
+            errorMessage = "Vui lòng nhập tên của bạn"
+        }
+    }
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                text = "Welcome to",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Normal,
-                color = Color.White.copy(alpha = 0.9f),
-                textAlign = TextAlign.Center,
+    // Chỉ hiển thị màn hình này nếu chưa có tên được lưu
+    if (existingUserName.isEmpty()) {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(
+                            Color(0xFF667eea).copy(alpha = 0.8f + animatedOffset * 0.2f),
+                            Color(0xFF764ba2).copy(alpha = 0.6f),
+                            Color(0xFF2d1b4e)
+                        ),
+                        radius = 1000f + animatedOffset * 200f
+                    )
+                )
+        ) {
+            Box(
                 modifier = Modifier
-                    .scale(textScale)
-                    .alpha(0.8f)
+                    .size(200.dp)
+                    .offset(x = (-50).dp, y = 100.dp + (animatedOffset * 20).dp)
+                    .background(
+                        Color.White.copy(alpha = 0.1f),
+                        CircleShape
+                    )
+                    .blur(50.dp)
             )
 
-            Text(
-                text = "PlayQuiz!",
-                fontSize = 38.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                textAlign = TextAlign.Center,
+            Box(
                 modifier = Modifier
-                    .scale(textScale)
-                    .padding(top = 4.dp)
+                    .size(150.dp)
+                    .offset(x = 250.dp, y = 200.dp + (animatedOffset * -15).dp)
+                    .background(
+                        colorResource(id = R.color.english_coral).copy(alpha = 0.2f),
+                        CircleShape
+                    )
+                    .blur(40.dp)
             )
 
-            Text(
-                text = "Học không chơi đánh rơi tuổi trẻ Chơi không học bán rẻ tương lai",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Normal,
-                color = Color.White.copy(alpha = 0.7f),
-                textAlign = TextAlign.Center,
+            Column(
                 modifier = Modifier
-                    .padding(top = 16.dp, bottom = 12.dp, start = 10.dp, end = 10.dp)
-                    .alpha(0.9f)
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White.copy(alpha = 0.15f)
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                shape = RoundedCornerShape(24.dp)
+                    .fillMaxSize()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                Spacer(modifier = Modifier.height(60.dp))
+
+                Card(
+                    modifier = Modifier
+                        .size(260.dp)
+                        .offset(y = floatingOffset.dp)
+                        .shadow(
+                            elevation = 20.dp,
+                            shape = CircleShape,
+                            ambientColor = colorResource(id = R.color.english_coral),
+                            spotColor = colorResource(id = R.color.english_coral)
+                        ),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White.copy(alpha = 0.95f)
+                    ),
+                    shape = CircleShape,
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        LottieAnimation(
+                            composition = composition,
+                            progress = { progress },
+                            modifier = Modifier.size(250.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Text(
+                    text = "Welcome to",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = Color.White.copy(alpha = 0.9f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .scale(textScale)
+                        .alpha(0.8f)
+                )
+
+                Text(
+                    text = "PlayQuiz!",
+                    fontSize = 38.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .scale(textScale)
+                        .padding(top = 4.dp)
+                )
+
+                Text(
+                    text = "Học không chơi đánh rơi tuổi trẻ Chơi không học bán rẻ tương lai",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = Color.White.copy(alpha = 0.7f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .padding(top = 16.dp, bottom = 12.dp, start = 10.dp, end = 10.dp)
+                        .alpha(0.9f)
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp)
+                        .padding(horizontal = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White.copy(alpha = 0.15f)
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    shape = RoundedCornerShape(24.dp)
                 ) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.White
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
-                        shape = RoundedCornerShape(20.dp)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp)
                     ) {
-                        OutlinedTextField(
-                            value = userName,
-                            onValueChange = {
-                                userName = it
-                                if (isError && it.isNotBlank()) {
-                                    isError = false
-                                }
-                            },
-                            label = {
-                                Text(
-                                    "Enter your name",
-                                    fontWeight = FontWeight.Medium
-                                )
-                            },
-                            placeholder = {
-                                Text(
-                                    "What's your name?",
-                                    color = Color.Gray.copy(alpha = 0.6f)
-                                )
-                            },
-                            isError = isError,
-                            supportingText = if (isError) {
-                                {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.White
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+                            shape = RoundedCornerShape(20.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = userName,
+                                onValueChange = {
+                                    userName = it
+                                    if (isError && it.isNotBlank()) {
+                                        isError = false
+                                        errorMessage = ""
+                                    }
+                                },
+                                label = {
                                     Text(
-                                        "Please enter your name",
+                                        "Enter your name",
                                         fontWeight = FontWeight.Medium
                                     )
-                                }
-                            } else null,
-                            leadingIcon = {
-                                Card(
-                                    modifier = Modifier.size(32.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = if (isError)
-                                            MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
-                                        else
-                                            colorResource(id = R.color.english_coral).copy(alpha = 0.1f)
-                                    ),
-                                    shape = CircleShape
-                                ) {
-                                    Box(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Person,
-                                            contentDescription = "Name",
-                                            tint = if (isError) MaterialTheme.colorScheme.error
-                                            else colorResource(id = R.color.english_coral),
-                                            modifier = Modifier.size(18.dp)
+                                },
+                                placeholder = {
+                                    Text(
+                                        "What's your name?",
+                                        color = Color.Gray.copy(alpha = 0.6f)
+                                    )
+                                },
+                                isError = isError,
+                                supportingText = if (isError) {
+                                    {
+                                        Text(
+                                            errorMessage.ifEmpty { "Please enter your name" },
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.error
                                         )
                                     }
                                 }
@@ -296,25 +320,35 @@ fun ReadyScreen(
                                         dataViewModel.updatePlayerName(userName.trim())
                                     } else {
                                         isError = true
+
                                     }
-                                }
-                            ),
-                            singleLine = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(20.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color.Transparent,
-                                unfocusedBorderColor = Color.Transparent,
-                                focusedLabelColor = colorResource(id = R.color.english_coral),
-                                cursorColor = colorResource(id = R.color.english_coral),
-                                unfocusedLabelColor = Color.Gray
+                                },
+                                keyboardOptions = KeyboardOptions(
+                                    capitalization = KeyboardCapitalization.Words,
+                                    imeAction = ImeAction.Done
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onDone = {
+                                        keyboardController?.hide()
+                                        handleStartClick()
+                                    }
+                                ),
+                                singleLine = true,
+                                enabled = !isLoading,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(20.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Color.Transparent,
+                                    unfocusedBorderColor = Color.Transparent,
+                                    focusedLabelColor = colorResource(id = R.color.english_coral),
+                                    cursorColor = colorResource(id = R.color.english_coral),
+                                    unfocusedLabelColor = Color.Gray
+                                )
                             )
-                        )
-                    }
+                        }
 
-                    Spacer(modifier = Modifier.height(20.dp))
-
+                        Spacer(modifier = Modifier.height(20.dp))
                     Button(
                         onClick = {
                             if (userName.isNotBlank()) {
@@ -345,42 +379,70 @@ fun ReadyScreen(
                     ) {
                         Box(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .background(
-                                    Brush.horizontalGradient(
-                                        colors = listOf(
-                                            colorResource(id = R.color.english_coral),
-                                            colorResource(id = R.color.english_coral).copy(alpha = 0.8f)
-                                        )
-                                    ),
-                                    RoundedCornerShape(20.dp)
+                                .fillMaxWidth()
+                                .height(60.dp)
+                                .shadow(
+                                    elevation = 12.dp,
+                                    shape = RoundedCornerShape(20.dp),
+                                    ambientColor = colorResource(id = R.color.english_coral),
+                                    spotColor = colorResource(id = R.color.english_coral)
                                 ),
-                            contentAlignment = Alignment.Center
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent
+                            ),
+                            shape = RoundedCornerShape(20.dp),
+                            contentPadding = PaddingValues(0.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.horizontalGradient(
+                                            colors = listOf(
+                                                colorResource(id = R.color.english_coral)
+                                                    .copy(alpha = if (isLoading) 0.6f else 1f),
+                                                colorResource(id = R.color.english_coral)
+                                                    .copy(alpha = if (isLoading) 0.4f else 0.8f)
+                                            )
+                                        ),
+                                        RoundedCornerShape(20.dp)
+                                    ),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.PlayArrow,
-                                    contentDescription = "Start",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Let's Start Playing!",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
+                                if (isLoading) {
+                                    CircularProgressIndicator(
+                                        color = Color.White,
+                                        modifier = Modifier.size(24.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.PlayArrow,
+                                            contentDescription = "Start",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "Let's Start Playing!",
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+            }
         }
     }
 }

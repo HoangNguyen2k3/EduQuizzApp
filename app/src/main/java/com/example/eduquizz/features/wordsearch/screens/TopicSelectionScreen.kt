@@ -15,9 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Work
-import androidx.compose.material.icons.filled.SportsEsports
-import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,11 +28,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.eduquizz.features.home.screens.WithLoading
-import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
-import com.example.wordsearch.ui.theme.Primary
-import kotlinx.coroutines.delay
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.eduquizz.data.local.UserViewModel
+import com.example.eduquizz.features.wordsearch.viewmodel.TopicSelectionViewModel
 
 data class Topic(
     val id: String,
@@ -52,121 +47,90 @@ data class Topic(
 fun TopicSelectionScreen(
     onTopicSelected: (String) -> Unit,
     onBackPressed: () -> Unit,
-    loadingViewModel: LoadingViewModel = viewModel()
+    userViewModel: UserViewModel = hiltViewModel(),
+    viewModel: TopicSelectionViewModel = hiltViewModel()
 ) {
-    val loadingState by loadingViewModel.loadingState.collectAsState()
+    val topics by viewModel.topics
+    val isLoading by viewModel.isLoading
+    val error by viewModel.error
+    val userName by userViewModel.userName.collectAsState()
     var isVisible by remember { mutableStateOf(false) }
-    var isDataLoaded by remember { mutableStateOf(false) }
 
-    // Mock data - trong thực tế sẽ load từ Firebase
-    val topics = listOf(
-        Topic(
-            id = "Travel",
-            title = "Travel",
-            icon = Icons.Default.Flight,
-            wordCount = 25,
-            difficulty = "Easy",
-            isCompleted = false,
-            backgroundColor = Color(0xFF4FC3F7)
-        ),
-        Topic(
-            id = "FunAndGames",
-            title = "Games",
-            icon = Icons.Default.SportsEsports,
-            wordCount = 30,
-            difficulty = "Easy",
-            isCompleted = false,
-            backgroundColor = Color(0xFF66BB6A)
-        ),
-        Topic(
-            id = "StudyWork",
-            title = "Study & Work",
-            icon = Icons.Default.Work,
-            wordCount = 35,
-            difficulty = "Easy",
-            isCompleted = false,
-            backgroundColor = Color(0xFFFF7043)
-        )
-    )
-
-    LaunchedEffect(Unit) {
-        loadingViewModel.showLoading("Đang tải chủ đề...", showProgress = true)
-
-        loadingViewModel.updateProgress(0.3f, "Đang kết nối Firebase...")
-        delay(600)
-
-        loadingViewModel.updateProgress(0.6f, "Đang tải dữ liệu từ vựng...")
-        delay(800)
-
-        loadingViewModel.updateProgress(0.9f, "Đang cập nhật tiến trình...")
-        delay(500)
-
-        loadingViewModel.updateProgress(1.0f, "Hoàn thành!")
-        delay(300)
-
-        loadingViewModel.hideLoading()
-        isDataLoaded = true
-
-        delay(200)
+    LaunchedEffect(userName) {
+        userName?.let { viewModel.loadTopics(it) }
         isVisible = true
     }
 
-    WithLoading(
-        isLoading = loadingState.isLoading,
-        isDarkTheme = false,
-        backgroundColors = listOf(
-            Color(0xFF4A85F5),
-            Color(0xFF7B61FF),
-            MaterialTheme.colorScheme.background
-        )
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFF4A85F5),
-                            Color(0xFF7B61FF),
-                            MaterialTheme.colorScheme.background
-                        )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF4A85F5),
+                        Color(0xFF7B61FF),
+                        MaterialTheme.colorScheme.background
                     )
                 )
-        ) {
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = {
-                            AnimatedVisibility(
-                                visible = isVisible && isDataLoaded,
-                                enter = fadeIn(animationSpec = tween(600, delayMillis = 300))
-                            ) {
-                                Text(
-                                    text = "Chọn chủ đề",
-                                    style = MaterialTheme.typography.headlineMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 20.sp
-                                    ),
-                                    color = Color.White
-                                )
-                            }
-                        },
-                        navigationIcon = {
-                            IconButton(onClick = onBackPressed) {
-                                Icon(
-                                    imageVector = Icons.Default.ArrowBackIosNew,
-                                    contentDescription = "Back",
-                                    tint = Color.White
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color.Transparent
-                        )
+            )
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        AnimatedVisibility(
+                            visible = isVisible,
+                            enter = fadeIn(animationSpec = tween(600, delayMillis = 300))
+                        ) {
+                            Text(
+                                text = "Chọn chủ đề",
+                                style = MaterialTheme.typography.headlineMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 20.sp
+                                ),
+                                color = Color.White
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBackPressed) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBackIosNew,
+                                contentDescription = "Back",
+                                tint = Color.White
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent
                     )
-                },
-                containerColor = Color.Transparent
-            ) { paddingValues ->
+                )
+            },
+            containerColor = Color.Transparent
+        ) { paddingValues ->
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color.White)
+                }
+            } else if (error != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = error ?: "Unknown error",
+                        color = Color.White,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else {
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -178,7 +142,7 @@ fun TopicSelectionScreen(
                         Spacer(modifier = Modifier.height(20.dp))
 
                         AnimatedVisibility(
-                            visible = isVisible && isDataLoaded,
+                            visible = isVisible,
                             enter = slideInVertically(
                                 initialOffsetY = { -it },
                                 animationSpec = tween(800, easing = FastOutSlowInEasing)
@@ -201,7 +165,7 @@ fun TopicSelectionScreen(
                     items(topics) { topic ->
                         val index = topics.indexOf(topic)
                         AnimatedVisibility(
-                            visible = isVisible && isDataLoaded,
+                            visible = isVisible,
                             enter = slideInVertically(
                                 initialOffsetY = { it },
                                 animationSpec = tween(
@@ -249,7 +213,6 @@ private fun TopicCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon Container
             Box(
                 modifier = Modifier
                     .size(60.dp)
@@ -267,7 +230,6 @@ private fun TopicCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Content
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -330,7 +292,6 @@ private fun TopicCard(
                 }
             }
 
-            // Progress indicator
             if (topic.isCompleted) {
                 Box(
                     modifier = Modifier
