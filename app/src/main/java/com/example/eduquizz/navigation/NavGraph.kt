@@ -27,6 +27,7 @@ import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.eduquizz.features.home.screens.MainScreen
 import com.example.eduquizz.features.match.viewmodel.WordMatchGame
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.MainActivity
 import com.example.eduquizz.features.BatChu.screens.IntroScreenBatChu
 import com.example.eduquizz.features.BatChu.screens.LevelChoiceBatChu
@@ -42,6 +43,7 @@ import com.example.eduquizz.features.home.screens.ReadyScreen
 import com.example.eduquizz.features.quizzGame.screens.LevelChoice
 import com.example.eduquizz.features.wordsearch.screens.TopicSelectionScreen
 import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
+import com.example.eduquizz.data.local.UserViewModel
 
 object Routes {
     //Main
@@ -79,6 +81,8 @@ fun NavGraph(
     navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
+    val userViewModel: UserViewModel = hiltViewModel()
+
     NavHost(
         navController = navController,
         startDestination = Routes.SPLASH,
@@ -97,13 +101,24 @@ fun NavGraph(
                 }
             )
         }
+
         composable(Routes.READY) {
             ReadyScreen(
                 onStartClick = { userName ->
                     navController.navigate(Routes.MAIN_DANH) {
                         popUpTo(Routes.READY) { inclusive = true }
                     }
-                }
+                },
+                userViewModel = userViewModel
+            )
+        }
+
+        composable(Routes.MAIN_DANH) {
+            MainScreen(
+                onNavigateToEnglish = {
+                    navController.navigate(Routes.GAME_SCENE)
+                },
+                userViewModel = userViewModel
             )
         }
 
@@ -111,8 +126,13 @@ fun NavGraph(
             arguments = listOf(navArgument("level") { type = NavType.StringType })) {
                 backStackEntry ->
             val level = backStackEntry.arguments?.getString("level") ?: ""
-            val viewModel: QuestionViewModel = hiltViewModel()
-            MainView(currentLevel = level, name = "Android", navController = navController, questionViewModel = viewModel)
+            val questionViewModel: QuestionViewModel = hiltViewModel()
+            MainView(
+                currentLevel = level,
+                name = "Android",
+                navController = navController,
+                questionViewModel = questionViewModel
+            )
         }
 
         composable(Routes.INTRO) {
@@ -138,6 +158,7 @@ fun NavGraph(
             val route_again = backStackEntry.arguments?.getString("route_again")?:""
             ResultsScreen(navController, correctAnswers = correct, totalQuestions = total, back_route = route_back, play_agian_route = route_again)
         }
+
         composable(Routes.MAIN_DANH) {
             MainScreen(
                 onNavigateToEnglish = {
@@ -159,6 +180,7 @@ fun NavGraph(
                         "connect_blocks" -> navController.navigate(Routes.INTRO_THONG)
                         "quiz" -> navController.navigate(Routes.INTRO)
                         "bubble_shot" -> navController.navigate(Routes.BUBBLE_SHOT_INTRO)
+
                         "batchu" -> navController.navigate(Routes.IntroBatChu)
                         else -> {
                             // Handle other games or show an error
@@ -181,7 +203,6 @@ fun NavGraph(
                         else -> {
                             // Handle other games or show an error
                         }
-
                     }
                 }
             )
@@ -222,6 +243,16 @@ fun NavGraph(
                             "level_image"->navController.navigate("main/LevelImage")
                         }
 
+        composable(Routes.QUIZ_LEVEL) {
+            LevelChoice(
+                onBackClick = { navController.navigate(Routes.INTRO) },
+                onGameClick = { game ->
+                    when(game.id) {
+                        "level_easy" -> navController.navigate("main/LevelEasy")
+                        "level_normal" -> navController.navigate("main/LevelNormal")
+                        "level_hard" -> navController.navigate("main/LevelHard")
+                        "level_image" -> navController.navigate("main/LevelImage")
+                    }
                 }
                 )
         }
