@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,14 +24,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.eduquizz.R
 import com.example.eduquizz.data_save.AudioManager
+import com.example.eduquizz.data_save.DataViewModel
 import com.example.quizapp.ui.theme.QuizAppTheme
 
 @Composable
-fun SettingScreen() {
+fun SettingScreen(
+    dataViewModel: DataViewModel = hiltViewModel(),
+) {
     var isBgmEnabled by remember { mutableStateOf(true) }
     var isSfxEnabled by remember { mutableStateOf(true) }
+    val musicEnabled by dataViewModel.music.observeAsState(true)
+    val sfxEnabled by dataViewModel.sfx.observeAsState(true)
     var selectedLanguage by remember { mutableStateOf("Tiếng Việt") }
     var showLanguageDialog by remember { mutableStateOf(false) }
 
@@ -72,7 +79,7 @@ fun SettingScreen() {
                 )
             ) {
                 // Background Music Toggle
-                SettingToggleItem(
+/*                SettingToggleItem(
                     icon = R.drawable.musicnote,
                     title = stringResource(id = R.string.background_music),
                     checked = isBgmEnabled,
@@ -91,6 +98,25 @@ fun SettingScreen() {
                     checked = isSfxEnabled,
                     onCheckedChange = {
                         isSfxEnabled = it
+                        AudioManager.setSfxVolume(if (it) 1f else 0f)
+                    }
+                )*/
+                SettingToggleItem(
+                    icon = R.drawable.musicnote,
+                    title = stringResource(id = R.string.background_music),
+                    checked = musicEnabled,
+                    onCheckedChange = {
+                        dataViewModel.UpdateMusic(it)
+                        AudioManager.setBgmEnabled(it)
+                    }
+                )
+                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_medium)))
+                SettingToggleItem(
+                    icon = R.drawable.volumeup,
+                    title = stringResource(id = R.string.sound_effects),
+                    checked = sfxEnabled,
+                    onCheckedChange = {
+                        dataViewModel.UpdateSfx(it)
                         AudioManager.setSfxVolume(if (it) 1f else 0f)
                     }
                 )

@@ -28,6 +28,7 @@ import com.example.eduquizz.features.home.screens.SettingScreen
 import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.eduquizz.features.home.screens.MainScreen
 import com.example.eduquizz.features.match.viewmodel.WordMatchGame
+
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.MainActivity
@@ -35,6 +36,7 @@ import com.example.eduquizz.features.BatChu.screens.IntroScreenBatChu
 import com.example.eduquizz.features.BatChu.screens.LevelChoiceBatChu
 import com.example.eduquizz.features.BatChu.screens.Main_BatChu
 import com.example.quizapp.ui.splash.SplashScreen
+
 import com.example.eduquizz.features.wordsearch.screens.IntroductionScreen
 import com.example.eduquizz.features.wordsearch.screens.WordSearchGame
 import com.example.wordsearch.ui.theme.WordSearchGameTheme
@@ -79,7 +81,6 @@ object Routes {
 fun NavGraph(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    dataViewModel: DataViewModel = hiltViewModel()
 ) {
     val userViewModel: UserViewModel = hiltViewModel()
     val firstTime by dataViewModel.firstTime.observeAsState(0)

@@ -19,15 +19,26 @@ class DataViewModel @Inject constructor(
     val gold = userPrefs.goldFlow.asLiveData()
     val currentLevel = userPrefs.currentLevelFlow.asLiveData()
     val firstTime = userPrefs.firstTimeInGame.asLiveData()
-
+val music = userPrefs.boolMusicFlow.asLiveData()
+    val sfx = userPrefs.boolSfxFlow.asLiveData()
     // --- Thống kê ---
     val numTotalQuestions = userPrefs.numTotalQuestionsFlow.asLiveData()
     val numCorrectAnsweredQuestions = userPrefs.numCorrectAnsweredQuestionsFlow.asLiveData()
     val numCorrectAllQuestions = userPrefs.numCorrectAllQuestionsFlow.asLiveData()
     val numCorrectAbove50Percent = userPrefs.numCorrectAbove50PercentFlow.asLiveData()
     val numCorrectBelow50Percent = userPrefs.numCorrectBelow50PercentFlow.asLiveData()
-
+    val birthDay = userPrefs.playerBirthdayFlow.asLiveData()
     // --- Cập nhật thông tin người chơi ---
+    fun UpdateMusic(flag: Boolean){
+        viewModelScope.launch {
+            userPrefs.editmusic(flag)
+        }
+    }
+    fun UpdateSfx(flag: Boolean){
+        viewModelScope.launch {
+            userPrefs.sfxmusic(flag)
+        }
+    }
     fun updateFirstTime(){
         viewModelScope.launch {
             userPrefs.firstTimeInPlayGame()
@@ -106,5 +117,9 @@ class DataViewModel @Inject constructor(
             userPrefs.addNumCorrectBelow50Percent(amount)
         }
     }
-
+    fun editBirthday(amount: String) {
+        viewModelScope.launch {
+            userPrefs.savePlayerBirthday(amount)
+        }
+    }
 }

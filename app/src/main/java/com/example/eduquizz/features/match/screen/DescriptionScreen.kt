@@ -28,206 +28,171 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.eduquizz.R
-import com.example.eduquizz.features.home.screens.WithLoading
-import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
-import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GameDescriptionScreen(
     onPlayClick: () -> Unit,
     onBackPressed: () -> Unit = {},
-    subject: String = "English",
-    loadingViewModel: LoadingViewModel = viewModel()
+    subject: String = "English"
 ) {
-    val loadingState by loadingViewModel.loadingState.collectAsState()
     var isVisible by remember { mutableStateOf(false) }
-    var isDataLoaded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        loadingViewModel.showLoading("Đang tải $subject...", showProgress = true)
-
-        loadingViewModel.updateProgress(0.2f, "Đang tải dữ liệu...")
-        delay(800)
-
-        loadingViewModel.updateProgress(0.5f, "Đang chuẩn bị nội dung...")
-        delay(800)
-
-        loadingViewModel.updateProgress(0.8f, "Đang khởi tạo game...")
-        delay(600)
-
-        loadingViewModel.updateProgress(1.0f, "Hoàn thành!")
-        delay(400)
-
-        loadingViewModel.hideLoading()
-        isDataLoaded = true
-        delay(300)
         isVisible = true
     }
 
-    WithLoading(
-        isLoading = loadingState.isLoading,
-        isDarkTheme = false,
-        backgroundColors = listOf(
-            Color(0xFFFF5722),
-            Color(0xFFFF9800),
-            Color(0xFFFFC107),
-            MaterialTheme.colorScheme.background
-        )
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFFFF5722),
-                            Color(0xFFFF9800),
-                            Color(0xFFFFC107),
-                            MaterialTheme.colorScheme.background
-                        )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFFFF5722),
+                        Color(0xFFFF9800),
+                        Color(0xFFFFC107),
+                        MaterialTheme.colorScheme.background
                     )
                 )
-        ) {
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = { },
-                        navigationIcon = {
-                            IconButton(onClick = onBackPressed) {
-                                Icon(
-                                    imageVector = Icons.Default.ArrowBack,
-                                    contentDescription = "Back",
-                                    tint = Color.White
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color.Transparent
-                        )
-                    )
-                },
-                containerColor = Color.Transparent,
-                bottomBar = {
-                    AnimatedVisibility(
-                        visible = isVisible && isDataLoaded,
-                        enter = slideInVertically(
-                            initialOffsetY = { it },
-                            animationSpec = tween(800, delayMillis = 1000, easing = FastOutSlowInEasing)
-                        ) + fadeIn(animationSpec = tween(800, delayMillis = 1000))
-                    ) {
-                        PlayButton(
-                            onClick = onPlayClick,
-                            modifier = Modifier.padding(20.dp)
-                        )
-                    }
-                }
-            ) { paddingValues ->
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .padding(horizontal = 20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    item {
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        // Subject Image Card
-                        AnimatedVisibility(
-                            visible = isVisible && isDataLoaded,
-                            enter = slideInVertically(
-                                initialOffsetY = { -it },
-                                animationSpec = tween(800, easing = FastOutSlowInEasing)
-                            ) + fadeIn(animationSpec = tween(800))
-                        ) {
-                            SubjectImageCard(image = getImageResource(subject), title = getTitle(subject))
-                        }
-                        Spacer(modifier = Modifier.height(24.dp))
-                    }
-
-                    item {
-                        // Game Title
-                        AnimatedVisibility(
-                            visible = isVisible && isDataLoaded,
-                            enter = slideInVertically(
-                                initialOffsetY = { it },
-                                animationSpec = tween(
-                                    800,
-                                    delayMillis = 200,
-                                    easing = FastOutSlowInEasing
-                                )
-                            ) + fadeIn(animationSpec = tween(800, delayMillis = 200))
-                        ) {
-                            Text(
-                                text = getTitle(subject),
-                                style = MaterialTheme.typography.headlineLarge.copy(
-                                    fontSize = 28.sp,
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = Color.White,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { },
+                    navigationIcon = {
+                        IconButton(onClick = onBackPressed) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Back",
+                                tint = Color.White
                             )
                         }
-                        Spacer(modifier = Modifier.height(24.dp))
-                    }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent
+                    )
+                )
+            },
+            containerColor = Color.Transparent,
+            bottomBar = {
+                AnimatedVisibility(
+                    visible = isVisible,
+                    enter = slideInVertically(
+                        initialOffsetY = { it },
+                        animationSpec = tween(800, delayMillis = 1000, easing = FastOutSlowInEasing)
+                    ) + fadeIn(animationSpec = tween(800, delayMillis = 1000))
+                ) {
+                    PlayButton(
+                        onClick = onPlayClick,
+                        modifier = Modifier.padding(20.dp)
+                    )
+                }
+            }
+        ) { paddingValues ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                item {
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                    item {
-                        // Statistics Row
-                        AnimatedVisibility(
-                            visible = isVisible && isDataLoaded,
-                            enter = slideInVertically(
-                                initialOffsetY = { it },
-                                animationSpec = tween(
-                                    800,
-                                    delayMillis = 400,
-                                    easing = FastOutSlowInEasing
-                                )
-                            ) + fadeIn(animationSpec = tween(800, delayMillis = 400))
-                        ) {
-                            StatisticsCard()
-                        }
-                        Spacer(modifier = Modifier.height(24.dp))
+                    // Subject Image Card
+                    AnimatedVisibility(
+                        visible = isVisible,
+                        enter = slideInVertically(
+                            initialOffsetY = { -it },
+                            animationSpec = tween(800, easing = FastOutSlowInEasing)
+                        ) + fadeIn(animationSpec = tween(800))
+                    ) {
+                        SubjectImageCard(image = getImageResource(subject), title = getTitle(subject))
                     }
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
 
-                    item {
-                        // Description Card
-                        AnimatedVisibility(
-                            visible = isVisible && isDataLoaded,
-                            enter = slideInVertically(
-                                initialOffsetY = { it },
-                                animationSpec = tween(
-                                    800,
-                                    delayMillis = 600,
-                                    easing = FastOutSlowInEasing
-                                )
-                            ) + fadeIn(animationSpec = tween(800, delayMillis = 600))
-                        ) {
-                            DescriptionCard(description = getDescription(subject))
-                        }
-                        Spacer(modifier = Modifier.height(24.dp))
+                item {
+                    // Game Title
+                    AnimatedVisibility(
+                        visible = isVisible,
+                        enter = slideInVertically(
+                            initialOffsetY = { it },
+                            animationSpec = tween(
+                                800,
+                                delayMillis = 200,
+                                easing = FastOutSlowInEasing
+                            )
+                        ) + fadeIn(animationSpec = tween(800, delayMillis = 200))
+                    ) {
+                        Text(
+                            text = getTitle(subject),
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = Color.White,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
                     }
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
 
-                    item {
-                        // Sample Questions Card
-                        AnimatedVisibility(
-                            visible = isVisible && isDataLoaded,
-                            enter = slideInVertically(
-                                initialOffsetY = { it },
-                                animationSpec = tween(
-                                    800,
-                                    delayMillis = 800,
-                                    easing = FastOutSlowInEasing
-                                )
-                            ) + fadeIn(animationSpec = tween(800, delayMillis = 800))
-                        ) {
-                            SampleQuestionsCard(subject = subject)
-                        }
-                        Spacer(modifier = Modifier.height(32.dp))
+                item {
+                    // Statistics Row
+                    AnimatedVisibility(
+                        visible = isVisible,
+                        enter = slideInVertically(
+                            initialOffsetY = { it },
+                            animationSpec = tween(
+                                800,
+                                delayMillis = 400,
+                                easing = FastOutSlowInEasing
+                            )
+                        ) + fadeIn(animationSpec = tween(800, delayMillis = 400))
+                    ) {
+                        StatisticsCard()
                     }
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+
+                item {
+                    // Description Card
+                    AnimatedVisibility(
+                        visible = isVisible,
+                        enter = slideInVertically(
+                            initialOffsetY = { it },
+                            animationSpec = tween(
+                                800,
+                                delayMillis = 600,
+                                easing = FastOutSlowInEasing
+                            )
+                        ) + fadeIn(animationSpec = tween(800, delayMillis = 600))
+                    ) {
+                        DescriptionCard(description = getDescription(subject))
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+
+                item {
+                    // Sample Questions Card
+                    AnimatedVisibility(
+                        visible = isVisible,
+                        enter = slideInVertically(
+                            initialOffsetY = { it },
+                            animationSpec = tween(
+                                800,
+                                delayMillis = 800,
+                                easing = FastOutSlowInEasing
+                            )
+                        ) + fadeIn(animationSpec = tween(800, delayMillis = 800))
+                    ) {
+                        SampleQuestionsCard(subject = subject)
+                    }
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
         }
