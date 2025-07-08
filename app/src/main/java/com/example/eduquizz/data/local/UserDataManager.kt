@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -26,6 +27,7 @@ class UserViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val userNameKey = stringPreferencesKey("user_name")
+    private val completedLessonsKey = stringSetPreferencesKey("completed_lessons")
 
     private val _userName = MutableStateFlow("")
     val userName: StateFlow<String> = _userName.asStateFlow()
@@ -62,10 +64,39 @@ class UserViewModel @Inject constructor(
         }
     }
 
-    // Hàm để lấy userName trực tiếp từ DataStore (không cần StateFlow)
     fun getUserNameFlow(): Flow<String> {
         return context.dataStore.data.map { preferences ->
             preferences[userNameKey] ?: ""
+        }
+    }
+
+    val completedLessons: Flow<Set<String>> = context.dataStore.data.map { preferences ->
+        preferences[completedLessonsKey] ?: emptySet()
+    }
+
+    fun addCompletedLesson(lessonId: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                val currentSet = preferences[completedLessonsKey] ?: emptySet()
+                preferences[completedLessonsKey] = currentSet + lessonId
+            }
+        }
+    }
+
+    fun removeCompletedLesson(lessonId: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                val currentSet = preferences[completedLessonsKey] ?: emptySet()
+                preferences[completedLessonsKey] = currentSet - lessonId
+            }
+        }
+    }
+
+    fun clearCompletedLessons() {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences.remove(completedLessonsKey)
+            }
         }
     }
 }
