@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,23 +35,29 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.eduquizz.R
+import com.example.eduquizz.data_save.DataViewModel
 import com.example.quizapp.ui.theme.QuizAppTheme
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(
+    dataviewModel: DataViewModel = hiltViewModel(),
+) {
     var avatarUri by remember { mutableStateOf<Uri?>(null) }
-    var username by remember { mutableStateOf("User123") }
-    var fullName by remember { mutableStateOf("Nguyễn Văn A") }
-    var birthDate by remember { mutableStateOf("01/01/2000") }
+  //  var username by remember { mutableStateOf("User123") }
+   // var fullName by remember { mutableStateOf("Nguyễn Văn A") }
+  //  var birthDate by remember { mutableStateOf("01/01/2000") }
     var showUsernameDialog by remember { mutableStateOf(false) }
     var showFullNameDialog by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
-
+    val  fullName by dataviewModel.playerHobbiesSubject.observeAsState("English")
+    val username by dataviewModel.playerName.observeAsState("User123")
+    val birthDate by dataviewModel.birthDay.observeAsState("01/01/2000")
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -224,30 +231,48 @@ fun ProfileScreen() {
         // Username Edit Dialog
         if (showUsernameDialog) {
             EditTextDialog(
-                title = "Chỉnh sửa tên đăng nhập",
+                title = "Chỉnh sửa tên",
                 currentValue = username,
-                onValueChange = { username = it },
+                onValueChange = {  },
                 onDismiss = { showUsernameDialog = false },
-                placeholder = "Nhập tên đăng nhập"
+                placeholder = "Nhập tên",
+                onSave = { dataviewModel.updatePlayerName(it) }
             )
         }
 
         // Full Name Edit Dialog
         if (showFullNameDialog) {
             EditTextDialog(
-                title = "Chỉnh sửa họ và tên",
+                title = "Chỉnh sửa môn học yêu thích",
                 currentValue = fullName,
-                onValueChange = { fullName = it },
+                onValueChange = {  },
                 onDismiss = { showFullNameDialog = false },
-                placeholder = "Nhập họ và tên"
+                placeholder = "Nhập họ và tên",
+                onSave = { dataviewModel.updatePlayerHobbiesSubject(it) }
             )
         }
 
         // Date Picker Dialog
+//        if (showDatePicker) {
+//            DatePickerDialog(
+//                currentDate = birthDate,
+//                onDateSelected = { birthDate = it },
+//                onDismiss = { showDatePicker = false }
+//            )
+//        }
         if (showDatePicker) {
             DatePickerDialog(
                 currentDate = birthDate,
-                onDateSelected = { birthDate = it },
+                onDateSelected = {
+                //    birthDate = it
+                    dataviewModel.editBirthday(it)
+
+/*                    val year = it.split("/").lastOrNull()?.toIntOrNull()
+                    if (year != null) {
+                        val age = Calendar.getInstance().get(Calendar.YEAR) - year
+                        dataviewModel.updatePlayerAge(age)
+                    }*/
+                },
                 onDismiss = { showDatePicker = false }
             )
         }
@@ -404,7 +429,8 @@ private fun EditTextDialog(
     currentValue: String,
     onValueChange: (String) -> Unit,
     onDismiss: () -> Unit,
-    placeholder: String
+    placeholder: String,
+    onSave: (String) -> Unit
 ) {
     var textValue by remember { mutableStateOf(currentValue) }
 
@@ -435,6 +461,7 @@ private fun EditTextDialog(
             TextButton(
                 onClick = {
                     onValueChange(textValue)
+                    onSave(textValue)
                     onDismiss()
                 },
                 colors = ButtonDefaults.textButtonColors(

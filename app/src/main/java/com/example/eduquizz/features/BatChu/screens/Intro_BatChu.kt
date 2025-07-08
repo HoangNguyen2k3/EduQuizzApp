@@ -51,21 +51,21 @@ fun IntroScreenBatChu(
     var isDataLoaded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
- /*       loadingViewModel.showLoading("Đang tải Quiz Game...", showProgress = true)
+        /*       loadingViewModel.showLoading("Đang tải Quiz Game...", showProgress = true)
 
-        loadingViewModel.updateProgress(0.2f, "Đang tải câu hỏi...")
-        delay(800)
+               loadingViewModel.updateProgress(0.2f, "Đang tải câu hỏi...")
+               delay(800)
 
-        loadingViewModel.updateProgress(0.5f, "Đang chuẩn bị nội dung...")
-        delay(800)
+               loadingViewModel.updateProgress(0.5f, "Đang chuẩn bị nội dung...")
+               delay(800)
 
-        loadingViewModel.updateProgress(0.8f, "Đang khởi tạo game...")
-        delay(600)
+               loadingViewModel.updateProgress(0.8f, "Đang khởi tạo game...")
+               delay(600)
 
-        loadingViewModel.updateProgress(1.0f, "Hoàn thành!")
-        delay(400)
+               loadingViewModel.updateProgress(1.0f, "Hoàn thành!")
+               delay(400)
 
-        loadingViewModel.hideLoading()*/
+               loadingViewModel.hideLoading()*/
         isDataLoaded = true
         isVisible = true
     }
@@ -121,10 +121,10 @@ fun IntroScreenBatChu(
                             animationSpec = tween(800, delayMillis = 1000, easing = FastOutSlowInEasing)
                         ) + fadeIn(animationSpec = tween(800, delayMillis = 1000))
                     ) {
-//                        PlayButton(
-//                            onClick = { navController.navigate(Routes.LevelBatChu) },
-//                            modifier = Modifier.padding(20.dp)
-//                        )
+                        PlayButton(
+                            onClick = { navController.navigate(Routes.LevelBatChu) },
+                            modifier = Modifier.padding(20.dp)
+                        )
                     }
                 }
             ) { paddingValues ->
@@ -265,7 +265,7 @@ private fun GameDescription() {
         )
     ) {
         Text(
-text = "Một bức hình, ngàn ý nghĩa! \"Đuổi hình bắt chữ\" – nơi trí thông minh lên tiếng, óc liên tưởng bật sáng và tiếng cười vang khắp mọi nơi!",
+            text = "Một bức hình, ngàn ý nghĩa! \"Đuổi hình bắt chữ\" – nơi trí thông minh lên tiếng, óc liên tưởng bật sáng và tiếng cười vang khắp mọi nơi!",
             style = MaterialTheme.typography.bodyLarge.copy(
                 fontSize = 16.sp,
                 lineHeight = 22.sp

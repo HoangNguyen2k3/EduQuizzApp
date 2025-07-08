@@ -26,7 +26,7 @@ class DataViewModel @Inject constructor(
     val numCorrectAllQuestions = userPrefs.numCorrectAllQuestionsFlow.asLiveData()
     val numCorrectAbove50Percent = userPrefs.numCorrectAbove50PercentFlow.asLiveData()
     val numCorrectBelow50Percent = userPrefs.numCorrectBelow50PercentFlow.asLiveData()
-
+    val birthDay = userPrefs.playerBirthdayFlow.asLiveData()
     // --- Cập nhật thông tin người chơi ---
     fun updateFirstTime(){
         viewModelScope.launch {
@@ -106,5 +106,9 @@ class DataViewModel @Inject constructor(
             userPrefs.addNumCorrectBelow50Percent(amount)
         }
     }
-
+    fun editBirthday(amount: String) {
+        viewModelScope.launch {
+            userPrefs.savePlayerBirthday(amount)
+        }
+    }
 }

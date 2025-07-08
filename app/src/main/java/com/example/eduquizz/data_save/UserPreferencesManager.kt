@@ -24,7 +24,10 @@ class UserPreferencesManager(private val context: Context) {
 
     val goldFlow: Flow<Int> = context.dataStore.data
         .map { it[UserPreferencesKeys.GOLD] ?: 0 }
-
+    val playerBirthdayFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[UserPreferencesKeys.BIRTHDAY] ?: "01/01/2000"
+        }
     val currentLevelFlow: Flow<Int> = context.dataStore.data
         .map { it[UserPreferencesKeys.CURRENT_LEVEL] ?: 1 }
 
@@ -148,5 +151,11 @@ class UserPreferencesManager(private val context: Context) {
         val current = numCorrectBelow50PercentFlow.first()
         saveNumCorrectBelow50Percent(current + amount)
     }
+    suspend fun savePlayerBirthday(birthday: String) {
+        context.dataStore.edit {
+            it[UserPreferencesKeys.BIRTHDAY] = birthday
+        }
+    }
+
 
 }

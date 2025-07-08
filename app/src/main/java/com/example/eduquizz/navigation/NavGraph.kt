@@ -180,7 +180,7 @@ fun NavGraph(
         composable(Routes.ENGLISH_GAMES_SCENE) {
             EnglishGamesScreen(
                 onBackClick = {
-                    navController.popBackStack()
+                    navController.navigate(Routes.MAIN_DANH)
                 },
                 onGameClick = { game ->
                     when (game.id) {
