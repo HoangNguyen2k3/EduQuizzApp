@@ -1,13 +1,18 @@
 package com.example.eduquizz.features.home.screens
 
 import android.content.res.Configuration
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.airbnb.lottie.compose.*
@@ -52,12 +57,35 @@ fun LoadingScreen(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            LottieAnimation(
-                composition = composition,
-                progress = { lottieProgress },
-                modifier = Modifier.size(animationSize.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+            ) {
+                LottieAnimation(
+                    composition = composition,
+                    progress = { lottieProgress },
+                    modifier = Modifier.size(animationSize.dp)
+                )
+            }
+
+            // Hình ảnh ở dưới cùng
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 32.dp)
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.loadingtext),
+                    contentDescription = "Banner Game",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .width(200.dp) // hoặc .fillMaxWidth(0.5f) tuỳ bạn
+                        .clip(RoundedCornerShape(16.dp))
+                )
+            }
         }
+
+
     } else {
         content()
     }

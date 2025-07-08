@@ -1,14 +1,15 @@
 package com.example.eduquizz.features.bubbleshot.screen
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,8 +20,6 @@ import androidx.navigation.NavHostController
 import com.example.eduquizz.features.bubbleshot.viewmodel.BubbleShot
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import android.app.Activity
-import android.content.pm.ActivityInfo
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,14 +38,33 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
+import com.example.eduquizz.data_save.AudioManager
+import androidx.compose.runtime.LaunchedEffect
+import com.example.eduquizz.navigation.Routes
 
 @Composable
 fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
-//    ForceLandscape()
     val answers = viewModel.answers
     val timer by viewModel.timer
     val question by viewModel.currentQuestion
     val score by viewModel.score
+    val isGameOver by viewModel.isGameOver
+
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        AudioManager.setBgmEnabled(true)
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            AudioManager.setBgmEnabled(false)
+        }
+    }
+
+    if (isGameOver) {
+        val context = LocalContext.current
+        Toast.makeText(context, "Đã hoàn thành tất cả câu hỏi!", Toast.LENGTH_SHORT).show()
+        navController.navigate("result/${viewModel.score.value}/${viewModel.totalQuestions.value}/${Routes.BUBBLE_SHOT_INTRO}/${Routes.BUBBLE_SHOT_INTRO}")
+    }
 
     Box(modifier = Modifier.fillMaxSize().background(
         Brush.verticalGradient(
@@ -82,15 +100,14 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
                 }
             }
             
-            // Timer Progress Bar
-            val progress = timer.toFloat() / 10f // Giả sử tổng thời gian là 10 giây
+            val progress = timer.toFloat() / 10f
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Spacer(modifier = Modifier.height(4.dp))
-                // Thanh tiến trình
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -109,7 +126,6 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Câu hỏi ở trên
             Text(
                 question.question,
                 fontSize = 24.sp,
@@ -122,7 +138,6 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
             
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Lưới bóng bay
             LazyVerticalGrid(
                 columns = GridCells.Fixed(4),
                 modifier = Modifier
@@ -138,7 +153,7 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
                     }
                     else {
                     val selectedAnswer = viewModel.selectedAnswer.value
-                    val isCorrect = viewModel.isCorrectAnswer.value
+                    //val isCorrect = viewModel.isCorrectAnswer.value
                     // Thêm hiệu ứng di chuyển lên xuống cho bóng
                     val infiniteTransition = rememberInfiniteTransition(label = "balloon-move")
                     val offsetY by infiniteTransition.animateFloat(
@@ -155,7 +170,10 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
                             .size(64.dp)
                             .offset(y = offsetY.dp)
                             .then(
-                                if (selectedAnswer == null) Modifier.clickable { viewModel.onAnswerSelected(idx) } else Modifier
+                                if (selectedAnswer == null) Modifier.clickable {
+                                    AudioManager.playClickSfx()
+                                    viewModel.onAnswerSelected(idx)
+                                } else Modifier
                             ),
                         contentAlignment = Alignment.Center
                     ) {
@@ -182,16 +200,16 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
                     //.height(100.dp)
             ) {
                 Image(
-                    painter = painterResource(R.drawable.gun),
+                    painter = painterResource(R.drawable.cannon),
                     contentDescription = "Cannon",
                     modifier = Modifier
-                        .size(200.dp)
-                        .align(Alignment.BottomEnd)
-                        //.rotate(270f)
-                        .offset(x = -30.dp)
+                        .size(180.dp)
+                        .align(Alignment.BottomCenter)
+                        .rotate(270f)
+                        .offset(x = -20.dp)
                 )
             }
-            //Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(30.dp))
         }
     }
 }
@@ -201,15 +219,3 @@ fun BubbleShotScreenPreview() {
     BubbleShotScreen(BubbleShot(), NavHostController(LocalContext.current))
 }
 
-@Composable
-fun ForceLandscape() {
-    val context = LocalContext.current
-    DisposableEffect(Unit) {
-        val activity = context as? Activity
-        val oldOrientation = activity?.requestedOrientation
-        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        onDispose {
-            activity?.requestedOrientation = oldOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        }
-    }
-}

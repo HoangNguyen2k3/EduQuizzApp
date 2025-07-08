@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,6 +35,7 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.eduquizz.R
 import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.navigation.Routes
+import com.example.eduquizz.data_save.AudioManager
 import com.example.quizapp.ui.theme.QuizAppTheme
 import kotlinx.coroutines.delay
 
@@ -89,6 +91,15 @@ fun ResultsScreen(
     }
     LaunchedEffect(Unit) {
         dataviewModel.addGold(coinsEarned)
+        dataviewModel.addTotalQuestions(totalQuestions)
+        dataviewModel.addCorrectAnsweredQuestions(correctAnswers)
+        if(correctAnswers==totalQuestions){
+            dataviewModel.addCorrectAllQuestions(1)
+        }else if(correctAnswers>totalQuestions/2){
+            dataviewModel.addCorrectAbove50Percent(1)
+        }else{
+            dataviewModel.addCorrectBelow50Percent(1)
+        }
     }
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -108,18 +119,27 @@ fun ResultsScreen(
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+
+//                Button(
+//                    onClick = {
+//                        AudioManager.playClickSfx()
+//                        // 🔁 Chơi lại: navigate lại đến màn quiz
+//                        navController.navigate(Routes.MAIN)
+//                    },
+//                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                 Text(
                     text = "🎯 Kết Quả",
                     fontSize = 40.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF1E88E5)
-                )
 
+                )
                 Card(
                     shape = RoundedCornerShape(20.dp),
                     elevation = CardDefaults.cardElevation(8.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
                     modifier = Modifier.fillMaxWidth()
+
                 ) {
                     Column(
                         modifier = Modifier
@@ -159,8 +179,16 @@ fun ResultsScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
 
+//                Button(
+//                    onClick = {
+//                        AudioManager.playClickSfx()
+//                        // 🔙 Quay lại: ví dụ về quay về màn hình chọn chế độ chơi
+//                        navController.navigate(Routes.INTRO)
+//                    },
+//                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+
+                Spacer(modifier = Modifier.height(24.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)

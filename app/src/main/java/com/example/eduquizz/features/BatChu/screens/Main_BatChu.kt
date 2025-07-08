@@ -13,16 +13,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.SubdirectoryArrowLeft
 import androidx.compose.material3.*
 import androidx.compose.material3.MaterialTheme
+import com.example.eduquizz.R
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -40,18 +37,22 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.eduquizz.data_save.DataViewModel
-import com.example.eduquizz.R
 import com.example.eduquizz.features.BatChu.model.DataBatChu
 import com.example.eduquizz.features.BatChu.viewmodel.ViewModelBatChu
-import com.example.eduquizz.features.quizzGame.screens.BottomHelperBar
-import com.example.eduquizz.features.quizzGame.screens.TimerProgressBar
-import com.example.quizapp.ui.theme.QuizAppTheme
+import com.example.eduquizz.features.home.screens.WithLoading
+import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.eduquizz.features.wordsearch.model.Cell
+import com.example.eduquizz.navigation.Routes
+import com.example.quizapp.ui.theme.QuizAppTheme
+import kotlinx.coroutines.delay
 import kotlin.math.sqrt
+import com.example.eduquizz.data_save.AudioManager
+import androidx.compose.runtime.DisposableEffect
 
 val CardBackground = Color(0xFFE3F2FD)
 val ButtonPrimary = Color(0xFF1976D2)
@@ -62,24 +63,29 @@ val SelectedCell = Color(0xFFBBDEFB)
 
 @Composable
 fun Main_BatChu(navController: NavController,
-                viewModelBatChu: ViewModelBatChu = androidx.lifecycle.viewmodel.compose.viewModel(),
-                dataviewModel: DataViewModel = hiltViewModel()
+                dataviewModel: DataViewModel = hiltViewModel(),
+                currentLevel: String ="",
+                loadingViewModel: LoadingViewModel = viewModel()
 ) {
-    LaunchedEffect(key1 = true) {
-        viewModelBatChu.Init(dataviewModel)
-    }
-    val context = LocalContext.current
-    var currentQuestionIndex by remember { mutableStateOf(0) }
-    val question = viewModelBatChu.sampleQuestions[currentQuestionIndex]
-    val answerLength = question.answer.length
+    val viewModelBatChu: ViewModelBatChu = hiltViewModel()
 
-    val selectedLetters = remember { mutableStateListOf<Char?>(*Array(answerLength) { null }) }
-    val usedIndices = remember { mutableStateListOf<Pair<Int, Char>>() }
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        AudioManager.setBgmEnabled(true)
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            AudioManager.setBgmEnabled(false)
+        }
+    }
+    var currentQuestionIndex by remember { mutableStateOf(0) }
+
+
 
     val gold by dataviewModel.gold.observeAsState(-1)
     val coins = viewModelBatChu.coins
     var showHintDialog by remember { mutableStateOf(false) }
-    var hintUsedForCurrentQuestion by remember { mutableStateOf(false) }
+    // var hintUsedForCurrentQuestion by remember { mutableStateOf(false) }
 
     // Reset coin ban đầu
     LaunchedEffect(gold) {
@@ -87,24 +93,82 @@ fun Main_BatChu(navController: NavController,
             coins.value = gold
         }
     }
+    val loadingState by loadingViewModel.loadingState.collectAsState()
+    var isVisible by remember { mutableStateOf(false) }
+    var isDataLoaded by remember { mutableStateOf(false) }
+    LaunchedEffect(key1 = true) {
+        viewModelBatChu.Init(dataviewModel)
+        viewModelBatChu.loadLevel(currentLevel)
 
-    // Reset khi đổi câu
-    LaunchedEffect(question) {
-        hintUsedForCurrentQuestion = false
-        selectedLetters.clear()
-        usedIndices.clear()
-        repeat(answerLength) {
-            selectedLetters.add(null)
-        }
+        loadingViewModel.showLoading("Đang tải Quiz Game...", showProgress = true)
+
+        loadingViewModel.updateProgress(0.2f, "Đang tải câu hỏi...")
+        delay(600)
+
+        loadingViewModel.updateProgress(0.5f, "Đang chuẩn bị nội dung...")
+        delay(600)
+
+        loadingViewModel.updateProgress(0.8f, "Đang khởi tạo game...")
+        delay(400)
+
+        loadingViewModel.updateProgress(1.0f, "Hoàn thành!")
+        delay(200)
+
+        loadingViewModel.hideLoading()
+        isDataLoaded = true
+        delay(100)
+        isVisible = true
     }
+    WithLoading(
+        isLoading = loadingState.isLoading,
+        isDarkTheme = false,
+        backgroundColors = listOf(
+            Color(0xFF096A5A),
+            Color(0xFF44A08D),
+            Color(0xFF4ECDC4),
+            MaterialTheme.colorScheme.background
+        )
+    ){
+
+    }
+    if(isDataLoaded == false){
+        return
+    }
+    if (viewModelBatChu.questionList.isEmpty()) {
+        return
+    }
+    val question = viewModelBatChu.questionList[currentQuestionIndex]
+    val answerLength = question.answer.length
+
+    //Dữ liệu đưa vào màn hình kết quả
+    val num_question = viewModelBatChu.questionList.size;
+    var num_question_correct by remember { mutableStateOf(0) }
+
+    val selectedLetters = remember(question) {
+        mutableStateListOf<Char?>(*Array(question.answer.length) { null })
+    }
+
+    val usedIndices = remember(question) { mutableStateListOf<Pair<Int, Char>>() }
+
+    var hintUsedForCurrentQuestion by remember(question) { mutableStateOf(false) }
+
+    /*    // Reset khi đổi câu
+        LaunchedEffect(question) {
+            hintUsedForCurrentQuestion = false
+            selectedLetters.clear()
+            usedIndices.clear()
+            repeat(answerLength) {
+                selectedLetters.add(null)
+            }
+        }*/
 
     // Nội dung UI
     Box(modifier = Modifier.fillMaxSize().background(
         Brush.verticalGradient(
             colors = listOf(
-                Color(0xFFFF6B9D),
-                Color(0xFFFF8E9E),
-                Color(0xFFFFB4A2),
+                Color(0xFFFF99BA),
+                Color(0xFFFFB8C2),
+                Color(0xFFFDCEC6),
                 MaterialTheme.colorScheme.background
             )
         )
@@ -125,52 +189,66 @@ fun Main_BatChu(navController: NavController,
                         showHintDialog = true
                     },
                     onSkip = {
-                        if (currentQuestionIndex < viewModelBatChu.sampleQuestions.lastIndex) {
+                        if (currentQuestionIndex < viewModelBatChu.questionList.lastIndex) {
                             currentQuestionIndex++
                         } else {
                             Toast.makeText(context, "Đã hoàn thành tất cả câu hỏi!", Toast.LENGTH_SHORT).show()
+                            navController.navigate("result/$num_question_correct/$num_question/${Routes.LevelBatChu}/${Routes.IntroBatChu}")
+                        }
+                    },
+                    onAutoSuggest = {
+                        if (selectedLetters.contains(null)) {
+                            viewModelBatChu.autoSuggestLetter(
+                                selectedLetters = selectedLetters,
+                                usedIndices = usedIndices,
+                                question = question
+                            )
+                            viewModelBatChu.spendCoins(8)
+                            hintUsedForCurrentQuestion = true
                         }
                     }
                 )
             },
+            topBar = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = {
+                            navController.popBackStack()
+                        },
+                        modifier = Modifier
+                            .background(
+                                Color.White.copy(alpha = 0.2f),
+                                RoundedCornerShape(12.dp)
+                            )
+                            .size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Quay lại",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Text(
+                        text = "Câu ${currentQuestionIndex + 1} / ${viewModelBatChu.questionList.size}",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            },
             modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = {
-                        // Xử lý back ở đây, ví dụ:
-                        navController.popBackStack()// nếu bạn dùng Navigation Compose
-                    },
-                    modifier = Modifier
-                        .background(
-                            Color.White.copy(alpha = 0.2f),
-                            RoundedCornerShape(12.dp)
-                        )
-                        .size(48.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Quay lại",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.weight(1f)) // đẩy text ra giữa
-
-                Text(
-                    text = "Câu ${currentQuestionIndex + 1} / ${viewModelBatChu.sampleQuestions.size}",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-
-                Spacer(modifier = Modifier.weight(1f)) // giữ khoảng cách cân bằng bên phải
-            }
             Spacer(modifier = Modifier.height(10.dp))
             Column(
                 modifier = Modifier
@@ -178,9 +256,17 @@ fun Main_BatChu(navController: NavController,
                     .padding(innerPadding),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(30.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = question.question ?: "", // nếu bạn có title câu hỏi
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Black,
+                    modifier = Modifier.padding(horizontal = 10.dp)
+                )
+                Spacer(modifier = Modifier.height(9.dp))
                 ImageComponent(question)
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(15.dp))
 
                 FlowRow(
                     horizontalArrangement = Arrangement.Center,
@@ -229,30 +315,83 @@ fun Main_BatChu(navController: NavController,
                     }
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(7.dp))
 
                 val userAnswer = selectedLetters.joinToString("") { it?.toString() ?: "" }
                 if (userAnswer.length == answerLength) {
-                    Text(
-                        text = if (userAnswer == question.answer) "✅ ĐÚNG RỒI!" else "❌ SAI RỒI!",
-                        color = if (userAnswer == question.answer) Color(0xFF2E7D32) else Color.Red,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.padding(vertical = 12.dp)
+                        ) {
+                            Text(
+                                text = if (userAnswer == question.answer) "" else "❌ SAI RỒI!",
+                                color = if (userAnswer == question.answer) Color(0xFF2E7D32) else Color.Red,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            var showCorrectDialog by remember { mutableStateOf(false) }
 
-                    if (userAnswer == question.answer) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Button(onClick = {
-                            if (currentQuestionIndex < viewModelBatChu.sampleQuestions.lastIndex) {
-                                currentQuestionIndex++
-                            } else {
-                                Toast.makeText(context, "Đã hoàn thành tất cả câu hỏi!", Toast.LENGTH_SHORT).show()
+                            val userAnswer = selectedLetters.joinToString("") { it?.toString() ?: "" }
+
+// Khi trả lời đúng, bật Dialog
+                            if (userAnswer.length == answerLength && userAnswer == question.answer) {
+                                LaunchedEffect(userAnswer) {
+                                    showCorrectDialog = true
+                                }
                             }
-                        }) {
-                            Text("Next")
+
+// Hiển thị Dialog
+                            if (showCorrectDialog) {
+                                AlertDialog(
+                                    onDismissRequest = { /* Không cho tắt ngoài */ },
+                                    title = {
+                                        Text("🎉 Đúng rồi!")
+                                    },
+                                    text = {
+                                        Text("Bạn đã trả lời đúng câu hỏi. Nhấn Next để tiếp tục.")
+                                    },
+                                    confirmButton = {
+                                        TextButton(onClick = {
+                                            showCorrectDialog = false
+                                            if (currentQuestionIndex < viewModelBatChu.questionList.lastIndex) {
+                                                num_question_correct++
+                                                currentQuestionIndex++
+                                            } else {
+                                                num_question_correct++
+                                                Toast.makeText(context, "Đã hoàn thành tất cả câu hỏi!", Toast.LENGTH_SHORT).show()
+                                                navController.navigate("result/$num_question_correct/$num_question/${Routes.LevelBatChu}/${Routes.IntroBatChu}")
+                                            }
+                                        }) {
+                                            Text("Next")
+                                        }
+                                    }
+                                )
+                            }
+                            /*                            if (userAnswer == question.answer) {
+                                                            Spacer(modifier = Modifier.width(16.dp)) // tạo khoảng cách ngang giữa text và nút
+
+                                                            Button(
+                                                                onClick = {
+                                                                    if (currentQuestionIndex < viewModelBatChu.questionList.lastIndex) {
+                                                                        num_question_correct++
+                                                                        currentQuestionIndex++
+                                                                    } else {
+                                                                        num_question_correct++
+                                                                        Toast.makeText(context, "Đã hoàn thành tất cả câu hỏi!", Toast.LENGTH_SHORT).show()
+                                                                        navController.navigate("result/$num_question_correct/$num_question/${Routes.LevelBatChu}/${Routes.IntroBatChu}")
+                                                                    }
+                                                                },
+                                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                                                            ) {
+                                                                Text("Next", color = Color.White)
+                                                            }
+                                                        }*/
                         }
                     }
                 }
+
             }
         }
     }
@@ -322,7 +461,10 @@ fun ModernGridCell(cell: Cell, onCellSelected: () -> Unit) {
             .scale(scale)
             .clip(RoundedCornerShape(6.dp))
             .background(backgroundColor)
-            .clickable(onClick = onCellSelected)
+            .clickable(onClick = {
+                AudioManager.playClickSfx()
+                onCellSelected()
+            })
     ) {
         Text(text = cell.char.toString(), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
     }
@@ -336,7 +478,8 @@ fun ModernWordGrid(
 ) {
     val gridSize = sqrt(grid.size.toFloat()).toInt()
     LazyVerticalGrid(
-        columns = GridCells.Fixed(gridSize),
+        //columns = GridCells.Fixed(gridSize),
+        columns = GridCells.Fixed(4),
         modifier = Modifier
             .fillMaxWidth()
             .height(240.dp)
@@ -350,7 +493,10 @@ fun ModernWordGrid(
             } else {
                 ModernGridCell(
                     cell = cell,
-                    onCellSelected = { onCellSelected(cell) }
+                    onCellSelected = {
+                        AudioManager.playClickSfx()
+                        onCellSelected(cell)
+                    }
                 )
             }
         }
@@ -361,7 +507,8 @@ fun Booster(
     modifier: Modifier = Modifier,
     coins: Int,
     onUseHint: () -> Unit,
-    onSkip: () -> Unit
+    onSkip: () -> Unit,
+    onAutoSuggest: () -> Unit
 ) {
     Column(
         modifier = modifier,
@@ -369,7 +516,7 @@ fun Booster(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Image(
-                painter = painterResource(id = R.drawable.coinimg),
+                painter = painterResource(id = R.drawable.coinimg ),
                 contentDescription = "Coin",
                 modifier = Modifier.size(24.dp)
             )
@@ -385,18 +532,18 @@ fun Booster(
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 32.dp)
+                .padding(horizontal = 16.dp)
         ) {
             Button(
                 onClick = onUseHint,
                 colors = ButtonDefaults.buttonColors(containerColor = ButtonPrimary),
                 modifier = Modifier.weight(1f)
             ) {
-                Text("Booster Hint")
+                Text("Xem gợi ý (5💰)")
             }
 
             Button(
@@ -406,6 +553,18 @@ fun Booster(
             ) {
                 Text("Bỏ qua")
             }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Button(
+            onClick = onAutoSuggest,
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+        ) {
+            Text("Gợi ý 1 chữ đúng (8💰)")
         }
     }
 }

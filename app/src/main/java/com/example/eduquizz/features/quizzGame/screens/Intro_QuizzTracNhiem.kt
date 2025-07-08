@@ -39,6 +39,7 @@ import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.eduquizz.navigation.Routes
 import com.example.quizapp.ui.theme.QuizAppTheme
 import kotlinx.coroutines.delay
+import com.example.eduquizz.data_save.AudioManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +53,7 @@ fun IntroScreen(
     var isDataLoaded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        loadingViewModel.showLoading("Đang tải Quiz Game...", showProgress = true)
+/*        loadingViewModel.showLoading("Đang tải Quiz Game...", showProgress = true)
 
         loadingViewModel.updateProgress(0.2f, "Đang tải câu hỏi...")
         delay(800)
@@ -66,9 +67,8 @@ fun IntroScreen(
         loadingViewModel.updateProgress(1.0f, "Hoàn thành!")
         delay(400)
 
-        loadingViewModel.hideLoading()
+        loadingViewModel.hideLoading()*/
         isDataLoaded = true
-        delay(300)
         isVisible = true
     }
 
@@ -125,7 +125,10 @@ fun IntroScreen(
                     ) {
                         PlayButton(
                            // onClick = { navController.navigate("main/levelEasy") },
-                            onClick = { navController.navigate(Routes.QUIZ_LEVEL) },
+                            onClick = {
+                                AudioManager.playClickSfx()
+                                navController.navigate(Routes.QUIZ_LEVEL)
+                            },
                             modifier = Modifier.padding(20.dp)
                         )
                     }
@@ -203,7 +206,7 @@ fun IntroScreen(
                                 )
                             ) + fadeIn(animationSpec = tween(800, delayMillis = 600))
                         ) {
-                            SampleImagesSection(sampleImages = listOf(R.drawable.image, R.drawable.image, R.drawable.image))
+                            SampleImagesSection(sampleImages = listOf(R.drawable.quiz1, R.drawable.quiz2, R.drawable.quiz3,R.drawable.quiz4,R.drawable.quiz5))
                         }
                         Spacer(modifier = Modifier.height(32.dp))
                     }
@@ -312,7 +315,7 @@ private fun SampleImagesSection(sampleImages: List<Int>) {
                     Image(
                         painter = painterResource(id = image),
                         contentDescription = "Ảnh mẫu",
-                        contentScale = ContentScale.Crop,
+                        contentScale = ContentScale.Fit,
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(RoundedCornerShape(16.dp))

@@ -30,6 +30,7 @@ import com.example.eduquizz.data.local.UserViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.example.eduquizz.R
 import com.example.eduquizz.data.models.Subject
+import com.example.eduquizz.features.ThongKe.ThongKe
 import com.example.quizapp.ui.theme.QuizAppTheme
 
 @Composable
@@ -148,7 +149,8 @@ fun MainScreen(
                     }
 
                     1 -> {
-                        CoursesScreen()
+                        //CoursesScreen()
+                        ThongKe()
                     }
                     2 -> {
                         SettingScreen()
@@ -214,7 +216,7 @@ private fun BottomNavigationBar(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HeaderSection(dataviewModel: DataViewModel, userViewModel: UserViewModel) {
-    val userName by userViewModel.userName.collectAsState()
+    val userName by dataviewModel.playerName.observeAsState("")
 
     TopAppBar(
         title = {},
@@ -254,6 +256,7 @@ private fun HeaderSection(dataviewModel: DataViewModel, userViewModel: UserViewM
                     )
                     Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.spacing_small)))
                     Text(
+                        //text = if (userName.isNotEmpty()) userName else "User",
                         text = if (userName.isNotEmpty()) userName else "User",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
@@ -289,7 +292,7 @@ private fun HeaderSection(dataviewModel: DataViewModel, userViewModel: UserViewM
                         modifier = Modifier.size(30.dp)
                     )
                     Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.spacing_small)))
-                    //dataviewModel.updateGold(1000)
+                    dataviewModel.updateGold(1000)
                     val gold by dataviewModel.gold.observeAsState(initial = 0)
                     Text(
                         text = "$gold",

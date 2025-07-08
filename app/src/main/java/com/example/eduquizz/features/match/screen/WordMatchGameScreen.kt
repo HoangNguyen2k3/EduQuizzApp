@@ -34,6 +34,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.navigation.Routes
 import kotlinx.coroutines.delay
+import com.example.eduquizz.data_save.AudioManager
+import androidx.compose.runtime.DisposableEffect
 
 @Composable
 fun WordMatchGameScreen(
@@ -57,33 +59,21 @@ fun WordMatchGameScreen(
     val correctIndices = viewModel.correctIndices
     val wrongIndices = viewModel.wrongIndices
 
+
+
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        AudioManager.setBgmEnabled(true)
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            AudioManager.setBgmEnabled(false)
+        }
+    }
+
     LaunchedEffect(key1 = true) {
         viewModel.Init(dataviewModel)
     }
-
-    // Loading Dialog
-    if (showLoadingDialog) {
-        AlertDialog(
-            onDismissRequest = { },
-            title = { Text("Đang tải dữ liệu...") },
-            text = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text("Vui lòng đợi...")
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { viewModel.retryLoadData() }) {
-                    Text("Thử lại")
-                }
-            }
-        )
-    }
-
     Column(modifier = Modifier.fillMaxSize()) {
         IconButton(
             onClick = { navController.popBackStack() },
@@ -178,9 +168,9 @@ fun WordMatchGameScreen(
                             alpha = if (card.isMatched) 0f else 1f
                         )
                         .background(backgroundColor)
-                        .clickable(
-                            enabled = !showResult && !isSelected && !isCorrect && !isWrong && !card.isMatched && !showLoadingDialog
-                        ) {
+
+                        .clickable(enabled = !showResult && !isSelected && !isCorrect && !isWrong && !card.isMatched) {
+                            AudioManager.playClickSfx()
                             viewModel.onCardClick(idx)
                         },
                     shape = RoundedCornerShape(16.dp),
@@ -207,16 +197,22 @@ fun WordMatchGameScreen(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             Button(
-                onClick = { viewModel.useHint() },
-                enabled = gold >= 20 && !showResult && !showLoadingDialog,
+                onClick = {
+                    AudioManager.playClickSfx()
+                    viewModel.useHint()
+                },
+                enabled = gold >= 20 && !showResult,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB0A9F8)),
                 modifier = Modifier.weight(1f).padding(end = 8.dp)
             ) {
                 Text("Hint (-20)", color = Color.White)
             }
             Button(
-                onClick = { viewModel.skipLevel() },
-                enabled = gold >= 100 && !showResult && !showLoadingDialog,
+                onClick = {
+                    AudioManager.playClickSfx()
+                    viewModel.skipLevel()
+                },
+                enabled = gold >= 100 && !showResult,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF7C873)),
                 modifier = Modifier.weight(1f).padding(start = 8.dp)
             ) {

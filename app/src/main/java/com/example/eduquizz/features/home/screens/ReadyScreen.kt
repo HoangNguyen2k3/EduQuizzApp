@@ -37,18 +37,28 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.eduquizz.R
 import com.example.eduquizz.data.local.UserViewModel
+import com.example.eduquizz.data_save.DataViewModel
 import com.example.quizapp.ui.theme.QuizAppTheme
+
+
+import com.google.firebase.database.FirebaseDatabase
+
+fun saveUserNameToFirebase(userName: String) {
+    val database = FirebaseDatabase.getInstance()
+    val usersRef = database.getReference("users")
+
+    usersRef.push().setValue(userName)
+}
 
 @Composable
 fun ReadyScreen(
     onStartClick: (String) -> Unit = {},
     modifier: Modifier = Modifier,
-    userViewModel: UserViewModel = hiltViewModel()
+    userViewModel: UserViewModel = hiltViewModel(),
+    dataViewModel: DataViewModel = hiltViewModel()
 ) {
     var userName by remember { mutableStateOf("") }
     var isError by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
 
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.welcome_learn))
@@ -84,20 +94,9 @@ fun ReadyScreen(
         label = "floating"
     )
 
-    // Hàm xử lý khi nhấn Start
-    fun handleStartClick() {
-        if (userName.isNotBlank()) {
-            isLoading = true
-            isError = false
-            userViewModel.setUserName(userName.trim())
-            isLoading = false
-            onStartClick(userName.trim())
-        } else {
-            isError = true
-            errorMessage = "Vui lòng nhập tên của bạn"
-        }
+    LaunchedEffect(Unit) {
+        dataViewModel.updateFirstTime()
     }
-
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -122,7 +121,6 @@ fun ReadyScreen(
                 )
                 .blur(50.dp)
         )
-
         Box(
             modifier = Modifier
                 .size(150.dp)
@@ -208,7 +206,8 @@ fun ReadyScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             Card(
-                modifier = modifier
+
+                modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp),
                 colors = CardDefaults.cardColors(
@@ -237,7 +236,6 @@ fun ReadyScreen(
                                 userName = it
                                 if (isError && it.isNotBlank()) {
                                     isError = false
-                                    errorMessage = ""
                                 }
                             },
                             label = {
@@ -256,9 +254,8 @@ fun ReadyScreen(
                             supportingText = if (isError) {
                                 {
                                     Text(
-                                        errorMessage.ifEmpty { "Please enter your name" },
-                                        fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.error
+                                        "Please enter your name",
+                                        fontWeight = FontWeight.Medium
                                     )
                                 }
                             } else null,
@@ -294,11 +291,17 @@ fun ReadyScreen(
                             keyboardActions = KeyboardActions(
                                 onDone = {
                                     keyboardController?.hide()
-                                    handleStartClick()
+                                    if (userName.isNotBlank()) {
+                                        // Lưu tên người dùng vào UserViewModel
+                                        userViewModel.setUserName(userName.trim())
+                                        onStartClick(userName.trim())
+                                        dataViewModel.updatePlayerName(userName.trim())
+                                    } else {
+                                        isError = true
+                                    }
                                 }
                             ),
                             singleLine = true,
-                            enabled = !isLoading,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(20.dp),
@@ -315,8 +318,18 @@ fun ReadyScreen(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     Button(
-                        onClick = { handleStartClick() },
-                        enabled = !isLoading,
+                        onClick = {
+                            if (userName.isNotBlank()) {
+                                dataViewModel.updateFirstTime()
+                                saveUserNameToFirebase(userName.trim())
+                                // Lưu tên người dùng vào UserViewModel
+                                userViewModel.setUserName(userName.trim())
+                                onStartClick(userName.trim())
+                                dataViewModel.updatePlayerName(userName.trim())
+                            } else {
+                                isError = true
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(60.dp)
@@ -327,8 +340,7 @@ fun ReadyScreen(
                                 spotColor = colorResource(id = R.color.english_coral)
                             ),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Transparent,
-                            disabledContainerColor = Color.Transparent
+                            containerColor = Color.Transparent
                         ),
                         shape = RoundedCornerShape(20.dp),
                         contentPadding = PaddingValues(0.dp)
@@ -339,41 +351,31 @@ fun ReadyScreen(
                                 .background(
                                     Brush.horizontalGradient(
                                         colors = listOf(
-                                            colorResource(id = R.color.english_coral)
-                                                .copy(alpha = if (isLoading) 0.6f else 1f),
-                                            colorResource(id = R.color.english_coral)
-                                                .copy(alpha = if (isLoading) 0.4f else 0.8f)
+                                            colorResource(id = R.color.english_coral),
+                                            colorResource(id = R.color.english_coral).copy(alpha = 0.8f)
                                         )
                                     ),
                                     RoundedCornerShape(20.dp)
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (isLoading) {
-                                CircularProgressIndicator(
-                                    color = Color.White,
-                                    modifier = Modifier.size(24.dp),
-                                    strokeWidth = 2.dp
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PlayArrow,
+                                    contentDescription = "Start",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
                                 )
-                            } else {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.PlayArrow,
-                                        contentDescription = "Start",
-                                        tint = Color.White,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "Let's Start Playing!",
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
-                                    )
-                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Let's Start Playing!",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
                             }
                         }
                     }
