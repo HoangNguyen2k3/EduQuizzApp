@@ -17,8 +17,11 @@ data class WordSearchData(
     val wordCount: Int = 0,
     val words: List<String> = emptyList()
 )
+
 @Singleton
-class WordSearchRepository @Inject constructor(@ApplicationContext private val context: Context) {
+class WordSearchRepository @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
     private val database = FirebaseDatabase.getInstance().getReference("English/WordSearch")
 
     suspend fun getWordsByTopic(topicId: String): Result<WordSearchData> {
@@ -39,12 +42,11 @@ class WordSearchRepository @Inject constructor(@ApplicationContext private val c
         }
     }
 
-    //Lưu state khi hoàn thành 1 chủ để
-    suspend fun saveTopicCompletion(topicId: String, isCompleted: Boolean): Result<Unit> {
+    suspend fun saveTopicCompletion(userName: String, topicId: String, isCompleted: Boolean): Result<Unit> {
         return try {
             val sharedPreferences = context.getSharedPreferences("word_search_prefs", Context.MODE_PRIVATE)
             sharedPreferences.edit()
-                .putBoolean("topic_${topicId}_completed", isCompleted)
+                .putBoolean("user_${userName}_topic_${topicId}_completed", isCompleted)
                 .apply()
             Result.success(Unit)
         } catch (e: Exception) {
@@ -52,62 +54,29 @@ class WordSearchRepository @Inject constructor(@ApplicationContext private val c
         }
     }
 
-    // lấy state hoàn thành của topic
-    suspend fun getTopicCompletion(topicId: String): Result<Boolean> {
+    suspend fun getTopicCompletion(userName: String, topicId: String): Result<Boolean> {
         return try {
             val sharedPreferences = context.getSharedPreferences("word_search_prefs", Context.MODE_PRIVATE)
-            val isCompleted = sharedPreferences.getBoolean("topic_${topicId}_completed", false)
+            val isCompleted = sharedPreferences.getBoolean("user_${userName}_topic_${topicId}_completed", false)
             Result.success(isCompleted)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    suspend fun getAllTopicCompletions(): Result<Map<String, Boolean>> {
+    suspend fun getAllTopicCompletions(userName: String): Result<Map<String, Boolean>> {
         return try {
             val sharedPreferences = context.getSharedPreferences("word_search_prefs", Context.MODE_PRIVATE)
             val completions = mutableMapOf<String, Boolean>()
-
-            // Danh sách topics cố định
             val topics = listOf("Travel", "FunAndGames", "StudyWork")
             topics.forEach { topicId ->
-                completions[topicId] = sharedPreferences.getBoolean("topic_${topicId}_completed", false)
+                completions[topicId] = sharedPreferences.getBoolean("user_${userName}_topic_${topicId}_completed", false)
             }
-
             Result.success(completions)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
-
-//    suspend fun getAllTopics(): Result<List<TopicData>> {
-//        return try {
-//            val snapshot = firestore
-//                .collection("WordSearch")
-//                .get()
-//                .await()
-//
-//            val topics = snapshot.documents.mapNotNull { doc ->
-//                try {
-//                    val data = doc.toObject(WordSearchData::class.java)
-//                    data?.let {
-//                        TopicData(
-//                            id = doc.id,
-//                            title = it.title,
-//                            difficulty = it.difficulty,
-//                            wordCount = it.wordCount
-//                        )
-//                    }
-//                } catch (e: Exception) {
-//                    null
-//                }
-//            }
-//
-//            Result.success(topics)
-//        } catch (e: Exception) {
-//            Result.failure(e)
-//        }
-//    }
 }
 
 data class TopicData(

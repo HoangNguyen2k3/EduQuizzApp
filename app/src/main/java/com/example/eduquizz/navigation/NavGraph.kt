@@ -20,7 +20,6 @@ import com.example.eduquizz.features.quizzGame.screens.ResultsScreen
 import com.example.eduquizz.features.quizzGame.viewmodel.QuestionViewModel
 import com.example.eduquizz.features.match.screen.GameDescriptionScreen
 import com.example.eduquizz.features.match.screen.WordMatchGameScreen
-
 import com.example.eduquizz.features.home.english.EnglishGamesScreen
 import com.example.eduquizz.features.home.screens.SettingScreen
 import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
@@ -30,10 +29,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.MainActivity
 import com.example.eduquizz.features.BatChu.screens.Main_BatChu
-import com.example.eduquizz.navigation.Routes.MAIN
+import com.example.eduquizz.navigation.Routes.MAIN_DANH
 import com.example.quizapp.ui.splash.SplashScreen
 import com.example.eduquizz.features.wordsearch.screens.IntroductionScreen
 import com.example.eduquizz.features.wordsearch.screens.WordSearchGame
+import com.example.eduquizz.features.wordsearch.screens.CompletionScreen
 import com.example.wordsearch.ui.theme.WordSearchGameTheme
 import com.example.eduquizz.features.bubbleshot.screen.BubbleShotScreen
 import com.example.eduquizz.features.bubbleshot.screen.BubbleShotDescriptionScreen
@@ -45,28 +45,22 @@ import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
 import com.example.eduquizz.data.local.UserViewModel
 
 object Routes {
-    //Hoang
     const val MAIN = "main"
     const val RESULT = "result"
     const val INTRO = "intro"
     const val MAIN_ROUTE = "main/{level}"
     const val QUIZ_LEVEL = "quiz_level"
-    //Danh
     const val MAIN_DANH = "main_danh"
     const val GAME_SCENE = "games_scene_danh"
     const val INTRO_WORD_SEARCH = "intro_word_search"
     const val GAME_WORD_SEARCH = "game_word_search"
-    //Thong
     const val GAME_THONG = "game_thong"
     const val SETTINGS = "settings"
     const val INTRO_THONG = "game_intro_thong"
-    // Bubble Shot
     const val BUBBLE_SHOT = "bubble_shot"
     const val BUBBLE_SHOT_INTRO = "bubble_shot_intro"
-    //Splash
     const val SPLASH = "splash"
-    const val READY ="ready"
-    //BatChu
+    const val READY = "ready"
     const val BatChu = "batchu"
 }
 
@@ -116,9 +110,7 @@ fun NavGraph(
             )
         }
 
-        composable( route = "main/{level}",
-            arguments = listOf(navArgument("level") { type = NavType.StringType })) {
-                backStackEntry ->
+        composable(route = "main/{level}", arguments = listOf(navArgument("level") { type = NavType.StringType })) { backStackEntry ->
             val level = backStackEntry.arguments?.getString("level") ?: ""
             val questionViewModel: QuestionViewModel = hiltViewModel()
             MainView(
@@ -137,24 +129,19 @@ fun NavGraph(
                 )
             }
         }
-        composable(
-            "result/{correct}/{total}",
-            arguments = listOf(
-                navArgument("correct") { type = NavType.IntType },
-                navArgument("total") { type = NavType.IntType },
-            )
-        ) { backStackEntry ->
+
+        composable("result/{correct}/{total}", arguments = listOf(
+            navArgument("correct") { type = NavType.IntType },
+            navArgument("total") { type = NavType.IntType }
+        )) { backStackEntry ->
             val correct = backStackEntry.arguments?.getInt("correct") ?: 0
             val total = backStackEntry.arguments?.getInt("total") ?: 0
-
             ResultsScreen(navController, correctAnswers = correct, totalQuestions = total)
         }
 
         composable(Routes.GAME_SCENE) {
             EnglishGamesScreen(
-                onBackClick = {
-                    navController.popBackStack()
-                },
+                onBackClick = { navController.popBackStack() },
                 onGameClick = { game ->
                     when (game.id) {
                         "word_find" -> navController.navigate(Routes.INTRO_WORD_SEARCH)
@@ -166,6 +153,7 @@ fun NavGraph(
                 }
             )
         }
+
         composable(Routes.BatChu) {
             Main_BatChu(navController = navController)
         }
@@ -181,12 +169,14 @@ fun NavGraph(
                         "level_image" -> navController.navigate("main/LevelImage")
                     }
                 }
-                )
+            )
         }
+
         composable(Routes.GAME_THONG) {
             val gameViewModel: WordMatchGame = hiltViewModel()
             WordMatchGameScreen(viewModel = gameViewModel, navController = navController)
         }
+
         composable(Routes.SETTINGS) {
             SettingScreen()
         }
@@ -198,16 +188,13 @@ fun NavGraph(
                 subject = "English"
             )
         }
+
         composable(Routes.INTRO_WORD_SEARCH) {
             val loadingViewModel: LoadingViewModel = hiltViewModel()
             WordSearchGameTheme {
                 IntroductionScreen(
-                    onPlayClicked = {
-                        navController.navigate("topic_selection")
-                    },
-                    onBackPressed = {
-                        navController.popBackStack()
-                    },
+                    onPlayClicked = { navController.navigate("topic_selection") },
+                    onBackPressed = { navController.popBackStack() },
                     showContinueButton = false,
                     loadingViewModel = loadingViewModel
                 )
@@ -217,28 +204,59 @@ fun NavGraph(
         composable("topic_selection") {
             val loadingViewModel: LoadingViewModel = hiltViewModel()
             TopicSelectionScreen(
-                onTopicSelected = { topicId ->
-                    navController.navigate("word_search_game/$topicId")
-                },
+                onTopicSelected = { topicId -> navController.navigate("word_search_game/$topicId") },
                 onBackPressed = { navController.popBackStack() },
-                loadingViewModel = loadingViewModel
+            )
+        }
+
+        composable(route = "word_search_game/{topicId}", arguments = listOf(navArgument("topicId") { type = NavType.StringType })) { backStackEntry ->
+            val topicId = backStackEntry.arguments?.getString("topicId") ?: "Travel"
+            val viewModel: WordSearchViewModel = hiltViewModel()
+            LaunchedEffect(topicId) {
+                viewModel.loadWordsFromFirebase(topicId)
+            }
+            WordSearchGame(
+                topicId = topicId,
+                viewModel = viewModel,
+                onBackToIntroduction = { navController.popBackStack() },
+                navController = navController
             )
         }
 
         composable(
-            route = "word_search_game/{topicId}",
-            arguments = listOf(navArgument("topicId") { type = NavType.StringType })
+            route = "completion/{topicId}/{totalWords}/{timeSpent}/{coinsEarned}",
+            arguments = listOf(
+                navArgument("topicId") { type = NavType.StringType },
+                navArgument("totalWords") { type = NavType.IntType },
+                navArgument("timeSpent") { type = NavType.StringType },
+                navArgument("coinsEarned") { type = NavType.IntType }
+            )
         ) { backStackEntry ->
-            val topicId = backStackEntry.arguments?.getString("topicId") ?: "Travel"
-            val viewModel: WordSearchViewModel = hiltViewModel()
+            val topicId = backStackEntry.arguments?.getString("topicId") ?: ""
+            val totalWords = backStackEntry.arguments?.getInt("totalWords") ?: 0
+            val timeSpent = backStackEntry.arguments?.getString("timeSpent") ?: "00:00"
+            val coinsEarned = backStackEntry.arguments?.getInt("coinsEarned") ?: 50
 
-            LaunchedEffect(topicId) {
-                viewModel.loadWordsFromFirebase(topicId)
-            }
-
-            WordSearchGame(
-                viewModel = viewModel,
-                onBackToIntroduction = { navController.popBackStack() }
+            CompletionScreen(
+                topicName = topicId,
+                totalWords = totalWords,
+                timeSpent = timeSpent,
+                coinsEarned = coinsEarned,
+                onPlayAgain = {
+                    navController.navigate("word_search_game/$topicId") {
+                        popUpTo("completion/$topicId/$totalWords/$timeSpent/$coinsEarned") { inclusive = true }
+                    }
+                },
+                onBackToTopics = {
+                    navController.navigate("topic_selection") {
+                        popUpTo("completion/$topicId/$totalWords/$timeSpent/$coinsEarned") { inclusive = true }
+                    }
+                },
+                onHome = {
+                    navController.navigate(Routes.MAIN_DANH) {
+                        popUpTo("completion/$topicId/$totalWords/$timeSpent/$coinsEarned") { inclusive = true }
+                    }
+                }
             )
         }
 
@@ -249,13 +267,14 @@ fun NavGraph(
                 subject = "BubbleShot"
             )
         }
+
         composable(Routes.BUBBLE_SHOT) {
             val viewModel: BubbleShot = hiltViewModel()
             BubbleShotScreen(viewModel = viewModel, navController = navController)
-
         }
+
         composable(Routes.GAME_WORD_SEARCH) {
-            WordSearchGame()
+            WordSearchGame(navController = navController)
         }
     }
 }

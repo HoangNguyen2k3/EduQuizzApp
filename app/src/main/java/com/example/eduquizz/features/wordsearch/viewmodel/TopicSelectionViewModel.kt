@@ -29,17 +29,13 @@ class TopicSelectionViewModel @Inject constructor(
     private val _error = mutableStateOf<String?>(null)
     val error: State<String?> get() = _error
 
-    init {
-        loadTopics()
-    }
-
-    private fun loadTopics() {
+    fun loadTopics(userName: String) {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
 
             try {
-                val completionsResult = repository.getAllTopicCompletions()
+                val completionsResult = repository.getAllTopicCompletions(userName)
                 completionsResult.onSuccess { completions ->
                     val topicIds = listOf("Travel", "FunAndGames", "StudyWork")
                     _topics.value = topicIds.map { id ->

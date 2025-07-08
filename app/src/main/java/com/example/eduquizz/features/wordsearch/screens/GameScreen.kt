@@ -23,20 +23,23 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.example.wordsearch.ui.components.*
 import com.example.wordsearch.ui.theme.*
 import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
 import com.example.eduquizz.R
+import com.example.eduquizz.data.local.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WordSearchGame(
     topicId: String? = null,
     viewModel: WordSearchViewModel = hiltViewModel(),
-    onBackToIntroduction: (() -> Unit)? = null
+    onBackToIntroduction: (() -> Unit)? = null,
+    navController: NavHostController,
+    userViewModel: UserViewModel = hiltViewModel()
 ) {
     val coins by viewModel.coins
     val hintCell by viewModel.hintCell
@@ -49,7 +52,15 @@ fun WordSearchGame(
     val selectedWord = viewModel.selectedWord
     val foundWordsCount = wordsToFind.count { it.isFound }
     val totalWords = wordsToFind.size
+    val isGameCompleted by viewModel.isGameCompleted
+    val timeSpent by viewModel.timeSpent
     val context = LocalContext.current
+
+
+    val userName by userViewModel.userName.collectAsState()
+    LaunchedEffect(userName) {
+        userName?.let { viewModel.setUserName(it) }
+    }
 
     LaunchedEffect(topicId) {
         if (topicId != null) {
@@ -63,6 +74,13 @@ fun WordSearchGame(
         error?.let { errorMessage ->
             Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
             viewModel.clearError()
+        }
+    }
+
+    LaunchedEffect(isGameCompleted) {
+        if (isGameCompleted && currentTopic != null) {
+            val coinsEarned = 50 // Có thể tính toán dựa trên hiệu suất
+            navController.navigate("completion/$currentTopic/$totalWords/$timeSpent/$coinsEarned")
         }
     }
 
@@ -196,8 +214,7 @@ fun WordSearchGame(
                         Button(
                             onClick = {
                                 if (!viewModel.revealHint()) {
-                                    Toast.makeText(context, "Not enough coins!", Toast.LENGTH_SHORT)
-                                        .show()
+                                    Toast.makeText(context, "Not enough coins!", Toast.LENGTH_SHORT).show()
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(
@@ -225,7 +242,7 @@ fun WordSearchGame(
                         totalWords = totalWords,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 16.dp)
+                            .padding(16.dp)
                     )
 
                     Card(
@@ -303,7 +320,6 @@ fun WordSearchGame(
                             contentDescription = null,
                             modifier = Modifier.size(20.dp)
                         )
-
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "New Game",
@@ -351,13 +367,5 @@ fun GameProgressBar(
             color = ButtonPrimary,
             trackColor = GridStroke
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun WordSearchGamePreview() {
-    WordSearchGameTheme {
-        WordSearchGame()
     }
 }

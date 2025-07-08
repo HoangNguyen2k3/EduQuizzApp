@@ -15,9 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Work
-import androidx.compose.material.icons.filled.SportsEsports
-import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,7 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
+import com.example.eduquizz.data.local.UserViewModel
 import com.example.eduquizz.features.wordsearch.viewmodel.TopicSelectionViewModel
 
 data class Topic(
@@ -50,14 +47,17 @@ data class Topic(
 fun TopicSelectionScreen(
     onTopicSelected: (String) -> Unit,
     onBackPressed: () -> Unit,
+    userViewModel: UserViewModel = hiltViewModel(),
     viewModel: TopicSelectionViewModel = hiltViewModel()
 ) {
     val topics by viewModel.topics
     val isLoading by viewModel.isLoading
     val error by viewModel.error
+    val userName by userViewModel.userName.collectAsState()
     var isVisible by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(userName) {
+        userName?.let { viewModel.loadTopics(it) }
         isVisible = true
     }
 

@@ -38,14 +38,50 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.eduquizz.R
 import com.example.eduquizz.data.local.UserViewModel
 import com.example.quizapp.ui.theme.QuizAppTheme
-
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
-fun saveUserNameToFirebase(userName: String) {
+fun saveUserNameToFirebase(
+    userName: String,
+    onSuccess: () -> Unit = {},
+    onAlreadyExists: () -> Unit = {},
+    onError: (String) -> Unit = {}
+) {
     val database = FirebaseDatabase.getInstance()
     val usersRef = database.getReference("users")
 
-    usersRef.push().setValue(userName)
+    usersRef.addListenerForSingleValueEvent(object : ValueEventListener {
+        override fun onDataChange(snapshot: DataSnapshot) {
+            var nameExists = false
+
+            for (childSnapshot in snapshot.children) {
+                val existingName = childSnapshot.getValue(String::class.java)
+                if (existingName != null && existingName.equals(userName.trim(), ignoreCase = true)) {
+                    nameExists = true
+                    break
+                }
+            }
+
+            if (nameExists) {
+                onAlreadyExists()
+            } else {
+                // Lưu tên mới
+                usersRef.push().setValue(userName.trim())
+                    .addOnSuccessListener {
+                        onSuccess()
+                    }
+                    .addOnFailureListener { exception ->
+                        onError(exception.message ?: "Unknown error")
+                    }
+            }
+        }
+
+        override fun onCancelled(error: DatabaseError) {
+            onError(error.message)
+        }
+    })
 }
 
 @Composable
@@ -56,6 +92,8 @@ fun ReadyScreen(
 ) {
     var userName by remember { mutableStateOf("") }
     var isError by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
 
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.welcome_learn))
@@ -90,6 +128,37 @@ fun ReadyScreen(
         ),
         label = "floating"
     )
+
+    // Hàm xử lý khi nhấn Start
+    fun handleStartClick() {
+        if (userName.isNotBlank()) {
+            isLoading = true
+            isError = false
+
+            saveUserNameToFirebase(
+                userName = userName.trim(),
+                onSuccess = {
+                    isLoading = false
+                    userViewModel.setUserName(userName.trim())
+                    onStartClick(userName.trim())
+                },
+                onAlreadyExists = {
+                    isLoading = false
+                    // Tên đã tồn tại, vẫn cho phép tiếp tục
+                    userViewModel.setUserName(userName.trim())
+                    onStartClick(userName.trim())
+                },
+                onError = { error ->
+                    isLoading = false
+                    isError = true
+                    errorMessage = "Lỗi kết nối: $error"
+                }
+            )
+        } else {
+            isError = true
+            errorMessage = "Vui lòng nhập tên của bạn"
+        }
+    }
 
     Box(
         modifier = modifier
@@ -230,6 +299,7 @@ fun ReadyScreen(
                                 userName = it
                                 if (isError && it.isNotBlank()) {
                                     isError = false
+                                    errorMessage = ""
                                 }
                             },
                             label = {
@@ -248,8 +318,9 @@ fun ReadyScreen(
                             supportingText = if (isError) {
                                 {
                                     Text(
-                                        "Please enter your name",
-                                        fontWeight = FontWeight.Medium
+                                        errorMessage.ifEmpty { "Please enter your name" },
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.error
                                     )
                                 }
                             } else null,
@@ -285,16 +356,11 @@ fun ReadyScreen(
                             keyboardActions = KeyboardActions(
                                 onDone = {
                                     keyboardController?.hide()
-                                    if (userName.isNotBlank()) {
-                                        // Lưu tên người dùng vào UserViewModel
-                                        userViewModel.setUserName(userName.trim())
-                                        onStartClick(userName.trim())
-                                    } else {
-                                        isError = true
-                                    }
+                                    handleStartClick()
                                 }
                             ),
                             singleLine = true,
+                            enabled = !isLoading,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(20.dp),
@@ -311,16 +377,8 @@ fun ReadyScreen(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     Button(
-                        onClick = {
-                            if (userName.isNotBlank()) {
-                                saveUserNameToFirebase(userName.trim())
-                                // Lưu tên người dùng vào UserViewModel
-                                userViewModel.setUserName(userName.trim())
-                                onStartClick(userName.trim())
-                            } else {
-                                isError = true
-                            }
-                        },
+                        onClick = { handleStartClick() },
+                        enabled = !isLoading,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(60.dp)
@@ -331,7 +389,8 @@ fun ReadyScreen(
                                 spotColor = colorResource(id = R.color.english_coral)
                             ),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Transparent
+                            containerColor = Color.Transparent,
+                            disabledContainerColor = Color.Transparent
                         ),
                         shape = RoundedCornerShape(20.dp),
                         contentPadding = PaddingValues(0.dp)
@@ -342,31 +401,41 @@ fun ReadyScreen(
                                 .background(
                                     Brush.horizontalGradient(
                                         colors = listOf(
-                                            colorResource(id = R.color.english_coral),
-                                            colorResource(id = R.color.english_coral).copy(alpha = 0.8f)
+                                            colorResource(id = R.color.english_coral)
+                                                .copy(alpha = if (isLoading) 0.6f else 1f),
+                                            colorResource(id = R.color.english_coral)
+                                                .copy(alpha = if (isLoading) 0.4f else 0.8f)
                                         )
                                     ),
                                     RoundedCornerShape(20.dp)
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.PlayArrow,
-                                    contentDescription = "Start",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(24.dp)
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    color = Color.White,
+                                    modifier = Modifier.size(24.dp),
+                                    strokeWidth = 2.dp
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Let's Start Playing!",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
+                            } else {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.PlayArrow,
+                                        contentDescription = "Start",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Let's Start Playing!",
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
                             }
                         }
                     }
