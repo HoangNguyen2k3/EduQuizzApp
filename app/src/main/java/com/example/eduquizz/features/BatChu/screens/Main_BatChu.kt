@@ -13,14 +13,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.SubdirectoryArrowLeft
 import androidx.compose.material3.*
 import androidx.compose.material3.MaterialTheme
 import com.example.eduquizz.R
@@ -47,9 +43,8 @@ import coil.compose.AsyncImage
 import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.features.BatChu.model.DataBatChu
 import com.example.eduquizz.features.BatChu.viewmodel.ViewModelBatChu
-import com.example.eduquizz.features.quizzGame.screens.BottomHelperBar
-import com.example.eduquizz.features.quizzGame.screens.TimerProgressBar
 import com.example.eduquizz.features.wordsearch.model.Cell
+import com.example.eduquizz.navigation.Routes
 import com.example.quizapp.ui.theme.QuizAppTheme
 import kotlin.math.sqrt
 
@@ -72,6 +67,10 @@ fun Main_BatChu(navController: NavController,
     var currentQuestionIndex by remember { mutableStateOf(0) }
     val question = viewModelBatChu.sampleQuestions[currentQuestionIndex]
     val answerLength = question.answer.length
+
+    //Dữ liệu đưa vào màn hình kết quả
+    val num_question = viewModelBatChu.sampleQuestions.size;
+    var num_question_correct by remember { mutableStateOf(0) }
 
     val selectedLetters = remember(question) {
         mutableStateListOf<Char?>(*Array(question.answer.length) { null })
@@ -109,9 +108,9 @@ fun Main_BatChu(navController: NavController,
     Box(modifier = Modifier.fillMaxSize().background(
         Brush.verticalGradient(
             colors = listOf(
-                Color(0xFFFF6B9D),
-                Color(0xFFFF8E9E),
-                Color(0xFFFFB4A2),
+                Color(0xFFFF99BA),
+                Color(0xFFFFB8C2),
+                Color(0xFFFDCEC6),
                 MaterialTheme.colorScheme.background
             )
         )
@@ -136,48 +135,62 @@ fun Main_BatChu(navController: NavController,
                             currentQuestionIndex++
                         } else {
                             Toast.makeText(context, "Đã hoàn thành tất cả câu hỏi!", Toast.LENGTH_SHORT).show()
+                            navController.navigate("result/$num_question_correct/$num_question/${Routes.LevelBatChu}/${Routes.IntroBatChu}")
+                        }
+                    },
+                    onAutoSuggest = {
+                        if (!hintUsedForCurrentQuestion && selectedLetters.contains(null)) {
+                            viewModelBatChu.autoSuggestLetter(
+                                selectedLetters = selectedLetters,
+                                usedIndices = usedIndices,
+                                question = question
+                            )
+                            viewModelBatChu.spendCoins(8)
+                            hintUsedForCurrentQuestion = true
                         }
                     }
                 )
             },
+            topBar = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = {
+                            navController.popBackStack()
+                        },
+                        modifier = Modifier
+                            .background(
+                                Color.White.copy(alpha = 0.2f),
+                                RoundedCornerShape(12.dp)
+                            )
+                            .size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Quay lại",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Text(
+                        text = "Câu ${currentQuestionIndex + 1} / ${viewModelBatChu.sampleQuestions.size}",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            },
             modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = {
-                        // Xử lý back ở đây, ví dụ:
-                        navController.popBackStack()// nếu bạn dùng Navigation Compose
-                    },
-                    modifier = Modifier
-                        .background(
-                            Color.White.copy(alpha = 0.2f),
-                            RoundedCornerShape(12.dp)
-                        )
-                        .size(48.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Quay lại",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.weight(1f)) // đẩy text ra giữa
-
-                Text(
-                    text = "Câu ${currentQuestionIndex + 1} / ${viewModelBatChu.sampleQuestions.size}",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-
-                Spacer(modifier = Modifier.weight(1f)) // giữ khoảng cách cân bằng bên phải
-            }
             Spacer(modifier = Modifier.height(10.dp))
             Column(
                 modifier = Modifier
@@ -185,7 +198,15 @@ fun Main_BatChu(navController: NavController,
                     .padding(innerPadding),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(30.dp))
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = question.question ?: "", // nếu bạn có title câu hỏi
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Black,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                Spacer(modifier = Modifier.height(15.dp))
                 ImageComponent(question)
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -240,26 +261,41 @@ fun Main_BatChu(navController: NavController,
 
                 val userAnswer = selectedLetters.joinToString("") { it?.toString() ?: "" }
                 if (userAnswer.length == answerLength) {
-                    Text(
-                        text = if (userAnswer == question.answer) "✅ ĐÚNG RỒI!" else "❌ SAI RỒI!",
-                        color = if (userAnswer == question.answer) Color(0xFF2E7D32) else Color.Red,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.padding(vertical = 12.dp)
+                        ) {
+                            Text(
+                                text = if (userAnswer == question.answer) "✅ ĐÚNG RỒI!" else "❌ SAI RỒI!",
+                                color = if (userAnswer == question.answer) Color(0xFF2E7D32) else Color.Red,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
 
-                    if (userAnswer == question.answer) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Button(onClick = {
-                            if (currentQuestionIndex < viewModelBatChu.sampleQuestions.lastIndex) {
-                                currentQuestionIndex++
-                            } else {
-                                Toast.makeText(context, "Đã hoàn thành tất cả câu hỏi!", Toast.LENGTH_SHORT).show()
+                            if (userAnswer == question.answer) {
+                                Spacer(modifier = Modifier.width(16.dp)) // tạo khoảng cách ngang giữa text và nút
+
+                                Button(
+                                    onClick = {
+                                        if (currentQuestionIndex < viewModelBatChu.sampleQuestions.lastIndex) {
+                                            num_question_correct++
+                                            currentQuestionIndex++
+                                        } else {
+                                            Toast.makeText(context, "Đã hoàn thành tất cả câu hỏi!", Toast.LENGTH_SHORT).show()
+                                            navController.navigate("result/$num_question_correct/$num_question/${Routes.LevelBatChu}/${Routes.IntroBatChu}")
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                                ) {
+                                    Text("Next", color = Color.White)
+                                }
                             }
-                        }) {
-                            Text("Next")
                         }
                     }
                 }
+
             }
         }
     }
@@ -343,7 +379,8 @@ fun ModernWordGrid(
 ) {
     val gridSize = sqrt(grid.size.toFloat()).toInt()
     LazyVerticalGrid(
-        columns = GridCells.Fixed(gridSize),
+        //columns = GridCells.Fixed(gridSize),
+        columns = GridCells.Fixed(4),
         modifier = Modifier
             .fillMaxWidth()
             .height(240.dp)
@@ -368,7 +405,8 @@ fun Booster(
     modifier: Modifier = Modifier,
     coins: Int,
     onUseHint: () -> Unit,
-    onSkip: () -> Unit
+    onSkip: () -> Unit,
+    onAutoSuggest: () -> Unit
 ) {
     Column(
         modifier = modifier,
@@ -392,18 +430,18 @@ fun Booster(
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 32.dp)
+                .padding(horizontal = 16.dp)
         ) {
             Button(
                 onClick = onUseHint,
                 colors = ButtonDefaults.buttonColors(containerColor = ButtonPrimary),
                 modifier = Modifier.weight(1f)
             ) {
-                Text("Booster Hint")
+                Text("Xem gợi ý (5💰)")
             }
 
             Button(
@@ -413,6 +451,18 @@ fun Booster(
             ) {
                 Text("Bỏ qua")
             }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Button(
+            onClick = onAutoSuggest,
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+        ) {
+            Text("Gợi ý 1 chữ đúng (8💰)")
         }
     }
 }

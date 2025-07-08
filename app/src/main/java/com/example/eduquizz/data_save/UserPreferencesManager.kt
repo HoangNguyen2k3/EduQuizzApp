@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 // Extension property để tạo DataStore 1 lần duy nhất
@@ -47,4 +48,9 @@ class UserPreferencesManager(private val context: Context) {
             preferences[UserPreferencesKeys.CURRENT_LEVEL] = level
         }
     }
+    suspend fun addGold(amount: Int) {
+        val currentGold = goldFlow.first() // lấy gold hiện tại
+        saveGold(currentGold + amount)     // cộng thêm và lưu lại
+    }
+
 }

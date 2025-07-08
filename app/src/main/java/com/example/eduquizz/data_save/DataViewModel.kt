@@ -25,11 +25,17 @@ class DataViewModel @Inject constructor(
         viewModelScope.launch {
             userPrefs.saveGold(amount)
         }
-    }
 
+    }
+    public fun addGold(amount: Int){
+        viewModelScope.launch {
+            userPrefs.addGold(amount)
+        }
+    }
     public fun updateLevel(level: Int) {
         viewModelScope.launch {
             userPrefs.saveCurrentLevel(level)
         }
     }
+
 }
