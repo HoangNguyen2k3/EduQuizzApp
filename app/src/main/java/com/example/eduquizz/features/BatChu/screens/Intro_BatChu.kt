@@ -200,7 +200,7 @@ fun IntroScreenBatChu(
                                 )
                             ) + fadeIn(animationSpec = tween(800, delayMillis = 600))
                         ) {
-                            SampleImagesSection(sampleImages = listOf(R.drawable.image, R.drawable.image, R.drawable.image))
+                            SampleImagesSection(sampleImages = listOf(R.drawable.batchu1, R.drawable.batchu2, R.drawable.batchu3,R.drawable.quiz4))
                         }
                         Spacer(modifier = Modifier.height(32.dp))
                     }
@@ -309,7 +309,7 @@ private fun SampleImagesSection(sampleImages: List<Int>) {
                     Image(
                         painter = painterResource(id = image),
                         contentDescription = "Ảnh mẫu",
-                        contentScale = ContentScale.Crop,
+                        contentScale = ContentScale.Fit,
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(RoundedCornerShape(16.dp))
