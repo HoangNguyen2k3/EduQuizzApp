@@ -49,6 +49,7 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
     val question by viewModel.currentQuestion
     val score by viewModel.score
     val isGameOver by viewModel.isGameOver
+    val isLoading by viewModel.isLoading
 
     val context = LocalContext.current
     LaunchedEffect(Unit) {
@@ -68,154 +69,181 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
 
     Box(modifier = Modifier.fillMaxSize().background(
         Brush.verticalGradient(
-        colors = listOf(
-            Color(0xFFFF5722),
-            Color(0xFFFF9800),
-            Color(0xFFFFC107),
-            MaterialTheme.colorScheme.background)))) {
-        
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Top bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-                    .zIndex(1f),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            colors = listOf(
+                Color(0xFFFF5722),
+                Color(0xFFFF9800),
+                Color(0xFFFFC107),
+                MaterialTheme.colorScheme.background)))) {
+
+        if (isLoading) {
+            // Loading screen
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color(0xFF000000)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(64.dp),
+                        color = Color.White,
+                        strokeWidth = 4.dp
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Đang tải câu hỏi...",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
                 }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text("⏰ $timer", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    Text("Score: $score", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                }
             }
-            
-            val progress = timer.toFloat() / 10f
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Box(
+        } else {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Top bar
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(100.dp))
-                        .background(Color.LightGray)
+                        .padding(8.dp)
+                        .zIndex(1f),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    LinearProgressIndicator(
-                        progress = progress,
-                        modifier = Modifier.fillMaxSize(),
-                        color = if (timer <= 10) Color.Red else Color(0xFF3F51B5),
-                        trackColor = Color.Transparent
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                question.question,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(4),
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(6.dp),
-                verticalArrangement = Arrangement.spacedBy(40.dp),
-                horizontalArrangement = Arrangement.spacedBy(40.dp)
-            ) {
-                items(answers.size) { idx ->
-                    val answer = answers[idx]
-                    if (answer == null) {
-                        Spacer(modifier = Modifier.size(40.dp))
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color(0xFF000000)
+                        )
                     }
-                    else {
-                    val selectedAnswer = viewModel.selectedAnswer.value
-                    //val isCorrect = viewModel.isCorrectAnswer.value
-                    // Thêm hiệu ứng di chuyển lên xuống cho bóng
-                    val infiniteTransition = rememberInfiniteTransition(label = "balloon-move")
-                    val offsetY by infiniteTransition.animateFloat(
-                        initialValue = 0f,
-                        targetValue = 20f, // Độ lệch tối đa (px)
-                        animationSpec = infiniteRepeatable(
-                            animation = tween<Float>(1200, delayMillis = idx * 200, easing = LinearEasing),
-                            repeatMode = RepeatMode.Reverse
-                        ),
-                        label = "balloon-offset"
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text("⏰ $timer", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text("Score: $score", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                val progress = timer.toFloat() / 10f
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Spacer(modifier = Modifier.height(4.dp))
+
                     Box(
                         modifier = Modifier
-                            .size(64.dp)
-                            .offset(y = offsetY.dp)
-                            .then(
-                                if (selectedAnswer == null) Modifier.clickable {
-                                    AudioManager.playClickSfx()
-                                    viewModel.onAnswerSelected(idx)
-                                } else Modifier
-                            ),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(100.dp))
+                            .background(Color.LightGray)
                     ) {
-                        Image(
-                            painter = painterResource(R.drawable.balloon),
-                            contentDescription = "Balloon",
+                        LinearProgressIndicator(
+                            progress = progress,
+                            modifier = Modifier.fillMaxSize(),
+                            color = if (timer <= 10) Color.Red else Color(0xFF3F51B5),
+                            trackColor = Color.Transparent
                         )
-                        Text(
-                            answer,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            color = Color.Yellow,
-                            modifier = Modifier.offset(y = (-8).dp)
-                        )
-                    }
                     }
                 }
-            }
 
-            // Phần dưới cùng với cannon
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    //.height(100.dp)
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.cannon),
-                    contentDescription = "Cannon",
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Hiển thị câu hỏi nếu có
+                question?.let { currentQuestion ->
+                    Text(
+                        currentQuestion.question,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(4),
                     modifier = Modifier
-                        .size(180.dp)
-                        .align(Alignment.BottomCenter)
-                        .rotate(270f)
-                        .offset(x = -20.dp)
-                )
+                        .weight(1f)
+                        .padding(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(40.dp),
+                    horizontalArrangement = Arrangement.spacedBy(40.dp)
+                ) {
+                    items(answers.size) { idx ->
+                        val answer = answers[idx]
+                        if (answer == null) {
+                            Spacer(modifier = Modifier.size(40.dp))
+                        } else {
+                            val selectedAnswer = viewModel.selectedAnswer.value
+
+                            // Thêm hiệu ứng di chuyển lên xuống cho bóng
+                            val infiniteTransition = rememberInfiniteTransition(label = "balloon-move")
+                            val offsetY by infiniteTransition.animateFloat(
+                                initialValue = 0f,
+                                targetValue = 20f, // Độ lệch tối đa (px)
+                                animationSpec = infiniteRepeatable(
+                                    animation = tween<Float>(1200, delayMillis = idx * 200, easing = LinearEasing),
+                                    repeatMode = RepeatMode.Reverse
+                                ),
+                                label = "balloon-offset"
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .offset(y = offsetY.dp)
+                                    .then(
+                                        if (selectedAnswer == null) Modifier.clickable {
+                                            AudioManager.playClickSfx()
+                                            viewModel.onAnswerSelected(idx)
+                                        } else Modifier
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(R.drawable.balloon),
+                                    contentDescription = "Balloon",
+                                )
+                                Text(
+                                    answer,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp,
+                                    color = Color.Yellow,
+                                    modifier = Modifier.offset(y = (-8).dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Phần dưới cùng với cannon
+                Box(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.cannon),
+                        contentDescription = "Cannon",
+                        modifier = Modifier
+                            .size(180.dp)
+                            .align(Alignment.BottomCenter)
+                            .rotate(270f)
+                            .offset(x = -20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(30.dp))
             }
-            Spacer(modifier = Modifier.height(30.dp))
         }
     }
 }
+
 @Preview(showBackground = true)
 @Composable
 fun BubbleShotScreenPreview() {
     BubbleShotScreen(BubbleShot(), NavHostController(LocalContext.current))
 }
-
