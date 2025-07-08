@@ -5,13 +5,11 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.features.wordsearch.model.Cell
 import com.example.eduquizz.features.wordsearch.model.Direction
 import com.example.eduquizz.features.wordsearch.model.Word
 import com.example.eduquizz.features.wordsearch.repository.WordSearchRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.abs
@@ -44,31 +42,11 @@ class WordSearchViewModel @Inject constructor(
 
     val selectedWord: String get() = _selectedCells.joinToString("") { it.char.toString() }
 
-/*    private var _coins = mutableStateOf(100)
-    val coins: State<Int> get() = _coins*/
-    var _coins = mutableStateOf(-1)
-        private set
+    private var _coins = mutableStateOf(100)
+    val coins: State<Int> get() = _coins
+
     private var _hintCell = mutableStateOf<Cell?>(null)
     val hintCell: State<Cell?> get() = _hintCell
-
-    val numall = mutableStateOf(0)
-    val numpass = mutableStateOf(0)
-    val isDone = mutableStateOf(false)
-    //process coin
-    private lateinit var dataViewModel: DataViewModel
-    fun Init(data: DataViewModel) {
-        this.dataViewModel = data
-        viewModelScope.launch {
-            delay(10) // Đợi LiveData emit ra giá trị
-            _coins.value = data.gold.value ?: 0
-        }
-        //gold = mutableStateOf(data.gold.value ?: 0)
-    }
-    fun spendCoins(amount: Int) {
-        _coins.value = (_coins.value ?: 0) - amount
-        dataViewModel.updateGold(_coins.value ?: 0) // <-- chỉ update khi cần
-    }
-
 
     fun loadWordsFromFirebase(topicId: String) {
         viewModelScope.launch {
@@ -82,7 +60,7 @@ class WordSearchViewModel @Inject constructor(
                     _gridSize.value = wordSearchData.gridSize
                     _wordsToFind.clear()
                     _wordsToFind.addAll(wordSearchData.words.map { Word(it) })
-                    numall.value = wordsToFind.size
+
                     // Khởi tạo lưới sau khi có dữ liệu
                     initializeGrid()
 
@@ -118,7 +96,6 @@ class WordSearchViewModel @Inject constructor(
             Word("GAME")
         ))
         initializeGrid()
-        numall.value = wordsToFind.size
     }
 
     private fun initializeGrid() {
@@ -287,7 +264,6 @@ class WordSearchViewModel @Inject constructor(
         }
 
         if (foundWordIndex >= 0) {
-            numpass.value++
             _wordsToFind[foundWordIndex] = _wordsToFind[foundWordIndex].copy(isFound = true)
             val cellsToMark = _selectedCells.toList()
 
@@ -299,9 +275,6 @@ class WordSearchViewModel @Inject constructor(
             }
             updateSelectionState()
             _selectedCells.clear()
-        }
-        if(numpass==numall){
-            isDone.value = true;
         }
     }
 

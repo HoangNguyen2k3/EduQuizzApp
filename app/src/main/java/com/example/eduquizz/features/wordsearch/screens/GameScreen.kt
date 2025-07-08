@@ -14,8 +14,6 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,25 +26,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
 import com.example.wordsearch.ui.components.*
 import com.example.wordsearch.ui.theme.*
 import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
 import com.example.eduquizz.R
-import com.example.eduquizz.data_save.DataViewModel
-import com.example.eduquizz.navigation.Routes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WordSearchGame(
     topicId: String? = null,
     viewModel: WordSearchViewModel = hiltViewModel(),
-    onBackToIntroduction: (() -> Unit)? = null,
-    dataviewModel: DataViewModel = hiltViewModel(),
-    navController: NavHostController
+    onBackToIntroduction: (() -> Unit)? = null
 ) {
-    //val coins by viewModel._coins
-    val coins by dataviewModel.gold.observeAsState(-1)
+    val coins by viewModel.coins
     val hintCell by viewModel.hintCell
     val isLoading by viewModel.isLoading
     val error by viewModel.error
@@ -58,10 +50,7 @@ fun WordSearchGame(
     val foundWordsCount = wordsToFind.count { it.isFound }
     val totalWords = wordsToFind.size
     val context = LocalContext.current
-    val isDone = viewModel.isDone
-    LaunchedEffect(key1 = true) {
-        viewModel.Init(dataviewModel)
-    }
+
     LaunchedEffect(topicId) {
         if (topicId != null) {
             viewModel.loadWordsFromFirebase(topicId)
@@ -176,9 +165,6 @@ fun WordSearchGame(
                     }
                 }
             } else {
-                if(isDone.value){
-                    navController.navigate("result/${totalWords}/${totalWords}/${Routes.INTRO_WORD_SEARCH}/topic_selection")
-                }
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -372,6 +358,6 @@ fun GameProgressBar(
 @Composable
 fun WordSearchGamePreview() {
     WordSearchGameTheme {
-        WordSearchGame(navController = NavHostController(LocalContext.current))
+        WordSearchGame()
     }
 }
