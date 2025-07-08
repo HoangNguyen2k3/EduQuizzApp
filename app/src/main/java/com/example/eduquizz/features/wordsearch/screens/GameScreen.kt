@@ -30,6 +30,8 @@ import com.example.wordsearch.ui.components.*
 import com.example.wordsearch.ui.theme.*
 import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
 import com.example.eduquizz.R
+import com.example.eduquizz.data_save.AudioManager
+import androidx.compose.runtime.DisposableEffect
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,6 +58,16 @@ fun WordSearchGame(
             viewModel.loadWordsFromFirebase(topicId)
         } else {
             viewModel.restartGame()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        AudioManager.setBgmEnabled(true)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            AudioManager.setBgmEnabled(false)
         }
     }
 
@@ -89,7 +101,10 @@ fun WordSearchGame(
                     },
                     navigationIcon = {
                         if (onBackToIntroduction != null) {
-                            IconButton(onClick = onBackToIntroduction) {
+                            IconButton(onClick = {
+                                AudioManager.playClickSfx()
+                                onBackToIntroduction()
+                            }) {
                                 Icon(
                                     imageVector = Icons.Default.ArrowBack,
                                     contentDescription = "Back to Introduction"
@@ -101,7 +116,10 @@ fun WordSearchGame(
                         containerColor = Color.Transparent
                     ),
                     actions = {
-                        IconButton(onClick = { viewModel.restartGame() }) {
+                        IconButton(onClick = {
+                            AudioManager.playClickSfx()
+                            viewModel.restartGame()
+                        }) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
                                 contentDescription = "Restart Game"
@@ -153,6 +171,7 @@ fun WordSearchGame(
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
                             onClick = {
+                                AudioManager.playClickSfx()
                                 if (topicId != null) {
                                     viewModel.loadWordsFromFirebase(topicId)
                                 } else {
@@ -195,6 +214,7 @@ fun WordSearchGame(
 
                         Button(
                             onClick = {
+                                AudioManager.playClickSfx()
                                 if (!viewModel.revealHint()) {
                                     Toast.makeText(context, "Not enough coins!", Toast.LENGTH_SHORT)
                                         .show()
@@ -289,7 +309,10 @@ fun WordSearchGame(
                     }
 
                     Button(
-                        onClick = { viewModel.restartGame() },
+                        onClick = {
+                            AudioManager.playClickSfx()
+                            viewModel.restartGame()
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(16.dp),

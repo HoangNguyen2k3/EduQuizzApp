@@ -39,6 +39,7 @@ import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.eduquizz.navigation.Routes
 import com.example.quizapp.ui.theme.QuizAppTheme
 import kotlinx.coroutines.delay
+import com.example.eduquizz.data_save.AudioManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -125,7 +126,10 @@ fun IntroScreen(
                     ) {
                         PlayButton(
                            // onClick = { navController.navigate("main/levelEasy") },
-                            onClick = { navController.navigate(Routes.QUIZ_LEVEL) },
+                            onClick = {
+                                AudioManager.playClickSfx()
+                                navController.navigate(Routes.QUIZ_LEVEL)
+                            },
                             modifier = Modifier.padding(20.dp)
                         )
                     }

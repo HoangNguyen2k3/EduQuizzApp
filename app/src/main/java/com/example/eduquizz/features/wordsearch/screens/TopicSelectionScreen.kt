@@ -36,6 +36,7 @@ import com.example.eduquizz.features.home.screens.WithLoading
 import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.wordsearch.ui.theme.Primary
 import kotlinx.coroutines.delay
+import com.example.eduquizz.data_save.AudioManager
 
 data class Topic(
     val id: String,
@@ -213,7 +214,10 @@ fun TopicSelectionScreen(
                         ) {
                             TopicCard(
                                 topic = topic,
-                                onClick = { onTopicSelected(topic.id) }
+                                onClick = {
+                                    AudioManager.playClickSfx()
+                                    onTopicSelected(topic.id)
+                                }
                             )
                         }
                     }

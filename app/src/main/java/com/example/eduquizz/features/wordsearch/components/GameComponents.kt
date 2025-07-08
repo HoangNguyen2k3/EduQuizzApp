@@ -31,6 +31,7 @@ import com.example.eduquizz.features.wordsearch.model.Cell
 import com.example.eduquizz.features.wordsearch.model.Word
 import com.example.wordsearch.ui.theme.*
 import kotlin.math.sqrt
+import com.example.eduquizz.data_save.AudioManager
 
 
 /**
@@ -110,7 +111,10 @@ fun ModernGridCell(
             )
             .clip(RoundedCornerShape(8.dp))
             .background(backgroundColor)
-            .clickable(onClick = onCellSelected)
+            .clickable(onClick = {
+                AudioManager.playClickSfx()
+                onCellSelected()
+            })
             .padding(2.dp)
     ) {
         Text(

@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.eduquizz.R
 import com.example.eduquizz.navigation.Routes
+import com.example.eduquizz.data_save.AudioManager
 
 @Composable
 fun ResultsScreen(
@@ -83,6 +84,7 @@ fun ResultsScreen(
             ) {
                 Button(
                     onClick = {
+                        AudioManager.playClickSfx()
                         // 🔁 Chơi lại: navigate lại đến màn quiz
                         navController.navigate(Routes.MAIN)
                     },
@@ -93,6 +95,7 @@ fun ResultsScreen(
 
                 Button(
                     onClick = {
+                        AudioManager.playClickSfx()
                         // 🔙 Quay lại: ví dụ về quay về màn hình chọn chế độ chơi
                         navController.navigate(Routes.INTRO)
                     },
