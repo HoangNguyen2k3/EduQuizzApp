@@ -1,5 +1,4 @@
-package com.example.eduquizz.features.quizzGame.screens
-
+package com.example.eduquizz.features.BatChu.screens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -39,11 +38,10 @@ import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.eduquizz.navigation.Routes
 import com.example.quizapp.ui.theme.QuizAppTheme
 import kotlinx.coroutines.delay
-import com.example.eduquizz.data_save.AudioManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun IntroScreen(
+fun IntroScreenBatChu(
     navController: NavController,
     onBackPressed: () -> Unit,
     loadingViewModel: LoadingViewModel = viewModel()
@@ -53,7 +51,7 @@ fun IntroScreen(
     var isDataLoaded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-/*        loadingViewModel.showLoading("Đang tải Quiz Game...", showProgress = true)
+ /*       loadingViewModel.showLoading("Đang tải Quiz Game...", showProgress = true)
 
         loadingViewModel.updateProgress(0.2f, "Đang tải câu hỏi...")
         delay(800)
@@ -123,14 +121,10 @@ fun IntroScreen(
                             animationSpec = tween(800, delayMillis = 1000, easing = FastOutSlowInEasing)
                         ) + fadeIn(animationSpec = tween(800, delayMillis = 1000))
                     ) {
-                        PlayButton(
-                           // onClick = { navController.navigate("main/levelEasy") },
-                            onClick = {
-                                AudioManager.playClickSfx()
-                                navController.navigate(Routes.QUIZ_LEVEL)
-                            },
-                            modifier = Modifier.padding(20.dp)
-                        )
+//                        PlayButton(
+//                            onClick = { navController.navigate(Routes.LevelBatChu) },
+//                            modifier = Modifier.padding(20.dp)
+//                        )
                     }
                 }
             ) { paddingValues ->
@@ -226,12 +220,12 @@ private fun GameBanner() {
         modifier = Modifier
             .fillMaxWidth()
             .height(170.dp),
-            //.shadow(12.dp, RoundedCornerShape(16.dp)),
+        //.shadow(12.dp, RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
         Image(
-            painter = painterResource(id = R.drawable.bannerquiz),
+            painter = painterResource(id = R.drawable.iconbatchupng),
             contentDescription = "Banner Game",
             contentScale = ContentScale.Fit,
             modifier = Modifier
@@ -247,7 +241,7 @@ private fun GameTitle() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Fun Quiz Game",
+            text = "Đuổi hình bắt chữ",
             style = MaterialTheme.typography.headlineLarge.copy(
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold
@@ -271,7 +265,7 @@ private fun GameDescription() {
         )
     ) {
         Text(
-            text = "Một hành trình khám phá kiến thức dành cho mọi lứa tuổi. Từ câu hỏi đơn giản đến hóc búa, trò chơi giúp bạn rèn luyện tư duy và tăng vốn hiểu biết mỗi ngày.",
+text = "Một bức hình, ngàn ý nghĩa! \"Đuổi hình bắt chữ\" – nơi trí thông minh lên tiếng, óc liên tưởng bật sáng và tiếng cười vang khắp mọi nơi!",
             style = MaterialTheme.typography.bodyLarge.copy(
                 fontSize = 16.sp,
                 lineHeight = 22.sp

@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.eduquizz.R
 import com.example.eduquizz.data_save.AudioManager
+import com.example.quizapp.ui.theme.QuizAppTheme
 
 @Composable
 fun SettingScreen() {
@@ -377,6 +378,7 @@ private fun LanguageOption(
     }
 }
 
+
 @Composable
 private fun SettingSliderItem(
     icon: Int,
@@ -420,4 +422,11 @@ private fun SettingSliderItem(
 @Composable
 fun SettingScreenPreview() {
     SettingScreen()
+=======
+@Preview
+@Composable
+fun SettingScreenPreview(){
+    QuizAppTheme {
+        SettingScreen()
+    }
 }

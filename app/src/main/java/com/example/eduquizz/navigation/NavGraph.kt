@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -26,6 +28,11 @@ import com.example.eduquizz.features.home.screens.SettingScreen
 import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.eduquizz.features.home.screens.MainScreen
 import com.example.eduquizz.features.match.viewmodel.WordMatchGame
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.eduquizz.data_save.DataViewModel
+import com.example.eduquizz.MainActivity
+import com.example.eduquizz.features.BatChu.screens.IntroScreenBatChu
+import com.example.eduquizz.features.BatChu.screens.LevelChoiceBatChu
 import com.example.eduquizz.features.BatChu.screens.Main_BatChu
 import com.example.quizapp.ui.splash.SplashScreen
 import com.example.eduquizz.features.wordsearch.screens.IntroductionScreen
@@ -38,6 +45,7 @@ import com.example.eduquizz.features.home.screens.ReadyScreen
 import com.example.eduquizz.features.quizzGame.screens.LevelChoice
 import com.example.eduquizz.features.wordsearch.screens.TopicSelectionScreen
 import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
+import com.example.eduquizz.data.local.UserViewModel
 
 object Routes {
     //Main
@@ -66,13 +74,18 @@ object Routes {
     const val READY ="ready"
     //BatChu
     const val BatChu = "batchu"
+    const val IntroBatChu = "introbatchu"
+    const val LevelBatChu = "levelbatchu"
 }
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    dataViewModel: DataViewModel = hiltViewModel()
 ) {
+    val userViewModel: UserViewModel = hiltViewModel()
+    val firstTime by dataViewModel.firstTime.observeAsState(0)
     NavHost(
         navController = navController,
         startDestination = Routes.SPLASH,
@@ -85,19 +98,35 @@ fun NavGraph(
         composable(Routes.SPLASH) {
             SplashScreen(
                 onNavigateToMain = {
-                    navController.navigate(Routes.READY) {
-                        popUpTo(Routes.SPLASH) { inclusive = true }
+                    if(firstTime==false){
+                        navController.navigate(Routes.READY) {
+                            popUpTo(Routes.SPLASH) { inclusive = true }
+                        }
+                    }else{
+                        navController.navigate(Routes.MAIN_DANH)
                     }
+
                 }
             )
         }
+
         composable(Routes.READY) {
             ReadyScreen(
                 onStartClick = { userName ->
                     navController.navigate(Routes.MAIN_DANH) {
                         popUpTo(Routes.READY) { inclusive = true }
                     }
-                }
+                },
+                userViewModel = userViewModel
+            )
+        }
+
+        composable(Routes.MAIN_DANH) {
+            MainScreen(
+                onNavigateToEnglish = {
+                    navController.navigate(Routes.GAME_SCENE)
+                },
+                userViewModel = userViewModel
             )
         }
 
@@ -105,30 +134,39 @@ fun NavGraph(
             arguments = listOf(navArgument("level") { type = NavType.StringType })) {
                 backStackEntry ->
             val level = backStackEntry.arguments?.getString("level") ?: ""
-            val viewModel: QuestionViewModel = hiltViewModel()
-            MainView(currentLevel = level, name = "Android", navController = navController, questionViewModel = viewModel)
+            val questionViewModel: QuestionViewModel = hiltViewModel()
+            MainView(
+                currentLevel = level,
+                name = "Android",
+                navController = navController,
+                questionViewModel = questionViewModel
+            )
         }
 
         composable(Routes.INTRO) {
             Box(modifier = Modifier.fillMaxSize()) {
                 IntroScreen(
                     navController,
-                    onBackPressed = { navController.popBackStack() }
+                    onBackPressed = { navController.navigate(Routes.ENGLISH_GAMES_SCENE) }
                 )
             }
         }
         composable(
-            "result/{correct}/{total}",
+            "result/{correct}/{total}/{route_back}/{route_again}",
             arguments = listOf(
                 navArgument("correct") { type = NavType.IntType },
                 navArgument("total") { type = NavType.IntType },
+                navArgument("route_back") { type = NavType.StringType },
+                navArgument("route_again") { type = NavType.StringType },
             )
         ) { backStackEntry ->
             val correct = backStackEntry.arguments?.getInt("correct") ?: 0
             val total = backStackEntry.arguments?.getInt("total") ?: 0
-
-            ResultsScreen(navController, correctAnswers = correct, totalQuestions = total)
+            val route_back = backStackEntry.arguments?.getString("route_back")?:""
+            val route_again = backStackEntry.arguments?.getString("route_again")?:""
+            ResultsScreen(navController, correctAnswers = correct, totalQuestions = total, back_route = route_back, play_agian_route = route_again)
         }
+
         composable(Routes.MAIN_DANH) {
             MainScreen(
                 onNavigateToEnglish = {
@@ -150,7 +188,8 @@ fun NavGraph(
                         "connect_blocks" -> navController.navigate(Routes.INTRO_THONG)
                         "quiz" -> navController.navigate(Routes.INTRO)
                         "bubble_shot" -> navController.navigate(Routes.BUBBLE_SHOT_INTRO)
-                        "batchu" -> navController.navigate(Routes.BatChu)
+
+                        "batchu" -> navController.navigate(Routes.IntroBatChu)
                         else -> {
                             // Handle other games or show an error
                         }
@@ -172,28 +211,67 @@ fun NavGraph(
                         else -> {
                             // Handle other games or show an error
                         }
-
                     }
                 }
             )
         }
-        composable(Routes.BatChu) {
-            Main_BatChu(navController = navController)
+        composable("batchu/{level}",
+            arguments = listOf(
+                navArgument("level") { type = NavType.StringType },
+            )) {
+            // Main_BatChu(navController = navController)
+                backStackEntry ->
+            val level = backStackEntry.arguments?.getString("level")?:""
+            Main_BatChu(navController, currentLevel = level)
+
+        }
+        composable(Routes.IntroBatChu) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                IntroScreenBatChu(
+                    navController,
+                    onBackPressed = { navController.navigate(Routes.ENGLISH_GAMES_SCENE) }
+                )
+            }
+        }
+        composable(Routes.LevelBatChu) {
+            LevelChoiceBatChu(
+                onBackClick = {navController.navigate(Routes.IntroBatChu)},
+                onGameClick = {
+                        game ->
+                    when(game.id){
+                        "level_easy"->navController.navigate("batchu/LevelEasy")
+                        "level_normal"->navController.navigate("batchu/LevelNormal")
+                        "level_hard"->navController.navigate("batchu/LevelHard")
+                    }
+                }
+            )
         }
         composable (Routes.QUIZ_LEVEL){
             LevelChoice(
                 onBackClick = {navController.navigate(Routes.INTRO)},
                 onGameClick = {
-                    game ->
-                        when(game.id){
-                            "level_easy"->navController.navigate("main/LevelEasy")
-                            "level_normal"->navController.navigate("main/LevelNormal")
-                            "level_hard"->navController.navigate("main/LevelHard")
-                            "level_image"->navController.navigate("main/LevelImage")
-                        }
+                        game ->
+                    when(game.id){
+                        "level_easy"->navController.navigate("main/LevelEasy")
+                        "level_normal"->navController.navigate("main/LevelNormal")
+                        "level_hard"->navController.navigate("main/LevelHard")
+                        "level_image"->navController.navigate("main/LevelImage")
+                    }
+                })
+        }
 
+        composable(Routes.QUIZ_LEVEL) {
+            LevelChoice(
+                onBackClick = { navController.navigate(Routes.INTRO) },
+                onGameClick = { game ->
+                    when(game.id) {
+                        "level_easy" -> navController.navigate("main/LevelEasy")
+                        "level_normal" -> navController.navigate("main/LevelNormal")
+                        "level_hard" -> navController.navigate("main/LevelHard")
+                        "level_image" -> navController.navigate("main/LevelImage")
+                    }
                 }
-                )
+            )
         }
         composable(Routes.GAME_THONG) {
             val gameViewModel: WordMatchGame = hiltViewModel()
@@ -206,7 +284,7 @@ fun NavGraph(
         composable(Routes.INTRO_THONG) {
             GameDescriptionScreen(
                 onPlayClick = { navController.navigate(Routes.GAME_THONG) },
-                onBackPressed = { navController.popBackStack() },
+                onBackPressed = { navController.navigate(Routes.ENGLISH_GAMES_SCENE) },
                 subject = "English"
             )
         }
@@ -217,9 +295,7 @@ fun NavGraph(
                     onPlayClicked = {
                         navController.navigate("topic_selection")
                     },
-                    onBackPressed = {
-                        navController.popBackStack()
-                    },
+                    onBackPressed = { navController.navigate(Routes.ENGLISH_GAMES_SCENE) },
                     showContinueButton = false,
                     loadingViewModel = loadingViewModel
                 )
@@ -232,8 +308,8 @@ fun NavGraph(
                 onTopicSelected = { topicId ->
                     navController.navigate("word_search_game/$topicId")
                 },
-                onBackPressed = { navController.popBackStack() },
-                loadingViewModel = loadingViewModel
+                onBackPressed = { navController.navigate(Routes.INTRO_WORD_SEARCH) },
+           //     loadingViewModel = loadingViewModel
             )
         }
 
@@ -250,7 +326,8 @@ fun NavGraph(
 
             WordSearchGame(
                 viewModel = viewModel,
-                onBackToIntroduction = { navController.popBackStack() }
+                onBackToIntroduction = { navController.popBackStack() },
+                navController = navController
             )
         }
 
@@ -267,7 +344,7 @@ fun NavGraph(
 
         }
         composable(Routes.GAME_WORD_SEARCH) {
-            WordSearchGame()
+            WordSearchGame(navController = navController)
         }
     }
 }

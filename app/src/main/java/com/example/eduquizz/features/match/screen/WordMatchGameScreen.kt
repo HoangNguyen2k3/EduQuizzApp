@@ -1,5 +1,6 @@
 package com.example.eduquizz.features.match.screen
 
+import android.widget.Toast
 import androidx.compose.runtime.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.Modifier
@@ -27,14 +28,20 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.draw.clip
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.eduquizz.data_save.DataViewModel
+import com.example.eduquizz.navigation.Routes
 import kotlinx.coroutines.delay
 import com.example.eduquizz.data_save.AudioManager
 import androidx.compose.runtime.DisposableEffect
 
 @Composable
-fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostController) {
-    val gold by viewModel.gold
+fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostController,
+                        dataviewModel: DataViewModel = hiltViewModel()
+) {
+    val gold by dataviewModel.gold.observeAsState(-1)
     val timer by viewModel.timerSeconds
     val level by viewModel.currentLevel
     val showResult by viewModel.showResult
@@ -50,6 +57,7 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
     val correctIndices = viewModel.correctIndices
     val wrongIndices = viewModel.wrongIndices
 
+
     val context = LocalContext.current
     LaunchedEffect(Unit) {
         AudioManager.setBgmEnabled(true)
@@ -58,6 +66,10 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
         onDispose {
             AudioManager.setBgmEnabled(false)
         }
+    }
+
+    LaunchedEffect(key1 = true) {
+        viewModel.Init(dataviewModel)
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -231,8 +243,12 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
             )
         }
         // Dialog hết thời gian
+
         if (showTimeOutDialog) {
-            AlertDialog(
+            val context = LocalContext.current
+            Toast.makeText(context, "Đã hoàn thành tất cả câu hỏi!", Toast.LENGTH_SHORT).show()
+            navController.navigate("result/${viewModel.totalRight.value}/${viewModel.totalQuestion.value}/${Routes.INTRO_THONG}/${Routes.INTRO_THONG}")
+/*            AlertDialog(
                 onDismissRequest = { },
                 title = { 
                     Text(
@@ -275,11 +291,14 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
                         Text("Reset ngay", color = Color.White) 
                     }
                 }
-            )
+            )*/
         }
         // Dialog kết thúc game
         if (showFinishDialog) {
-            AlertDialog(
+            val context = LocalContext.current
+            Toast.makeText(context, "Đã hoàn thành tất cả câu hỏi!", Toast.LENGTH_SHORT).show()
+            navController.navigate("result/${viewModel.totalRight.value}/${viewModel.totalQuestion.value}/${Routes.INTRO_THONG}/${Routes.INTRO_THONG}")
+/*            AlertDialog(
                 onDismissRequest = { },
                 title = { 
                     Text(
@@ -321,7 +340,7 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
                         Text("Chơi lại", color = Color.White) 
                     }
                 }
-            )
+            )*/
         }
     }
 }

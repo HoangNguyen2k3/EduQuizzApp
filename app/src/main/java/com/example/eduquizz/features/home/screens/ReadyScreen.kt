@@ -29,12 +29,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.eduquizz.R
+import com.example.eduquizz.data.local.UserViewModel
+import com.example.eduquizz.data_save.DataViewModel
 import com.example.quizapp.ui.theme.QuizAppTheme
 
 import com.google.firebase.database.FirebaseDatabase
@@ -49,7 +52,9 @@ fun saveUserNameToFirebase(userName: String) {
 @Composable
 fun ReadyScreen(
     onStartClick: (String) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    userViewModel: UserViewModel = hiltViewModel(),
+    dataViewModel: DataViewModel = hiltViewModel()
 ) {
     var userName by remember { mutableStateOf("") }
     var isError by remember { mutableStateOf(false) }
@@ -87,7 +92,9 @@ fun ReadyScreen(
         ),
         label = "floating"
     )
-
+    LaunchedEffect(Unit) {
+        dataViewModel.updateFirstTime()
+    }
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -283,7 +290,10 @@ fun ReadyScreen(
                                 onDone = {
                                     keyboardController?.hide()
                                     if (userName.isNotBlank()) {
+                                        // Lưu tên người dùng vào UserViewModel
+                                        userViewModel.setUserName(userName.trim())
                                         onStartClick(userName.trim())
+                                        dataViewModel.updatePlayerName(userName.trim())
                                     } else {
                                         isError = true
                                     }
@@ -308,8 +318,12 @@ fun ReadyScreen(
                     Button(
                         onClick = {
                             if (userName.isNotBlank()) {
+                                dataViewModel.updateFirstTime()
                                 saveUserNameToFirebase(userName.trim())
+                                // Lưu tên người dùng vào UserViewModel
+                                userViewModel.setUserName(userName.trim())
                                 onStartClick(userName.trim())
+                                dataViewModel.updatePlayerName(userName.trim())
                             } else {
                                 isError = true
                             }

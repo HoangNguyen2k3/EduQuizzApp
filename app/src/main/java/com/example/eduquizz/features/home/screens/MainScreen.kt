@@ -20,21 +20,25 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.eduquizz.data_save.DataViewModel
+import com.example.eduquizz.data.local.UserViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.example.eduquizz.R
 import com.example.eduquizz.data.models.Subject
+import com.example.eduquizz.features.ThongKe.ThongKe
 import com.example.quizapp.ui.theme.QuizAppTheme
 
 @Composable
 fun MainScreen(
     onNavigateToEnglish:() -> Unit = {},
     onNavigateToMath:() -> Unit = {},
-    dataviewModel: DataViewModel = hiltViewModel()
+    dataviewModel: DataViewModel = hiltViewModel(),
+    userViewModel: UserViewModel = hiltViewModel()
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
 
@@ -100,7 +104,7 @@ fun MainScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            HeaderSection(dataviewModel)
+            HeaderSection(dataviewModel, userViewModel)
         },
         bottomBar = {
             BottomNavigationBar(
@@ -145,7 +149,8 @@ fun MainScreen(
                     }
 
                     1 -> {
-                        CoursesScreen()
+                        //CoursesScreen()
+                        ThongKe()
                     }
                     2 -> {
                         SettingScreen()
@@ -210,7 +215,9 @@ private fun BottomNavigationBar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HeaderSection(dataviewModel: DataViewModel) {
+private fun HeaderSection(dataviewModel: DataViewModel, userViewModel: UserViewModel) {
+    val userName by dataviewModel.playerName.observeAsState("")
+
     TopAppBar(
         title = {},
         actions = {
@@ -221,7 +228,7 @@ private fun HeaderSection(dataviewModel: DataViewModel) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Level badge
+                // User name badge (thay thế Level badge)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -238,20 +245,28 @@ private fun HeaderSection(dataviewModel: DataViewModel) {
                             horizontal = dimensionResource(id = R.dimen.badge_horizontal_padding),
                             vertical = dimensionResource(id = R.dimen.badge_vertical_padding)
                         )
+                        .weight(1f, fill = false)
+                        .widthIn(max = 200.dp) // Giới hạn chiều rộng tối đa
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_coin),
-                        contentDescription = "Ảnh PNG",
-                        modifier = Modifier.size(30.dp)
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "User",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.spacing_small)))
                     Text(
-                        text = stringResource(id = R.string.level_value),
+                        //text = if (userName.isNotEmpty()) userName else "User",
+                        text = if (userName.isNotEmpty()) userName else "User",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize = dimensionResource(id = R.dimen.text_medium).value.sp
+                        fontSize = dimensionResource(id = R.dimen.text_medium).value.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 // Coins badge
                 Row(
@@ -277,7 +292,7 @@ private fun HeaderSection(dataviewModel: DataViewModel) {
                         modifier = Modifier.size(30.dp)
                     )
                     Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.spacing_small)))
-                    dataviewModel.updateGold(1000)
+                    //dataviewModel.updateGold(1000)
                     val gold by dataviewModel.gold.observeAsState(initial = 0)
                     Text(
                         text = "$gold",

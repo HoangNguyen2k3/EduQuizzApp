@@ -18,6 +18,11 @@ import kotlin.math.abs
 class WordSearchViewModel @Inject constructor(
     private val repository: WordSearchRepository
 ) : ViewModel() {
+    private var userName: String? = null
+
+    fun setUserName(name: String) {
+        userName = name
+    }
 
     private var _gridSize = mutableStateOf(8)
     val gridSize: State<Int> get() = _gridSize
@@ -48,6 +53,16 @@ class WordSearchViewModel @Inject constructor(
     private var _hintCell = mutableStateOf<Cell?>(null)
     val hintCell: State<Cell?> get() = _hintCell
 
+    private val _isGameCompleted = mutableStateOf(false)
+    val isGameCompleted: State<Boolean> get() = _isGameCompleted
+
+    private val _showCompletionDialog = mutableStateOf(false)
+    val showCompletionDialog: State<Boolean> get() = _showCompletionDialog
+
+    private var startTime = 0L
+    private val _timeSpent = mutableStateOf("00:00")
+    val timeSpent: State<String> get() = _timeSpent
+
     fun loadWordsFromFirebase(topicId: String) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -60,13 +75,9 @@ class WordSearchViewModel @Inject constructor(
                     _gridSize.value = wordSearchData.gridSize
                     _wordsToFind.clear()
                     _wordsToFind.addAll(wordSearchData.words.map { Word(it) })
-
-                    // Khởi tạo lưới sau khi có dữ liệu
                     initializeGrid()
-
                 }.onFailure { exception ->
                     _error.value = "Failed to load words: ${exception.message}"
-                    // Fallback to default words if Firebase fails
                     initializeDefaultWords()
                 }
             } catch (e: Exception) {
@@ -99,6 +110,7 @@ class WordSearchViewModel @Inject constructor(
     }
 
     private fun initializeGrid() {
+        startTime = System.currentTimeMillis()
         val currentGridSize = _gridSize.value
         val emptyGrid = Array(currentGridSize) { row ->
             Array(currentGridSize) { col ->
@@ -143,7 +155,6 @@ class WordSearchViewModel @Inject constructor(
 
         while (attempts < maxAttempts) {
             attempts++
-
             val direction = directions.random()
             val startRow: Int
             val startCol: Int
@@ -202,7 +213,6 @@ class WordSearchViewModel @Inject constructor(
         for (i in word.indices) {
             val row = startRow + i * rowIncrement
             val col = startCol + i * colIncrement
-
             if (row < 0 || row >= currentGridSize || col < 0 || col >= currentGridSize) {
                 return false
             }
@@ -275,7 +285,44 @@ class WordSearchViewModel @Inject constructor(
             }
             updateSelectionState()
             _selectedCells.clear()
+            checkGameCompletion()
         }
+    }
+
+    private fun checkGameCompletion() {
+        val allWordsFound = _wordsToFind.all { it.isFound }
+        if (allWordsFound && _wordsToFind.isNotEmpty()) {
+            val endTime = System.currentTimeMillis()
+            val elapsedMillis = endTime - startTime
+            val minutes = (elapsedMillis / 60000).toInt()
+            val seconds = ((elapsedMillis % 60000) / 1000).toInt()
+            _timeSpent.value = String.format("%02d:%02d", minutes, seconds)
+            _isGameCompleted.value = true
+            _showCompletionDialog.value = true
+
+            _currentTopic.value?.let { topic ->
+                userName?.let { name ->
+                    saveTopicCompletion(name, topic)
+                } ?: run {
+                    println("Lỗi: userName chưa được thiết lập")
+                }
+            }
+        }
+    }
+
+    private fun saveTopicCompletion(userName: String, topicId: String) {
+        viewModelScope.launch {
+            try {
+                repository.saveTopicCompletion(userName, topicId, true)
+            } catch (e: Exception) {
+                println("Error saving topic completion: ${e.message}")
+            }
+        }
+    }
+
+    fun resetCompletionState() {
+        _isGameCompleted.value = false
+        _showCompletionDialog.value = false
     }
 
     fun useHint(): Boolean {
@@ -288,15 +335,107 @@ class WordSearchViewModel @Inject constructor(
         }
     }
 
+    // Cơ chế Hint
     fun revealHint(): Boolean {
         if (!useHint()) {
             return false
         }
 
+        // tim 1 chu cai trong tu chua dc tim
         val unfoundWord = _wordsToFind.firstOrNull { !it.isFound } ?: return false
-        val hintLetter = unfoundWord.word.random()
-        _hintCell.value = _grid.firstOrNull { it.char == hintLetter && !it.belongsToFoundWord }
+        val wordCells = findWordCellsInGrid(unfoundWord.word)
+        if (wordCells.isEmpty()) {
+            return false
+        }
+
+        _hintCell.value = wordCells.random()
         return true
+    }
+
+    // tim cell cua 1 tu trong grid
+    private fun findWordCellsInGrid(word: String): List<Cell> {
+        val currentGridSize = _gridSize.value
+        val wordCells = mutableListOf<Cell>()
+
+        for (row in 0 until currentGridSize){
+            for (col in 0 until currentGridSize) {
+                if (col + word.length <= currentGridSize) {
+                    if (checkWordMatch(word, row, col, 0, 1)) {
+                        for (i in word.indices) {
+                            wordCells.add(_grid[row * currentGridSize + col + i])
+                        }
+                    }
+                }
+
+                if (row + word.length <= currentGridSize) {
+                    if (checkWordMatch(word, row, col, 1, 0)) {
+                        for (i in word.indices) {
+                            wordCells.add(_grid[(row + i) * currentGridSize + col])
+                        }
+                    }
+                }
+
+                if (row + word.length <= currentGridSize && col + word.length <= currentGridSize) {
+                    if (checkWordMatch(word, row, col, 1, 1)) {
+                        for (i in word.indices) {
+                            wordCells.add(_grid[(row + i) * currentGridSize + col + i])
+                        }
+                    }
+                }
+
+                if (row - word.length + 1 >= 0 && col + word.length <= currentGridSize) {
+                    if (checkWordMatch(word, row, col, -1, 1)) {
+                        for (i in word.indices) {
+                            wordCells.add(_grid[(row - i) * currentGridSize + col + i])
+                        }
+                    }
+                }
+            }
+        }
+        return wordCells.distinctBy { "${it.row},${it.col}" }
+    }
+
+    //ktra vtri, huong
+    private fun checkWordMatch(
+        word: String,
+        startRow: Int,
+        startCol: Int,
+        rowIncrement: Int,
+        colIncrement: Int
+    ): Boolean {
+        val currentGridSize = _gridSize.value
+
+        var matches = true
+        for (i in word.indices) {
+            val row = startRow + i * rowIncrement
+            val col = startCol + i * colIncrement
+            if (row < 0 || row >= currentGridSize || col < 0 || col >= currentGridSize) {
+                matches = false
+                break
+            }
+            if (_grid[row * currentGridSize + col].char != word[i]) {
+                matches = false
+                break
+            }
+        }
+
+        if (matches) return true
+
+        matches = true
+        for (i in word.indices) {
+            val row = startRow + i * rowIncrement
+            val col = startCol + i * colIncrement
+            if (row < 0 || row >= currentGridSize || col < 0 || col >= currentGridSize) {
+                matches = false
+                break
+            }
+            if (_grid[row * currentGridSize + col].char != word[word.length - 1 - i]) {
+                matches = false
+                break
+            }
+        }
+
+        return matches
     }
 
     fun resetSelection() {
@@ -307,6 +446,9 @@ class WordSearchViewModel @Inject constructor(
     fun restartGame() {
         _selectedCells.clear()
         _wordsToFind.replaceAll { it.copy(isFound = false) }
+        _isGameCompleted.value = false
+        _showCompletionDialog.value = false
+        _hintCell.value = null
         initializeGrid()
     }
 
