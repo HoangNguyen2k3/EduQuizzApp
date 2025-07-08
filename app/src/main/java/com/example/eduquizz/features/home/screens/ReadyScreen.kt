@@ -37,6 +37,7 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.eduquizz.R
 import com.example.eduquizz.data.local.UserViewModel
+import com.example.eduquizz.data_save.DataViewModel
 import com.example.quizapp.ui.theme.QuizAppTheme
 import kotlinx.coroutines.launch
 
@@ -44,7 +45,8 @@ import kotlinx.coroutines.launch
 fun ReadyScreen(
     onStartClick: (String) -> Unit = {},
     modifier: Modifier = Modifier,
-    userViewModel: UserViewModel = hiltViewModel()
+    userViewModel: UserViewModel = hiltViewModel(),
+    dataViewModel: DataViewModel = hiltViewModel()
 ) {
     var userName by remember { mutableStateOf("") }
     var isError by remember { mutableStateOf(false) }
@@ -94,12 +96,33 @@ fun ReadyScreen(
         ),
         label = "floating"
     )
-
-    // Hàm xử lý khi nhấn Start
-    fun handleStartClick() {
-        if (userName.isNotBlank()) {
-            isLoading = true
-            isError = false
+    LaunchedEffect(Unit) {
+        dataViewModel.updateFirstTime()
+    }
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(
+                Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFF667eea).copy(alpha = 0.8f + animatedOffset * 0.2f),
+                        Color(0xFF764ba2).copy(alpha = 0.6f),
+                        Color(0xFF2d1b4e)
+                    ),
+                    radius = 1000f + animatedOffset * 200f
+                )
+            )
+    ) {
+        Box(
+            modifier = Modifier
+                .size(200.dp)
+                .offset(x = (-50).dp, y = 100.dp + (animatedOffset * 20).dp)
+                .background(
+                    Color.White.copy(alpha = 0.1f),
+                    CircleShape
+                )
+                .blur(50.dp)
+        )
 
             // Lưu tên vào local storage
             userViewModel.setUserName(userName.trim())
@@ -281,30 +304,23 @@ fun ReadyScreen(
                                             color = MaterialTheme.colorScheme.error
                                         )
                                     }
-                                } else null,
-                                leadingIcon = {
-                                    Card(
-                                        modifier = Modifier.size(32.dp),
-                                        colors = CardDefaults.cardColors(
-                                            containerColor = if (isError)
-                                                MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
-                                            else
-                                                colorResource(id = R.color.english_coral).copy(alpha = 0.1f)
-                                        ),
-                                        shape = CircleShape
-                                    ) {
-                                        Box(
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Person,
-                                                contentDescription = "Name",
-                                                tint = if (isError) MaterialTheme.colorScheme.error
-                                                else colorResource(id = R.color.english_coral),
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                        }
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(
+                                capitalization = KeyboardCapitalization.Words,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    keyboardController?.hide()
+                                    if (userName.isNotBlank()) {
+                                        // Lưu tên người dùng vào UserViewModel
+                                        userViewModel.setUserName(userName.trim())
+                                        onStartClick(userName.trim())
+                                        dataViewModel.updatePlayerName(userName.trim())
+                                    } else {
+                                        isError = true
+
                                     }
                                 },
                                 keyboardOptions = KeyboardOptions(
@@ -333,10 +349,35 @@ fun ReadyScreen(
                         }
 
                         Spacer(modifier = Modifier.height(20.dp))
-
-                        Button(
-                            onClick = { handleStartClick() },
-                            enabled = !isLoading,
+                    Button(
+                        onClick = {
+                            if (userName.isNotBlank()) {
+                                dataViewModel.updateFirstTime()
+                                saveUserNameToFirebase(userName.trim())
+                                // Lưu tên người dùng vào UserViewModel
+                                userViewModel.setUserName(userName.trim())
+                                onStartClick(userName.trim())
+                                dataViewModel.updatePlayerName(userName.trim())
+                            } else {
+                                isError = true
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp)
+                            .shadow(
+                                elevation = 12.dp,
+                                shape = RoundedCornerShape(20.dp),
+                                ambientColor = colorResource(id = R.color.english_coral),
+                                spotColor = colorResource(id = R.color.english_coral)
+                            ),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Transparent
+                        ),
+                        shape = RoundedCornerShape(20.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(60.dp)

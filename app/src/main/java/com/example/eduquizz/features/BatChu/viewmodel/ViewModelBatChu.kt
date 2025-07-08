@@ -1,12 +1,22 @@
 package com.example.eduquizz.features.BatChu.viewmodel
 
+import android.util.Log
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.features.BatChu.model.DataBatChu
-
-class ViewModelBatChu: ViewModel() {
+import com.example.eduquizz.features.BatChu.repository.BatChuRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+@HiltViewModel
+class ViewModelBatChu @Inject constructor(
+private val repository: BatChuRepository
+): ViewModel() {
     val sampleQuestions = listOf(
         DataBatChu(
             question = "What is this?",
@@ -30,6 +40,20 @@ class ViewModelBatChu: ViewModel() {
             shuffledLetters = listOf('B', 'A', 'P', 'O', 'A', 'B', 'C', 'D', 'F', 'G', 'O', 'I', 'J', 'K')
         )
     )
+var questionList by mutableStateOf<List<DataBatChu>>(emptyList())
+    private set
+
+    fun loadLevel(level: String) {
+        viewModelScope.launch {
+            val result = repository.getQuestionsByLevel(level)
+            result.onSuccess { list ->
+                questionList = list
+            }.onFailure {
+                questionList = sampleQuestions
+    //            e -> Log.e("BatChu", "Error: ${e.message}")
+            }
+        }
+    }
     var gold = mutableStateOf(-1)
         private set
     val coins = mutableStateOf(-1)
@@ -69,3 +93,5 @@ class ViewModelBatChu: ViewModel() {
     }
 
 }
+
+

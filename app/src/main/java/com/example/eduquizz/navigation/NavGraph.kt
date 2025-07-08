@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -67,10 +69,11 @@ object Routes {
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    dataViewModel: DataViewModel = hiltViewModel()
 ) {
     val userViewModel: UserViewModel = hiltViewModel()
-
+    val firstTime by dataViewModel.firstTime.observeAsState(0)
     NavHost(
         navController = navController,
         startDestination = Routes.SPLASH,
@@ -83,9 +86,14 @@ fun NavGraph(
         composable(Routes.SPLASH) {
             SplashScreen(
                 onNavigateToMain = {
-                    navController.navigate(Routes.READY) {
-                        popUpTo(Routes.SPLASH) { inclusive = true }
+                    if(firstTime==false){
+                        navController.navigate(Routes.READY) {
+                            popUpTo(Routes.SPLASH) { inclusive = true }
+                        }
+                    }else{
+                        navController.navigate(Routes.MAIN_DANH)
                     }
+
                 }
             )
         }
@@ -125,7 +133,7 @@ fun NavGraph(
             Box(modifier = Modifier.fillMaxSize()) {
                 IntroScreen(
                     navController,
-                    onBackPressed = { navController.popBackStack() }
+                    onBackPressed = { navController.navigate(Routes.ENGLISH_GAMES_SCENE) }
                 )
             }
         }
@@ -153,9 +161,49 @@ fun NavGraph(
                 }
             )
         }
+        composable("batchu/{level}",
+            arguments = listOf(
+                navArgument("level") { type = NavType.StringType },
+            )) {
+           // Main_BatChu(navController = navController)
+            backStackEntry ->
+            val level = backStackEntry.arguments?.getString("level")?:""
+            Main_BatChu(navController, currentLevel = level)
 
-        composable(Routes.BatChu) {
-            Main_BatChu(navController = navController)
+        }
+        composable(Routes.IntroBatChu) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                IntroScreenBatChu(
+                    navController,
+                    onBackPressed = { navController.navigate(Routes.ENGLISH_GAMES_SCENE) }
+                )
+            }
+        }
+        composable(Routes.LevelBatChu) {
+            LevelChoiceBatChu(
+                onBackClick = {navController.navigate(Routes.IntroBatChu)},
+                onGameClick = {
+                        game ->
+                    when(game.id){
+                        "level_easy"->navController.navigate("batchu/LevelEasy")
+                        "level_normal"->navController.navigate("batchu/LevelNormal")
+                        "level_hard"->navController.navigate("batchu/LevelHard")
+                    }
+                }
+            )
+        }
+        composable (Routes.QUIZ_LEVEL){
+            LevelChoice(
+                onBackClick = {navController.navigate(Routes.INTRO)},
+                onGameClick = {
+                    game ->
+                        when(game.id){
+                            "level_easy"->navController.navigate("main/LevelEasy")
+                            "level_normal"->navController.navigate("main/LevelNormal")
+                            "level_hard"->navController.navigate("main/LevelHard")
+                            "level_image"->navController.navigate("main/LevelImage")
+                        }
+                })
         }
 
         composable(Routes.QUIZ_LEVEL) {
@@ -184,7 +232,7 @@ fun NavGraph(
         composable(Routes.INTRO_THONG) {
             GameDescriptionScreen(
                 onPlayClick = { navController.navigate(Routes.GAME_THONG) },
-                onBackPressed = { navController.popBackStack() },
+                onBackPressed = { navController.navigate(Routes.ENGLISH_GAMES_SCENE) },
                 subject = "English"
             )
         }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -89,6 +90,15 @@ fun ResultsScreen(
     }
     LaunchedEffect(Unit) {
         dataviewModel.addGold(coinsEarned)
+        dataviewModel.addTotalQuestions(totalQuestions)
+        dataviewModel.addCorrectAnsweredQuestions(correctAnswers)
+        if(correctAnswers==totalQuestions){
+            dataviewModel.addCorrectAllQuestions(1)
+        }else if(correctAnswers>totalQuestions/2){
+            dataviewModel.addCorrectAbove50Percent(1)
+        }else{
+            dataviewModel.addCorrectBelow50Percent(1)
+        }
     }
     Surface(
         modifier = Modifier.fillMaxSize(),

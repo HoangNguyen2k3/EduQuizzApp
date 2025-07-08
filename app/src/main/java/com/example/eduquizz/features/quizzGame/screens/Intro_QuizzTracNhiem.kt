@@ -52,7 +52,7 @@ fun IntroScreen(
     var isDataLoaded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        loadingViewModel.showLoading("Đang tải Quiz Game...", showProgress = true)
+/*        loadingViewModel.showLoading("Đang tải Quiz Game...", showProgress = true)
 
         loadingViewModel.updateProgress(0.2f, "Đang tải câu hỏi...")
         delay(800)
@@ -66,9 +66,8 @@ fun IntroScreen(
         loadingViewModel.updateProgress(1.0f, "Hoàn thành!")
         delay(400)
 
-        loadingViewModel.hideLoading()
+        loadingViewModel.hideLoading()*/
         isDataLoaded = true
-        delay(300)
         isVisible = true
     }
 

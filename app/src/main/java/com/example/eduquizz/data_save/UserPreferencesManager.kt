@@ -12,45 +12,141 @@ val Context.dataStore by preferencesDataStore(name = "user_prefs")
 
 class UserPreferencesManager(private val context: Context) {
 
+    // --- Thông tin người chơi ---
     val playerNameFlow: Flow<String> = context.dataStore.data
-        .map { preferences ->
-            preferences[UserPreferencesKeys.PLAYER_NAME] ?: ""
-        }
+        .map { it[UserPreferencesKeys.PLAYER_NAME] ?: "" }
+
+    val playerAgeFlow: Flow<Int> = context.dataStore.data
+        .map { it[UserPreferencesKeys.PLAYER_AGE] ?: 0 }
+
+    val playerHobbiesSubjectFlow: Flow<String> = context.dataStore.data
+        .map { it[UserPreferencesKeys.PLAYER_HOBBIES_SUBJECT] ?: "" }
 
     val goldFlow: Flow<Int> = context.dataStore.data
-        .map { preferences ->
-            preferences[UserPreferencesKeys.GOLD] ?: 0
-        }
+        .map { it[UserPreferencesKeys.GOLD] ?: 0 }
 
     val currentLevelFlow: Flow<Int> = context.dataStore.data
-        .map { preferences ->
-            preferences[UserPreferencesKeys.CURRENT_LEVEL] ?: 1
+        .map { it[UserPreferencesKeys.CURRENT_LEVEL] ?: 1 }
+
+    val firstTimeInGame: Flow<Boolean> = context.dataStore.data
+        .map { it[UserPreferencesKeys.FIRST_TIME] ?: false }
+
+    // --- Thống kê ---
+    val numTotalQuestionsFlow: Flow<Int> = context.dataStore.data
+        .map { it[UserPreferencesKeys.NUM_TOTAL_QUESTION] ?: 0 }
+
+    val numCorrectAnsweredQuestionsFlow: Flow<Int> = context.dataStore.data
+        .map { it[UserPreferencesKeys.NUM_CORRECT_ANS_QUESTION] ?: 0 }
+
+    val numCorrectAllQuestionsFlow: Flow<Int> = context.dataStore.data
+        .map { it[UserPreferencesKeys.NUM_CORRECT_ALL_QUESTION] ?: 0 }
+
+    val numCorrectAbove50PercentFlow: Flow<Int> = context.dataStore.data
+        .map { it[UserPreferencesKeys.NUM_CORRECT_ABOVE_50_PERCENT_QUES] ?: 0 }
+
+    val numCorrectBelow50PercentFlow: Flow<Int> = context.dataStore.data
+        .map { it[UserPreferencesKeys.NUM_CORRECT_BELOW_50_PERCENT_QUES] ?: 0 }
+
+    // --- Lưu thông tin người chơi ---
+    suspend fun firstTimeInPlayGame(){
+        context.dataStore.edit {
+            it[UserPreferencesKeys.FIRST_TIME] = true
         }
-    val firstTimeInGame: Flow<Boolean> =context.dataStore.data
-        .map {
-            preferences ->
-            preferences[UserPreferencesKeys.FIRST_TIME] ?: false
-        }
+    }
     suspend fun savePlayerName(name: String) {
-        context.dataStore.edit { preferences ->
-            preferences[UserPreferencesKeys.PLAYER_NAME] = name
+        context.dataStore.edit {
+            it[UserPreferencesKeys.PLAYER_NAME] = name
+        }
+    }
+
+    suspend fun savePlayerAge(age: Int) {
+        context.dataStore.edit {
+            it[UserPreferencesKeys.PLAYER_AGE] = age
+        }
+    }
+
+    suspend fun savePlayerHobbiesSubject(subject: String) {
+        context.dataStore.edit {
+            it[UserPreferencesKeys.PLAYER_HOBBIES_SUBJECT] = subject
         }
     }
 
     suspend fun saveGold(gold: Int) {
-        context.dataStore.edit { preferences ->
-            preferences[UserPreferencesKeys.GOLD] = gold
+        context.dataStore.edit {
+            it[UserPreferencesKeys.GOLD] = gold
         }
     }
 
     suspend fun saveCurrentLevel(level: Int) {
-        context.dataStore.edit { preferences ->
-            preferences[UserPreferencesKeys.CURRENT_LEVEL] = level
+        context.dataStore.edit {
+            it[UserPreferencesKeys.CURRENT_LEVEL] = level
         }
     }
+
+    suspend fun saveFirstTime(flag: Boolean) {
+        context.dataStore.edit {
+            it[UserPreferencesKeys.FIRST_TIME] = flag
+        }
+    }
+
     suspend fun addGold(amount: Int) {
-        val currentGold = goldFlow.first() // lấy gold hiện tại
-        saveGold(currentGold + amount)     // cộng thêm và lưu lại
+        val currentGold = goldFlow.first()
+        saveGold(currentGold + amount)
+    }
+
+    // --- Lưu thống kê ---
+    suspend fun saveNumTotalQuestions(count: Int) {
+        context.dataStore.edit {
+            it[UserPreferencesKeys.NUM_TOTAL_QUESTION] = count
+        }
+    }
+
+    suspend fun saveNumCorrectAnsweredQuestions(count: Int) {
+        context.dataStore.edit {
+            it[UserPreferencesKeys.NUM_CORRECT_ANS_QUESTION] = count
+        }
+    }
+
+    suspend fun saveNumCorrectAllQuestions(count: Int) {
+        context.dataStore.edit {
+            it[UserPreferencesKeys.NUM_CORRECT_ALL_QUESTION] = count
+        }
+    }
+
+    suspend fun saveNumCorrectAbove50Percent(count: Int) {
+        context.dataStore.edit {
+            it[UserPreferencesKeys.NUM_CORRECT_ABOVE_50_PERCENT_QUES] = count
+        }
+    }
+
+    suspend fun saveNumCorrectBelow50Percent(count: Int) {
+        context.dataStore.edit {
+            it[UserPreferencesKeys.NUM_CORRECT_BELOW_50_PERCENT_QUES] = count
+        }
+    }
+    suspend fun addNumTotalQuestions(amount: Int = 1) {
+        val current = numTotalQuestionsFlow.first()
+        saveNumTotalQuestions(current + amount)
+    }
+
+    suspend fun addNumCorrectAnsweredQuestions(amount: Int = 1) {
+        val current = numCorrectAnsweredQuestionsFlow.first()
+        saveNumCorrectAnsweredQuestions(current + amount)
+    }
+
+    suspend fun addNumCorrectAllQuestions(amount: Int = 1) {
+        val current = numCorrectAllQuestionsFlow.first()
+        saveNumCorrectAllQuestions(current + amount)
+    }
+
+    suspend fun addNumCorrectAbove50Percent(amount: Int = 1) {
+        val current = numCorrectAbove50PercentFlow.first()
+        saveNumCorrectAbove50Percent(current + amount)
+    }
+
+    suspend fun addNumCorrectBelow50Percent(amount: Int = 1) {
+        val current = numCorrectBelow50PercentFlow.first()
+        saveNumCorrectBelow50Percent(current + amount)
     }
 
 }
