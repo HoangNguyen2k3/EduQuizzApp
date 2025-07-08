@@ -212,7 +212,7 @@ fun NavGraph(
             Box(modifier = Modifier.fillMaxSize()) {
                 IntroScreenBatChu(
                     navController,
-                    onBackPressed = { navController.navigate(from) }
+                    onBackPressed = { navController.navigate(from) },
                 )
             }
         }
@@ -248,13 +248,17 @@ fun NavGraph(
             Box(modifier = Modifier.fillMaxSize()) {
                 IntroScreen(
                     navController,
-                    onBackPressed = { navController.navigate(from) }
+                    onBackPressed = { navController.navigate(from) },
                 )
             }
         }
-        composable(Routes.QUIZ_LEVEL) {
+        composable(
+            route = "${Routes.QUIZ_LEVEL}?from={from}",
+            arguments = listOf(navArgument("from") { defaultValue = Routes.ENGLISH_GAMES_SCENE; type = NavType.StringType })
+        ) { backStackEntry ->
+            val from = backStackEntry.arguments?.getString("from") ?: Routes.ENGLISH_GAMES_SCENE
             LevelChoice(
-                onBackClick = { navController.navigate(Routes.INTRO) },
+                onBackClick = { navController.navigate("${Routes.INTRO}?from=$from") },
                 onGameClick = { game ->
                     when(game.id) {
                         "level_easy" -> navController.navigate("main/LevelEasy")
