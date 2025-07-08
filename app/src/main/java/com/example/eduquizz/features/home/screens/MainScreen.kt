@@ -35,6 +35,7 @@ import com.example.quizapp.ui.theme.QuizAppTheme
 @Composable
 fun MainScreen(
     onNavigateToEnglish:() -> Unit = {},
+    onNavigateToMath:() -> Unit = {},
     dataviewModel: DataViewModel = hiltViewModel(),
     userViewModel: UserViewModel = hiltViewModel()
 ) {

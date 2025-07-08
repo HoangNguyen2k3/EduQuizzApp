@@ -139,7 +139,7 @@ fun NavGraph(
             Box(modifier = Modifier.fillMaxSize()) {
                 IntroScreen(
                     navController,
-                    onBackPressed = { navController.popBackStack() }
+                    onBackPressed = { navController.navigate(Routes.ENGLISH_GAMES_SCENE) }
                 )
             }
         }
@@ -207,14 +207,21 @@ fun NavGraph(
                 }
             )
         }
-        composable(Routes.BatChu) {
-            Main_BatChu(navController = navController)
+        composable("batchu/{level}",
+            arguments = listOf(
+                navArgument("level") { type = NavType.StringType },
+            )) {
+           // Main_BatChu(navController = navController)
+            backStackEntry ->
+            val level = backStackEntry.arguments?.getString("level")?:""
+            Main_BatChu(navController, currentLevel = level)
+
         }
         composable(Routes.IntroBatChu) {
             Box(modifier = Modifier.fillMaxSize()) {
                 IntroScreenBatChu(
                     navController,
-                    onBackPressed = { navController.popBackStack() }
+                    onBackPressed = { navController.navigate(Routes.ENGLISH_GAMES_SCENE) }
                 )
             }
         }
@@ -224,9 +231,9 @@ fun NavGraph(
                 onGameClick = {
                         game ->
                     when(game.id){
-                        "level_easy"->navController.navigate(Routes.BatChu)
-                        "level_normal"->navController.navigate(Routes.BatChu)
-                        "level_hard"->navController.navigate(Routes.BatChu)
+                        "level_easy"->navController.navigate("batchu/LevelEasy")
+                        "level_normal"->navController.navigate("batchu/LevelNormal")
+                        "level_hard"->navController.navigate("batchu/LevelHard")
                     }
                 }
             )
@@ -242,6 +249,8 @@ fun NavGraph(
                             "level_hard"->navController.navigate("main/LevelHard")
                             "level_image"->navController.navigate("main/LevelImage")
                         }
+                })
+        }
 
         composable(Routes.QUIZ_LEVEL) {
             LevelChoice(
@@ -267,7 +276,7 @@ fun NavGraph(
         composable(Routes.INTRO_THONG) {
             GameDescriptionScreen(
                 onPlayClick = { navController.navigate(Routes.GAME_THONG) },
-                onBackPressed = { navController.popBackStack() },
+                onBackPressed = { navController.navigate(Routes.ENGLISH_GAMES_SCENE) },
                 subject = "English"
             )
         }
