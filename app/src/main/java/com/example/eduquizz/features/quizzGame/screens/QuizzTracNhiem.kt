@@ -28,23 +28,49 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.ContentScale
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.eduquizz.navigation.Routes
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.eduquizz.data_save.DataViewModel
+import com.example.eduquizz.features.home.screens.WithLoading
+import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.eduquizz.data_save.AudioManager
 import androidx.compose.runtime.DisposableEffect
 
 @SuppressLint("SuspiciousIndentation")
 @Composable
 fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,navController: NavController,questionViewModel: QuestionViewModel
-,dataviewModel: DataViewModel = hiltViewModel()) {
+,dataviewModel: DataViewModel = hiltViewModel(),loadingViewModel: LoadingViewModel = viewModel()) {
+    val loadingState by loadingViewModel.loadingState.collectAsState()
+    var isVisible by remember { mutableStateOf(false) }
+    var isDataLoaded by remember { mutableStateOf(false) }
     LaunchedEffect(key1 = true) {
         questionViewModel.Init(dataviewModel,currentLevel)
+        loadingViewModel.showLoading("Đang tải Quiz Game...", showProgress = true)
+
+        loadingViewModel.updateProgress(0.2f, "Đang tải câu hỏi...")
+        delay(600)
+
+        loadingViewModel.updateProgress(0.5f, "Đang chuẩn bị nội dung...")
+        delay(600)
+
+        loadingViewModel.updateProgress(0.8f, "Đang khởi tạo game...")
+        delay(400)
+
+        loadingViewModel.updateProgress(1.0f, "Hoàn thành!")
+        delay(200)
+
+        loadingViewModel.hideLoading()
+        isDataLoaded = true
+        delay(100)
+        isVisible = true
     }
     val count = questionViewModel.count
     val score = questionViewModel.score
@@ -78,7 +104,44 @@ fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,nav
             coins.value = gold
         }
     }
+
+    WithLoading(
+        isLoading = loadingState.isLoading,
+        isDarkTheme = false,
+        backgroundColors = listOf(
+            Color(0xFF096A5A),
+            Color(0xFF44A08D),
+            Color(0xFF4ECDC4),
+            MaterialTheme.colorScheme.background
+        )
+    ){
+
+    }
+    if(isDataLoaded == false){
+        return
+    }
     Scaffold(
+        topBar = {
+            IconButton(
+                onClick = {
+                    navController.popBackStack()
+                },
+                modifier = Modifier.padding(16.dp)
+                    .background(
+                        Color.Black.copy(alpha = 0.2f),
+                        RoundedCornerShape(12.dp)
+                    )
+                    .size(40.dp)
+
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Quay lại",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        },
         bottomBar = {
             BottomHelperBar(
                 usedHelperThisQuestion = usedHelperThisQuestion.value, // truyền vào đây
