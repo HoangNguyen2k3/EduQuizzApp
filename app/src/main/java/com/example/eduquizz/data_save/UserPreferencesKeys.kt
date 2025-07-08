@@ -19,4 +19,7 @@ object UserPreferencesKeys {
     val NUM_CORRECT_ABOVE_50_PERCENT_QUES = intPreferencesKey("correct_above_50_percent_question")
     val NUM_CORRECT_BELOW_50_PERCENT_QUES = intPreferencesKey("correct_below_50_percent_question")
     val BIRTHDAY = stringPreferencesKey("player_birthday")
+
+    val music = booleanPreferencesKey("music")
+    val sfx = booleanPreferencesKey("sfx")
 }
