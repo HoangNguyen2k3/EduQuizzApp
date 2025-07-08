@@ -5,8 +5,6 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.google.gms.google.services)
-    // Remove kapt if not needed for other dependencies
-    // id("org.jetbrains.kotlin.kapt") // Comment out or remove
 }
 
 android {
@@ -52,7 +50,7 @@ dependencies {
     //Firebase
     implementation(libs.firebase.database)
     implementation(libs.firebase.firestore.ktx)
-    implementation(libs.androidx.runtime.livedata) // Updated to use version catalog
+    implementation(libs.androidx.runtime.livedata)
     ksp(libs.hilt.compiler) // Updated to use version catalog
 
     //Navigation
@@ -92,5 +90,5 @@ dependencies {
     // Coil core for Jetpack Compose
     implementation("io.coil-kt:coil-compose:2.4.0")
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
-    implementation("io.coil-kt:coil-gif:2.4.0") // Thêm bộ giải mã GIF
+    implementation("io.coil-kt:coil-gif:2.4.0")
 }

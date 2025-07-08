@@ -25,12 +25,8 @@ import com.example.eduquizz.features.home.screens.SettingScreen
 import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.eduquizz.features.home.screens.MainScreen
 import com.example.eduquizz.features.match.viewmodel.WordMatchGame
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.eduquizz.data_save.DataViewModel
-import com.example.eduquizz.MainActivity
 import com.example.eduquizz.features.BatChu.screens.Main_BatChu
-import com.example.eduquizz.navigation.Routes.MAIN_DANH
-import com.example.quizapp.ui.splash.SplashScreen
+import com.example.eduquizz.features.home.screens.SplashScreen
 import com.example.eduquizz.features.wordsearch.screens.IntroductionScreen
 import com.example.eduquizz.features.wordsearch.screens.WordSearchGame
 import com.example.eduquizz.features.wordsearch.screens.CompletionScreen
@@ -66,7 +62,7 @@ object Routes {
 
 @Composable
 fun NavGraph(
-    navController: NavHostController,
+        navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
     val userViewModel: UserViewModel = hiltViewModel()
