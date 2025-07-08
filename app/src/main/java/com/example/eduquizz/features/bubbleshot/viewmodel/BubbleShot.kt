@@ -70,6 +70,9 @@ class BubbleShot : ViewModel() {
     var job: Job? = null
     var selectedAnswer = mutableStateOf<String?>(null)
     var isCorrectAnswer = mutableStateOf<Boolean?>(null)
+    var questionCount = mutableStateOf(0)
+    var isGameOver = mutableStateOf(false)
+    var totalQuestions = mutableStateOf(20);
 
     init {
         setupInitialAnswers()
@@ -78,7 +81,6 @@ class BubbleShot : ViewModel() {
 
     private fun setupInitialAnswers() {
         val answerPool = allQuestions.map { it.correctAnswer }.shuffled().take(20).toMutableList()
-        // Đảm bảo đáp án đúng của câu hiện tại có trong lưới
         if (!answerPool.contains(currentQuestion.value.correctAnswer)) {
             answerPool[Random.nextInt(12)] = currentQuestion.value.correctAnswer
         }
@@ -87,6 +89,7 @@ class BubbleShot : ViewModel() {
     }
 
     fun onAnswerSelected(index: Int) {
+        if (isGameOver.value) return
         job?.cancel()
         val answer = answers[index]
         val isCorrect = answer == currentQuestion.value.correctAnswer
@@ -95,16 +98,22 @@ class BubbleShot : ViewModel() {
         if (isCorrect) {
             score.value += 1
         }
+        questionCount.value += 1
         viewModelScope.launch {
             delay(500)
             answers[index] = null
             delay(200)
             selectedAnswer.value = null
             isCorrectAnswer.value = null
-            nextQuestion()
+            if (questionCount.value >= 20) {
+                isGameOver.value = true
+            } else {
+                nextQuestion()
+            }
         }
     }
 fun nextQuestion() {
+    if (isGameOver.value) return
     currentQuestion.value = allQuestions.random()
     val correctAnswer = currentQuestion.value.correctAnswer
     val nonNullIndices = answers.mapIndexedNotNull { idx, v -> if (v != null) idx else null }
@@ -183,7 +192,11 @@ fun nextQuestion() {
                 delay(1000)
                 timer.value--
                 if (timer.value == 0) {
-                    nextQuestion()
+                    if (questionCount.value >= totalQuestions.value ){
+                        isGameOver.value = true
+                    } else {
+                        nextQuestion()
+                    }
                 }
             }
         }

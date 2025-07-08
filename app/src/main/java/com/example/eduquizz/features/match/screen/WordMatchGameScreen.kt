@@ -99,14 +99,7 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            // Hiển thị thời gian còn lại
-//            Text(
-//                text = "⏰ $timer",
-//                color = if (timer <= 10) Color.Red else Color.Black,
-//                fontWeight = FontWeight.Bold,
-//                fontSize = 16.sp,
-//                modifier = Modifier.align(Alignment.CenterHorizontally)
-//            )
+
             Spacer(modifier = Modifier.height(4.dp))
             // Thanh tiến trình
             Box(
@@ -248,99 +241,12 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
             val context = LocalContext.current
             Toast.makeText(context, "Đã hoàn thành tất cả câu hỏi!", Toast.LENGTH_SHORT).show()
             navController.navigate("result/${viewModel.totalRight.value}/${viewModel.totalQuestion.value}/${Routes.INTRO_THONG}/${Routes.INTRO_THONG}")
-/*            AlertDialog(
-                onDismissRequest = { },
-                title = { 
-                    Text(
-                        "⏰ Hết thời gian!",
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Red
-                    ) 
-                },
-                text = {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "Bạn đã hết thời gian cho level này!",
-                            textAlign = TextAlign.Center,
-                            fontSize = 16.sp,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        Text(
-                            "Số cặp đúng: ${viewModel.totalRight.value}/20",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFF44336)
-                        )
-                        Text(
-                            "Game sẽ reset về level đầu sau 5 giây...",
-                            fontSize = 14.sp,
-                            color = Color.Gray,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = { 
-                            viewModel.showTimeOutDialog.value = false
-                            viewModel.resetAll()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336))
-                    ) { 
-                        Text("Reset ngay", color = Color.White) 
-                    }
-                }
-            )*/
         }
         // Dialog kết thúc game
         if (showFinishDialog) {
             val context = LocalContext.current
             Toast.makeText(context, "Đã hoàn thành tất cả câu hỏi!", Toast.LENGTH_SHORT).show()
             navController.navigate("result/${viewModel.totalRight.value}/${viewModel.totalQuestion.value}/${Routes.INTRO_THONG}/${Routes.INTRO_THONG}")
-/*            AlertDialog(
-                onDismissRequest = { },
-                title = { 
-                    Text(
-                        if (canPass) "🎉 Hoàn thành!" else "😔 Chưa đạt yêu cầu",
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.Bold
-                    ) 
-                },
-                text = {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            if (canPass) "Chúc mừng! Bạn đã hoàn thành game!"
-                            else "Bạn cần cải thiện thêm để qua màn!",
-                            textAlign = TextAlign.Center,
-                            fontSize = 16.sp,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        Text(
-                            "Số cặp đúng: ${viewModel.totalRight.value}/20",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (canPass) Color(0xFF4CAF50) else Color(0xFFF44336)
-                        )
-                        Text(
-                            "Vàng kiếm được: ${viewModel.totalRight.value * 5}",
-                            fontSize = 14.sp,
-                            color = Color(0xFFFFB800),
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = { viewModel.resetAll() },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (canPass) Color(0xFF4CAF50) else Color(0xFFF44336)
-                        )
-                    ) { 
-                        Text("Chơi lại", color = Color.White) 
-                    }
-                }
-            )*/
         }
     }
 }
