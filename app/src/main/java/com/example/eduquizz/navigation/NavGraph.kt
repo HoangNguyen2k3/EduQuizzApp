@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -79,10 +81,11 @@ object Routes {
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    dataViewModel: DataViewModel = hiltViewModel()
 ) {
     val userViewModel: UserViewModel = hiltViewModel()
-
+    val firstTime by dataViewModel.firstTime.observeAsState(0)
     NavHost(
         navController = navController,
         startDestination = Routes.SPLASH,
@@ -95,9 +98,14 @@ fun NavGraph(
         composable(Routes.SPLASH) {
             SplashScreen(
                 onNavigateToMain = {
-                    navController.navigate(Routes.READY) {
-                        popUpTo(Routes.SPLASH) { inclusive = true }
+                    if(firstTime==false){
+                        navController.navigate(Routes.READY) {
+                            popUpTo(Routes.SPLASH) { inclusive = true }
+                        }
+                    }else{
+                        navController.navigate(Routes.MAIN_DANH)
                     }
+
                 }
             )
         }

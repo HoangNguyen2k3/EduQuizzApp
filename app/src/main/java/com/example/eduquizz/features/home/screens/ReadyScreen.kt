@@ -37,6 +37,7 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.eduquizz.R
 import com.example.eduquizz.data.local.UserViewModel
+import com.example.eduquizz.data_save.DataViewModel
 import com.example.quizapp.ui.theme.QuizAppTheme
 
 import com.google.firebase.database.FirebaseDatabase
@@ -52,7 +53,8 @@ fun saveUserNameToFirebase(userName: String) {
 fun ReadyScreen(
     onStartClick: (String) -> Unit = {},
     modifier: Modifier = Modifier,
-    userViewModel: UserViewModel = hiltViewModel()
+    userViewModel: UserViewModel = hiltViewModel(),
+    dataViewModel: DataViewModel = hiltViewModel()
 ) {
     var userName by remember { mutableStateOf("") }
     var isError by remember { mutableStateOf(false) }
@@ -90,7 +92,9 @@ fun ReadyScreen(
         ),
         label = "floating"
     )
-
+    LaunchedEffect(Unit) {
+        dataViewModel.updateFirstTime()
+    }
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -289,6 +293,7 @@ fun ReadyScreen(
                                         // Lưu tên người dùng vào UserViewModel
                                         userViewModel.setUserName(userName.trim())
                                         onStartClick(userName.trim())
+                                        dataViewModel.updatePlayerName(userName.trim())
                                     } else {
                                         isError = true
                                     }
@@ -313,10 +318,12 @@ fun ReadyScreen(
                     Button(
                         onClick = {
                             if (userName.isNotBlank()) {
+                                dataViewModel.updateFirstTime()
                                 saveUserNameToFirebase(userName.trim())
                                 // Lưu tên người dùng vào UserViewModel
                                 userViewModel.setUserName(userName.trim())
                                 onStartClick(userName.trim())
+                                dataViewModel.updatePlayerName(userName.trim())
                             } else {
                                 isError = true
                             }

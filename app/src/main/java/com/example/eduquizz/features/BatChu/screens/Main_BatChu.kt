@@ -88,7 +88,6 @@ fun Main_BatChu(navController: NavController,
     var isDataLoaded by remember { mutableStateOf(false) }
     LaunchedEffect(key1 = true) {
         viewModelBatChu.Init(dataviewModel)
-        viewModelBatChu.sampleQuestions
         viewModelBatChu.loadLevel(currentLevel)
 
         loadingViewModel.showLoading("Đang tải Quiz Game...", showProgress = true)

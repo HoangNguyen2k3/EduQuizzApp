@@ -28,6 +28,12 @@ class DataViewModel @Inject constructor(
     val numCorrectBelow50Percent = userPrefs.numCorrectBelow50PercentFlow.asLiveData()
 
     // --- Cập nhật thông tin người chơi ---
+    fun updateFirstTime(){
+        viewModelScope.launch {
+            userPrefs.firstTimeInPlayGame()
+        }
+    }
+
     fun updatePlayerName(name: String) {
         viewModelScope.launch {
             userPrefs.savePlayerName(name)
@@ -71,33 +77,34 @@ class DataViewModel @Inject constructor(
     }
 
     // --- Cập nhật thống kê ---
-    fun updateTotalQuestions(count: Int) {
+    fun addTotalQuestions(amount: Int = 1) {
         viewModelScope.launch {
-            userPrefs.saveNumTotalQuestions(count)
+            userPrefs.addNumTotalQuestions(amount)
         }
     }
 
-    fun updateCorrectAnsweredQuestions(count: Int) {
+    fun addCorrectAnsweredQuestions(amount: Int = 1) {
         viewModelScope.launch {
-            userPrefs.saveNumCorrectAnsweredQuestions(count)
+            userPrefs.addNumCorrectAnsweredQuestions(amount)
         }
     }
 
-    fun updateCorrectAllQuestions(count: Int) {
+    fun addCorrectAllQuestions(amount: Int = 1) {
         viewModelScope.launch {
-            userPrefs.saveNumCorrectAllQuestions(count)
+            userPrefs.addNumCorrectAllQuestions(amount)
         }
     }
 
-    fun updateCorrectAbove50Percent(count: Int) {
+    fun addCorrectAbove50Percent(amount: Int = 1) {
         viewModelScope.launch {
-            userPrefs.saveNumCorrectAbove50Percent(count)
+            userPrefs.addNumCorrectAbove50Percent(amount)
         }
     }
 
-    fun updateCorrectBelow50Percent(count: Int) {
+    fun addCorrectBelow50Percent(amount: Int = 1) {
         viewModelScope.launch {
-            userPrefs.saveNumCorrectBelow50Percent(count)
+            userPrefs.addNumCorrectBelow50Percent(amount)
         }
     }
+
 }
