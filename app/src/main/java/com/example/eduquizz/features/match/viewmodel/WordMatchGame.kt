@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import com.example.eduquizz.features.match.model.WordPair
 
 import androidx.lifecycle.viewModelScope
+import com.example.eduquizz.data_save.DataViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -36,7 +37,8 @@ class WordMatchGame : ViewModel() {
         WordPair("Bus", "A large passenger vehicle"),
     ).shuffled()
 
-    val gold = mutableStateOf(200)
+    var gold = mutableStateOf(-1)
+        private set
     val currentLevel = mutableStateOf(0) // 0..3 (4 màn, mỗi màn 5 câu)
     val timerSeconds = mutableStateOf(40)
     val showResult = mutableStateOf(false)
@@ -44,6 +46,7 @@ class WordMatchGame : ViewModel() {
     val showFinishDialog = mutableStateOf(false)
     val showTimeOutDialog = mutableStateOf(false)
     val totalRight = mutableStateOf(0)
+    val totalQuestion = mutableStateOf(0)
     val canPass = mutableStateOf(false)
 
     // Dữ liệu cho từng vòng
@@ -53,13 +56,26 @@ class WordMatchGame : ViewModel() {
     var correctIndices = mutableStateListOf<Int>() // chỉ số đúng (màu xanh)
     var wrongIndices = mutableStateListOf<Int>() // chỉ số sai (màu đỏ)
 
-    // Timer
+        // Timer
     private var timerJob: Job? = null
 
     init {
         startLevel(0)
     }
-
+    private lateinit var dataViewModel: DataViewModel
+    fun Init(data: DataViewModel) {
+        this.dataViewModel = data
+        viewModelScope.launch {
+            delay(10) // Đợi LiveData emit ra giá trị
+            gold.value = data.gold.value ?: 0
+        }
+        //gold = mutableStateOf(data.gold.value ?: 0)
+        totalQuestion.value = _allWordPairs.size
+    }
+    fun spendCoins(amount: Int) {
+        gold.value = (gold.value ?: 0) - amount
+        dataViewModel.updateGold(gold.value ?: 0) // <-- chỉ update khi cần
+    }
     fun startLevel(level: Int) {
         currentLevel.value = level
         val start = level * 5
@@ -148,7 +164,7 @@ class WordMatchGame : ViewModel() {
 
     fun useHint() {
         if (gold.value >= 20) {
-            gold.value -= 20
+            spendCoins(20)
             // Tự động mở đúng 1 cặp chưa matched
             val unmatched = cards.withIndex().filter { !it.value.isMatched }
             val pairs = unmatched.groupBy { it.value.pairId }.values.filter { it.size == 2 }
@@ -174,10 +190,9 @@ class WordMatchGame : ViewModel() {
             }
         } else showBuyGoldDialog.value = true
     }
-
     fun skipLevel() {
         if (gold.value >= 100) {
-            gold.value -= 100
+            spendCoins(100)
             // Đếm số cặp chưa match để cộng vào totalRight
             val unmatchedCount = cards.count { !it.isMatched }
             val pairsToAdd = unmatchedCount / 2 // Mỗi cặp = 2 card
