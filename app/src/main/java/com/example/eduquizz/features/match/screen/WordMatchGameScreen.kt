@@ -38,8 +38,10 @@ import com.example.eduquizz.data_save.AudioManager
 import androidx.compose.runtime.DisposableEffect
 
 @Composable
-fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostController,
-                        dataviewModel: DataViewModel = hiltViewModel()
+fun WordMatchGameScreen(
+    viewModel: WordMatchGame = hiltViewModel(),
+    navController: NavHostController,
+    dataviewModel: DataViewModel = hiltViewModel()
 ) {
     val gold by dataviewModel.gold.observeAsState(-1)
     val timer by viewModel.timerSeconds
@@ -48,14 +50,15 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
     val showBuyGoldDialog by viewModel.showBuyGoldDialog
     val showFinishDialog by viewModel.showFinishDialog
     val showTimeOutDialog by viewModel.showTimeOutDialog
+    val showLoadingDialog by viewModel.showLoadingDialog
     val canPass by viewModel.canPass
-    
 
     val cards = viewModel.cards
     val selectedIndices = viewModel.selectedIndices
     val shakingIndices = viewModel.shakingIndices
     val correctIndices = viewModel.correctIndices
     val wrongIndices = viewModel.wrongIndices
+
 
 
     val context = LocalContext.current
@@ -71,7 +74,6 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
     LaunchedEffect(key1 = true) {
         viewModel.Init(dataviewModel)
     }
-
     Column(modifier = Modifier.fillMaxSize()) {
         IconButton(
             onClick = { navController.popBackStack() },
@@ -82,6 +84,7 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
                 contentDescription = "Back"
             )
         }
+
         // Top bar
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -89,19 +92,16 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
         ) {
             Text("Level ${level + 1}/4", fontWeight = FontWeight.Bold)
             Text("Gold: $gold", color = Color(0xFFFFB800), fontWeight = FontWeight.Bold)
-            // Ẩn timer số, chỉ hiển thị thanh tiến trình
         }
-        
-        // Timer Progress Bar - thay thế timer số
+
+        // Timer Progress Bar
         val progress = timer.toFloat() / 40f
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-
             Spacer(modifier = Modifier.height(4.dp))
-            // Thanh tiến trình
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -117,12 +117,12 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(8.dp))
 
         // Lưới thẻ
         LazyVerticalGrid(
-            columns = GridCells.Fixed(2), // 2 cột dọc sát nhau
+            columns = GridCells.Fixed(2),
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
@@ -136,15 +136,14 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
                 val isCorrect = correctIndices.contains(idx)
                 val isWrong = wrongIndices.contains(idx)
                 val shakeAnim = remember { Animatable(0f) }
-                
-                // Xác định màu nền dựa trên trạng thái
+
                 val backgroundColor = when {
-                    isCorrect -> Color(0xFF4CAF50) // Xanh lá
-                    isWrong -> Color(0xFFF44336) // Đỏ
-                    isSelected -> Color(0xFF7E7E7E) // Vàng nhạt
+                    isCorrect -> Color(0xFF4CAF50)
+                    isWrong -> Color(0xFFF44336)
+                    isSelected -> Color(0xFF7E7E7E)
                     else -> Color.White
                 }
-                
+
                 if (isShaking) {
                     LaunchedEffect(isShaking) {
                         shakeAnim.snapTo(0f)
@@ -159,15 +158,17 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
                         shakeAnim.snapTo(0f)
                     }
                 }
+
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(80.dp)
-                        .graphicsLayer (
+                        .graphicsLayer(
                             translationX = if (isShaking) shakeAnim.value * 16f else 0f,
                             alpha = if (card.isMatched) 0f else 1f
                         )
                         .background(backgroundColor)
+
                         .clickable(enabled = !showResult && !isSelected && !isCorrect && !isWrong && !card.isMatched) {
                             AudioManager.playClickSfx()
                             viewModel.onCardClick(idx)
@@ -177,9 +178,9 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
                 ) {
                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                         Text(
-                            card.text, 
-                            fontSize = 18.sp, 
-                            fontWeight = FontWeight.Bold, 
+                            card.text,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
                             color = if (isCorrect || isWrong) Color.White else Color.Black
                         )
@@ -187,7 +188,8 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
                 }
             }
         }
-        // Hint/Skip
+
+        // Hint/Skip buttons
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -217,7 +219,8 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
                 Text("Skip (-100)", color = Color.White)
             }
         }
-        // Dialog hết vàng
+
+        // Dialogs
         if (showBuyGoldDialog) {
             AlertDialog(
                 onDismissRequest = { viewModel.showBuyGoldDialog.value = false },
@@ -235,14 +238,13 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
                 }
             )
         }
-        // Dialog hết thời gian
 
         if (showTimeOutDialog) {
             val context = LocalContext.current
-            Toast.makeText(context, "Đã hoàn thành tất cả câu hỏi!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Hết thời gian!", Toast.LENGTH_SHORT).show()
             navController.navigate("result/${viewModel.totalRight.value}/${viewModel.totalQuestion.value}/${Routes.INTRO_THONG}/${Routes.INTRO_THONG}")
         }
-        // Dialog kết thúc game
+
         if (showFinishDialog) {
             val context = LocalContext.current
             Toast.makeText(context, "Đã hoàn thành tất cả câu hỏi!", Toast.LENGTH_SHORT).show()
@@ -250,11 +252,3 @@ fun WordMatchGameScreen(viewModel: WordMatchGame, navController: NavHostControll
         }
     }
 }
-@Preview(showBackground = true)
-@Composable
-fun WordMatchGameScreenPreview() {
-    val viewModel = WordMatchGame()
-    val navController = NavHostController(LocalContext.current)
-    WordMatchGameScreen(viewModel, navController)
-}
-

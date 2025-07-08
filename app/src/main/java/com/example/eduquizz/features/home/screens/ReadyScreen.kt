@@ -40,6 +40,7 @@ import com.example.eduquizz.data.local.UserViewModel
 import com.example.eduquizz.data_save.DataViewModel
 import com.example.quizapp.ui.theme.QuizAppTheme
 
+
 import com.google.firebase.database.FirebaseDatabase
 
 fun saveUserNameToFirebase(userName: String) {
@@ -92,6 +93,7 @@ fun ReadyScreen(
         ),
         label = "floating"
     )
+
     LaunchedEffect(Unit) {
         dataViewModel.updateFirstTime()
     }
@@ -119,7 +121,6 @@ fun ReadyScreen(
                 )
                 .blur(50.dp)
         )
-
         Box(
             modifier = Modifier
                 .size(150.dp)
@@ -205,6 +206,7 @@ fun ReadyScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             Card(
+
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp),

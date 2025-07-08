@@ -1,4 +1,4 @@
-package com.example.quizapp.ui.splash
+package com.example.eduquizz.features.home.screens
 
 import android.content.res.Configuration
 import androidx.compose.animation.core.animateFloatAsState
@@ -26,9 +26,12 @@ fun SplashScreen(onNavigateToMain: () -> Unit = {}) {
     val composition by rememberLottieComposition(
         LottieCompositionSpec.RawRes(R.raw.splash_animation)
     )
-
-    // System UI Controller
     val systemUiController = rememberSystemUiController()
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = 1,
+        isPlaying = true
+    )
 
     LaunchedEffect(Unit) {
         systemUiController.setStatusBarColor(
@@ -40,20 +43,12 @@ fun SplashScreen(onNavigateToMain: () -> Unit = {}) {
             darkIcons = true
         )
     }
-
-    val progress by animateLottieCompositionAsState(
-        composition = composition,
-        iterations = 1,
-        isPlaying = true
-    )
-
     LaunchedEffect(progress) {
         if (progress == 1f) {
             delay(500)
             onNavigateToMain()
         }
     }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
