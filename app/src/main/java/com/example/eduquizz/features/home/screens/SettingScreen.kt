@@ -20,9 +20,11 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.eduquizz.R
+import com.example.quizapp.ui.theme.QuizAppTheme
 
 @Composable
 fun SettingScreen() {
@@ -368,5 +370,13 @@ private fun LanguageOption(
             fontSize = dimensionResource(id = R.dimen.text_normal).value.sp,
             color = colorResource(id = R.color.text_primary_dark)
         )
+    }
+}
+
+@Preview
+@Composable
+fun SettingScreenPreview(){
+    QuizAppTheme {
+        SettingScreen()
     }
 }

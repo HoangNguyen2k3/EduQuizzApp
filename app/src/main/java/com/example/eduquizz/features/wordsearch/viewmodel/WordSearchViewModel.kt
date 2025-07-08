@@ -335,15 +335,107 @@ class WordSearchViewModel @Inject constructor(
         }
     }
 
+    // Cơ chế Hint
     fun revealHint(): Boolean {
         if (!useHint()) {
             return false
         }
 
+        // tim 1 chu cai trong tu chua dc tim
         val unfoundWord = _wordsToFind.firstOrNull { !it.isFound } ?: return false
-        val hintLetter = unfoundWord.word.random()
-        _hintCell.value = _grid.firstOrNull { it.char == hintLetter && !it.belongsToFoundWord }
+        val wordCells = findWordCellsInGrid(unfoundWord.word)
+        if (wordCells.isEmpty()) {
+            return false
+        }
+
+        _hintCell.value = wordCells.random()
         return true
+    }
+
+    // tim cell cua 1 tu trong grid
+    private fun findWordCellsInGrid(word: String): List<Cell> {
+        val currentGridSize = _gridSize.value
+        val wordCells = mutableListOf<Cell>()
+
+        for (row in 0 until currentGridSize){
+            for (col in 0 until currentGridSize) {
+                if (col + word.length <= currentGridSize) {
+                    if (checkWordMatch(word, row, col, 0, 1)) {
+                        for (i in word.indices) {
+                            wordCells.add(_grid[row * currentGridSize + col + i])
+                        }
+                    }
+                }
+
+                if (row + word.length <= currentGridSize) {
+                    if (checkWordMatch(word, row, col, 1, 0)) {
+                        for (i in word.indices) {
+                            wordCells.add(_grid[(row + i) * currentGridSize + col])
+                        }
+                    }
+                }
+
+                if (row + word.length <= currentGridSize && col + word.length <= currentGridSize) {
+                    if (checkWordMatch(word, row, col, 1, 1)) {
+                        for (i in word.indices) {
+                            wordCells.add(_grid[(row + i) * currentGridSize + col + i])
+                        }
+                    }
+                }
+
+                if (row - word.length + 1 >= 0 && col + word.length <= currentGridSize) {
+                    if (checkWordMatch(word, row, col, -1, 1)) {
+                        for (i in word.indices) {
+                            wordCells.add(_grid[(row - i) * currentGridSize + col + i])
+                        }
+                    }
+                }
+            }
+        }
+        return wordCells.distinctBy { "${it.row},${it.col}" }
+    }
+
+    //ktra vtri, huong
+    private fun checkWordMatch(
+        word: String,
+        startRow: Int,
+        startCol: Int,
+        rowIncrement: Int,
+        colIncrement: Int
+    ): Boolean {
+        val currentGridSize = _gridSize.value
+
+        var matches = true
+        for (i in word.indices) {
+            val row = startRow + i * rowIncrement
+            val col = startCol + i * colIncrement
+            if (row < 0 || row >= currentGridSize || col < 0 || col >= currentGridSize) {
+                matches = false
+                break
+            }
+            if (_grid[row * currentGridSize + col].char != word[i]) {
+                matches = false
+                break
+            }
+        }
+
+        if (matches) return true
+
+        matches = true
+        for (i in word.indices) {
+            val row = startRow + i * rowIncrement
+            val col = startCol + i * colIncrement
+            if (row < 0 || row >= currentGridSize || col < 0 || col >= currentGridSize) {
+                matches = false
+                break
+            }
+            if (_grid[row * currentGridSize + col].char != word[word.length - 1 - i]) {
+                matches = false
+                break
+            }
+        }
+
+        return matches
     }
 
     fun resetSelection() {
