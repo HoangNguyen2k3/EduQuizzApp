@@ -30,13 +30,11 @@ import com.example.eduquizz.features.home.screens.MainScreen
 import com.example.eduquizz.features.match.viewmodel.WordMatchGame
 
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.MainActivity
 import com.example.eduquizz.features.BatChu.screens.IntroScreenBatChu
 import com.example.eduquizz.features.BatChu.screens.LevelChoiceBatChu
 import com.example.eduquizz.features.BatChu.screens.Main_BatChu
-import com.example.quizapp.ui.splash.SplashScreen
-
+import com.example.eduquizz.features.home.screens.SplashScreen
 import com.example.eduquizz.features.wordsearch.screens.IntroductionScreen
 import com.example.eduquizz.features.wordsearch.screens.WordSearchGame
 import com.example.wordsearch.ui.theme.WordSearchGameTheme
@@ -48,6 +46,7 @@ import com.example.eduquizz.features.quizzGame.screens.LevelChoice
 import com.example.eduquizz.features.wordsearch.screens.TopicSelectionScreen
 import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
 import com.example.eduquizz.data.local.UserViewModel
+import com.example.eduquizz.data_save.DataViewModel
 
 object Routes {
     //Main
@@ -83,6 +82,7 @@ fun NavGraph(
     modifier: Modifier = Modifier,
 ) {
     val userViewModel: UserViewModel = hiltViewModel()
+    val dataViewModel: DataViewModel = hiltViewModel()
     val firstTime by dataViewModel.firstTime.observeAsState(0)
     NavHost(
         navController = navController,
@@ -96,7 +96,7 @@ fun NavGraph(
         composable(Routes.SPLASH) {
             SplashScreen(
                 onNavigateToMain = {
-                    if(firstTime==false){
+                    if(firstTime == false){
                         navController.navigate(Routes.READY) {
                             popUpTo(Routes.SPLASH) { inclusive = true }
                         }
