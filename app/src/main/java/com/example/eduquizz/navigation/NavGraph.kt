@@ -29,8 +29,8 @@ import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.eduquizz.features.home.screens.MainScreen
 import com.example.eduquizz.features.match.viewmodel.WordMatchGame
 
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.eduquizz.MainActivity
+import com.example.eduquizz.data.local.UserViewModel
 import com.example.eduquizz.features.BatChu.screens.IntroScreenBatChu
 import com.example.eduquizz.features.BatChu.screens.LevelChoiceBatChu
 import com.example.eduquizz.features.BatChu.screens.Main_BatChu
@@ -45,7 +45,6 @@ import com.example.eduquizz.features.home.screens.ReadyScreen
 import com.example.eduquizz.features.quizzGame.screens.LevelChoice
 import com.example.eduquizz.features.wordsearch.screens.TopicSelectionScreen
 import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
-import com.example.eduquizz.data.local.UserViewModel
 import com.example.eduquizz.data_save.DataViewModel
 
 object Routes {
