@@ -54,19 +54,14 @@ fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,nav
     LaunchedEffect(key1 = true) {
         questionViewModel.Init(dataviewModel,currentLevel)
         loadingViewModel.showLoading("Đang tải Quiz Game...", showProgress = true)
-
         loadingViewModel.updateProgress(0.2f, "Đang tải câu hỏi...")
         delay(600)
-
         loadingViewModel.updateProgress(0.5f, "Đang chuẩn bị nội dung...")
         delay(600)
-
         loadingViewModel.updateProgress(0.8f, "Đang khởi tạo game...")
         delay(400)
-
         loadingViewModel.updateProgress(1.0f, "Hoàn thành!")
         delay(200)
-
         loadingViewModel.hideLoading()
         isDataLoaded = true
         delay(100)
