@@ -46,9 +46,9 @@ fun ThongKe(
         if (totalQuestions == 0) 0f else correctAnswers.toFloat() / totalQuestions
     }
     val pieChartData = listOf(
-        PieData(value = winAbove50, label = ">50%", color = Color(0xFFE53935)),
-        PieData(value = winPerfect, label = "100%", color = Color(0xFF43A047)),
-        PieData(value = winBelow50, label = "<50%", color = Color(0xFF8E24AA))
+        PieData(value = winAbove50, label = "Thắng >50%", color = Color(0xFFE53935)),
+        PieData(value = winPerfect, label = "Thắng 100%", color = Color(0xFF43A047)),
+        PieData(value = winBelow50, label = "Thắng <50%", color = Color(0xFF8E24AA))
     )
     Column(
         modifier = Modifier

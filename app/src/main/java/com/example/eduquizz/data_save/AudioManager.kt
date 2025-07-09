@@ -42,7 +42,6 @@ object AudioManager {
         bgmVolume = volume
         bgmPlayer?.setVolume(volume, volume)
     }
-
     fun playClickSfx() {
         soundPool?.play(clickSoundId, sfxVolume, sfxVolume, 1, 0, 1f)
     }

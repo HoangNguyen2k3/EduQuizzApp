@@ -147,9 +147,10 @@ fun Main_BatChu(navController: NavController,
     val selectedLetters = remember(question) {
         mutableStateListOf<Char?>(*Array(question.answer.length) { null })
     }
+    //danh sách các chữ cái người chơi đã chọn.
 
     val usedIndices = remember(question) { mutableStateListOf<Pair<Int, Char>>() }
-
+//lưu index của các chữ cái đã được chọn
     var hintUsedForCurrentQuestion by remember(question) { mutableStateOf(false) }
 
     /*    // Reset khi đổi câu
