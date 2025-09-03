@@ -4,89 +4,136 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import com.example.eduquizz.features.match.model.WordPair
-
+import com.example.eduquizz.features.match.repository.WordPairRepository
 import androidx.lifecycle.viewModelScope
 import com.example.eduquizz.data_save.DataViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.example.eduquizz.features.match.model.MatchCard
-// Thẻ cho game matching pairs
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class WordMatchGame : ViewModel() {
-    private val _allWordPairs = listOf(
-        WordPair("Apple", "a round fruit with firm, white flesh and a green, red, or yellow skin"),
-        WordPair("Dog", "A domestic animal"),
-        WordPair("Sun", "The star at the center of our solar system"),
-        WordPair("Book", "A collection of pages"),
-        WordPair("Computer", "An electronic device for processing data"),
-        WordPair("Flower", "A plant's reproductive organ"),
-        WordPair("Tiger", "A big cat"),
-        WordPair("River", "A natural water flow"),
-        WordPair("Mountain", "A high landform"),
-        WordPair("Car", "A road vehicle"),
-        WordPair("Banana", "A yellow fruit"),
-        WordPair("Cat", "A domestic feline"),
-        WordPair("Moon", "Earth's natural satellite"),
-        WordPair("Notebook", "A collection of blank pages"),
-        WordPair("Phone", "A device for calling"),
-        WordPair("Rose", "A type of flower"),
-        WordPair("Lion", "The king of the jungle"),
-        WordPair("Lake", "A body of water surrounded by land"),
-        WordPair("Hill", "A small elevation of land"),
-        WordPair("Bus", "A large passenger vehicle"),
-    ).shuffled()
+@HiltViewModel
+class WordMatchGame @Inject constructor(
+    private val wordPairRepository: WordPairRepository
+) : ViewModel() {
+
+    private var _allWordPairs = mutableStateListOf<WordPair>()
+    private val _isDataLoaded = mutableStateOf(false)
+    private var _currentUserName = ""
 
     var gold = mutableStateOf(-1)
         private set
-    val currentLevel = mutableStateOf(0) // 0..3 (4 màn, mỗi màn 5 câu)
+    val currentLevel = mutableStateOf(0)
     val timerSeconds = mutableStateOf(40)
     val showResult = mutableStateOf(false)
     val showBuyGoldDialog = mutableStateOf(false)
     val showFinishDialog = mutableStateOf(false)
     val showTimeOutDialog = mutableStateOf(false)
+    val showLoadingDialog = mutableStateOf(false)
     val totalRight = mutableStateOf(0)
     val totalQuestion = mutableStateOf(0)
     val canPass = mutableStateOf(false)
 
     // Dữ liệu cho từng vòng
     var cards = mutableStateListOf<MatchCard>()
-    var selectedIndices = mutableStateListOf<Int>() // chỉ số trong cards
-    var shakingIndices = mutableStateListOf<Int>() // chỉ số đang rung
-    var correctIndices = mutableStateListOf<Int>() // chỉ số đúng (màu xanh)
-    var wrongIndices = mutableStateListOf<Int>() // chỉ số sai (màu đỏ)
+    var selectedIndices = mutableStateListOf<Int>()
+    var shakingIndices = mutableStateListOf<Int>()
+    var correctIndices = mutableStateListOf<Int>()
+    var wrongIndices = mutableStateListOf<Int>()
 
-        // Timer
+    // Timer
     private var timerJob: Job? = null
+    private lateinit var dataViewModel: DataViewModel
 
     init {
-        startLevel(0)
+        loadWordPairsFromFirebase()
     }
-    private lateinit var dataViewModel: DataViewModel
+
+    private fun loadWordPairsFromFirebase() {
+        showLoadingDialog.value = true
+        viewModelScope.launch {
+            try {
+                val wordPairs = wordPairRepository.getAllWordPairs()
+                _allWordPairs.clear()
+                _allWordPairs.addAll(wordPairs.shuffled())
+                totalQuestion.value = _allWordPairs.size
+                _isDataLoaded.value = true
+                showLoadingDialog.value = false
+
+                // Bắt đầu level đầu tiên sau khi load xong data
+                startLevel(0)
+            } catch (e: Exception) {
+                showLoadingDialog.value = false
+                // Có thể hiện thông báo lỗi hoặc retry
+            }
+        }
+    }
+
     fun Init(data: DataViewModel) {
         this.dataViewModel = data
         viewModelScope.launch {
-            delay(10) // Đợi LiveData emit ra giá trị
+            delay(10)
             gold.value = data.gold.value ?: 0
+            // Load user progress
+            loadUserProgress()
         }
-        //gold = mutableStateOf(data.gold.value ?: 0)
-        totalQuestion.value = _allWordPairs.size
     }
+
+    private fun loadUserProgress() {
+        viewModelScope.launch {
+            wordPairRepository.getUserProgress(_currentUserName)
+                .onSuccess { (level, totalRight, totalQuestions) ->
+                    // currentLevel.value = level
+                    // this@WordMatchGame.totalRight.value = totalRight
+                    // this@WordMatchGame.totalQuestion.value = totalQuestions
+                }
+                .onFailure {
+                    // Không có progress hoặc lỗi, bắt đầu từ level 0
+                }
+        }
+    }
+
     fun spendCoins(amount: Int) {
         gold.value = (gold.value ?: 0) - amount
-        dataViewModel.updateGold(gold.value ?: 0) // <-- chỉ update khi cần
+        dataViewModel.updateGold(gold.value ?: 0)
     }
+
     fun startLevel(level: Int) {
+        if (!_isDataLoaded.value || _allWordPairs.isEmpty()) {
+            // Nếu data chưa load xong, đợi
+            viewModelScope.launch {
+                while (!_isDataLoaded.value) {
+                    delay(100)
+                }
+                startLevelInternal(level)
+            }
+            return
+        }
+        startLevelInternal(level)
+    }
+
+    private fun startLevelInternal(level: Int) {
         currentLevel.value = level
         val start = level * 5
-        val end = (level + 1) * 5
+        val end = minOf((level + 1) * 5, _allWordPairs.size)
+
+        if (start >= _allWordPairs.size) {
+            // Không đủ data cho level này
+            finishGame()
+            return
+        }
+
         val wordPairs = _allWordPairs.subList(start, end)
-        // Tạo 10 thẻ (5 từ, 5 nghĩa), mỗi cặp có cùng pairId
+
+        // Tạo cards từ word pairs
         val newCards = mutableListOf<MatchCard>()
         wordPairs.forEachIndexed { idx, pair ->
             newCards.add(MatchCard(id = idx * 2, text = pair.word, pairId = idx))
             newCards.add(MatchCard(id = idx * 2 + 1, text = pair.definition, pairId = idx))
         }
+
         cards.clear()
         cards.addAll(newCards.shuffled())
         selectedIndices.clear()
@@ -118,19 +165,25 @@ class WordMatchGame : ViewModel() {
             val first = cards[selectedIndices[0]]
             val second = cards[selectedIndices[1]]
             if (first.pairId == second.pairId && first.id != second.id) {
-                // Đúng, thêm vào danh sách đúng và đánh dấu đã match
+                // Đúng
                 cards[selectedIndices[0]] = cards[selectedIndices[0]].copy(isMatched = true)
                 cards[selectedIndices[1]] = cards[selectedIndices[1]].copy(isMatched = true)
                 correctIndices.addAll(selectedIndices)
                 gold.value += 5
                 totalRight.value += 1
                 selectedIndices.clear()
-                
-                // Kiểm tra nếu đã hoàn thành tất cả cặp (5 cặp = 10 card)
-                if (cards.count { it.isMatched } == 10) {
-                    // Tự động chuyển level sau 1 giây
+
+                // Lưu progress
+                saveUserProgress()
+
+                // Kiểm tra hoàn thành level
+                if (cards.count { it.isMatched } == cards.size) {
                     viewModelScope.launch {
                         delay(1000)
+
+                        // Lưu level completion
+                        saveLevelCompletion(currentLevel.value)
+
                         if (currentLevel.value < 3) {
                             nextLevel()
                         } else {
@@ -139,18 +192,38 @@ class WordMatchGame : ViewModel() {
                     }
                 }
             } else {
-                // Sai, rung 2 thẻ và thêm vào danh sách sai
+                // Sai
                 shakingIndices.addAll(selectedIndices)
                 wrongIndices.addAll(selectedIndices)
                 viewModelScope.launch {
                     delay(300)
                     shakingIndices.clear()
                     selectedIndices.clear()
-                    // Xóa màu đỏ sau 1 giây
                     delay(1000)
                     wrongIndices.clear()
                 }
             }
+        }
+    }
+
+    private fun saveUserProgress() {
+        viewModelScope.launch {
+            wordPairRepository.saveUserProgress(
+                _currentUserName,
+                currentLevel.value,
+                totalRight.value,
+                totalQuestion.value
+            )
+        }
+    }
+
+    private fun saveLevelCompletion(level: Int) {
+        viewModelScope.launch {
+            wordPairRepository.saveLevelCompletion(
+                _currentUserName,
+                "level_${level + 1}",
+                true
+            )
         }
     }
 
@@ -165,7 +238,6 @@ class WordMatchGame : ViewModel() {
     fun useHint() {
         if (gold.value >= 20) {
             spendCoins(20)
-            // Tự động mở đúng 1 cặp chưa matched
             val unmatched = cards.withIndex().filter { !it.value.isMatched }
             val pairs = unmatched.groupBy { it.value.pairId }.values.filter { it.size == 2 }
             if (pairs.isNotEmpty()) {
@@ -175,11 +247,17 @@ class WordMatchGame : ViewModel() {
                 correctIndices.add(pair[0].index)
                 correctIndices.add(pair[1].index)
                 totalRight.value += 1
-                
-                // Kiểm tra nếu đã hoàn thành tất cả cặp
-                if (cards.count { it.isMatched } == 10) {
+
+                // Lưu progress
+                saveUserProgress()
+
+                if (cards.count { it.isMatched } == cards.size) {
                     viewModelScope.launch {
                         delay(1000)
+
+                        // Lưu level completion
+                        saveLevelCompletion(currentLevel.value)
+
                         if (currentLevel.value < 3) {
                             nextLevel()
                         } else {
@@ -190,29 +268,32 @@ class WordMatchGame : ViewModel() {
             }
         } else showBuyGoldDialog.value = true
     }
+
     fun skipLevel() {
         if (gold.value >= 100) {
             spendCoins(100)
-            // Đếm số cặp chưa match để cộng vào totalRight
             val unmatchedCount = cards.count { !it.isMatched }
-            val pairsToAdd = unmatchedCount / 2 // Mỗi cặp = 2 card
-            
-            // Mở toàn bộ cặp còn lại
+            val pairsToAdd = unmatchedCount / 2
+
             cards.forEachIndexed { i, c ->
                 if (!c.isMatched) {
                     cards[i] = c.copy(isMatched = true)
                     correctIndices.add(i)
                 }
             }
-            
-            // Cộng số cặp đúng vào totalRight (không cộng vàng)
+
             totalRight.value += pairsToAdd
-            
             showResult.value = true
-            
-            // Tự động chuyển level sau 1 giây
+
+            // Lưu progress
+            saveUserProgress()
+
             viewModelScope.launch {
                 delay(1000)
+
+                // Lưu level completion
+                saveLevelCompletion(currentLevel.value)
+
                 if (currentLevel.value < 3) {
                     nextLevel()
                 } else {
@@ -225,12 +306,15 @@ class WordMatchGame : ViewModel() {
     fun buyGold(amount: Int) {
         gold.value += amount
         showBuyGoldDialog.value = false
+        dataViewModel.updateGold(gold.value ?: 0)
     }
 
     fun finishGame() {
-        // Giả sử KPI qua màn là ≥ 16/20 đúng
         canPass.value = totalRight.value >= 16
         showFinishDialog.value = true
+
+        // Lưu progress cuối cùng
+        saveUserProgress()
     }
 
     fun resetAll() {
@@ -240,25 +324,57 @@ class WordMatchGame : ViewModel() {
         wrongIndices.clear()
         startLevel(0)
         showFinishDialog.value = false
+        dataViewModel.updateGold(200)
     }
 
     fun onTimeOut() {
         showResult.value = true
         timerJob?.cancel()
         showTimeOutDialog.value = true
-        
-        // Khi hết thời gian, hiển thị kết quả và reset về level đầu
+
         viewModelScope.launch {
-            delay(5000) // Hiển thị dialog 3 giây
+            delay(5000)
             showTimeOutDialog.value = false
-            // Reset về level đầu thay vì kết thúc game
             totalRight.value = 0
             gold.value = 200
             correctIndices.clear()
             wrongIndices.clear()
             startLevel(0)
             showFinishDialog.value = false
+            dataViewModel.updateGold(200)
+        }
+    }
+
+    fun retryLoadData() {
+        loadWordPairsFromFirebase()
+    }
+
+    fun getLevelCompletionStatus(): Map<String, Boolean> {
+        var completions = emptyMap<String, Boolean>()
+        viewModelScope.launch {
+            wordPairRepository.getAllLevelCompletions(_currentUserName)
+                .onSuccess { completions = it }
+        }
+        return completions
+    }
+
+    fun loadWordPairsByTopic(topicId: String) {
+        showLoadingDialog.value = true
+        viewModelScope.launch {
+            wordPairRepository.getWordPairsByTopic(topicId)
+                .onSuccess { wordMatchData ->
+                    _allWordPairs.clear()
+                    _allWordPairs.addAll(wordMatchData.wordPairs.shuffled())
+                    totalQuestion.value = _allWordPairs.size
+                    _isDataLoaded.value = true
+                    showLoadingDialog.value = false
+                    startLevel(0)
+                }
+                .onFailure {
+                    showLoadingDialog.value = false
+                    // Fallback to default data
+                    loadWordPairsFromFirebase()
+                }
         }
     }
 }
-

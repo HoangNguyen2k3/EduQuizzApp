@@ -122,7 +122,10 @@ fun IntroScreenBatChu(
                         ) + fadeIn(animationSpec = tween(800, delayMillis = 1000))
                     ) {
                         PlayButton(
-                            onClick = { navController.navigate(Routes.LevelBatChu) },
+                            onClick = {
+                                val from = navController.currentBackStackEntry?.arguments?.getString("from") ?: "english_games_scene"
+                                navController.navigate("levelbatchu?from=$from")
+                            },
                             modifier = Modifier.padding(20.dp)
                         )
                     }

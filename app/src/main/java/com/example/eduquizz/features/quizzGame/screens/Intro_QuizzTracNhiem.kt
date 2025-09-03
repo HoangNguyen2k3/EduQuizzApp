@@ -124,10 +124,10 @@ fun IntroScreen(
                         ) + fadeIn(animationSpec = tween(800, delayMillis = 1000))
                     ) {
                         PlayButton(
-                           // onClick = { navController.navigate("main/levelEasy") },
                             onClick = {
                                 AudioManager.playClickSfx()
-                                navController.navigate(Routes.QUIZ_LEVEL)
+                                val from = navController.currentBackStackEntry?.arguments?.getString("from") ?: "english_games_scene"
+                                navController.navigate("quiz_level?from=$from")
                             },
                             modifier = Modifier.padding(20.dp)
                         )
