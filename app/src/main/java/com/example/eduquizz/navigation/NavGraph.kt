@@ -46,6 +46,7 @@ import com.example.eduquizz.features.bubbleshot.screen.BubbleShotDescriptionScre
 import com.example.eduquizz.features.bubbleshot.viewmodel.BubbleShot
 import com.example.eduquizz.features.home.screens.ReadyScreen
 import com.example.eduquizz.features.quizzGame.screens.LevelChoice
+import com.example.eduquizz.features.wordsearch.screens.CompletionScreen
 import com.example.eduquizz.features.wordsearch.screens.TopicSelectionScreen
 import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
 
@@ -352,6 +353,32 @@ fun NavGraph(
            //     loadingViewModel = loadingViewModel
             )
         }
+
+        composable(
+            route = "completion/{topicName}/{totalWords}/{timeSpent}/{coinsEarned}",
+            arguments = listOf(
+                navArgument("topicName") { type = NavType.StringType },
+                navArgument("totalWords") { type = NavType.IntType },
+                navArgument("timeSpent") { type = NavType.StringType },
+                navArgument("coinsEarned") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val topicName = backStackEntry.arguments?.getString("topicName") ?: ""
+            val totalWords = backStackEntry.arguments?.getInt("totalWords") ?: 0
+            val timeSpent = backStackEntry.arguments?.getString("timeSpent") ?: "00:00"
+            val coinsEarned = backStackEntry.arguments?.getInt("coinsEarned") ?: 50
+
+            CompletionScreen(
+                topicName = topicName,
+                totalWords = totalWords,
+                timeSpent = timeSpent,
+                coinsEarned = coinsEarned,
+                onPlayAgain = { navController.popBackStack() },
+                onBackToTopics = { navController.navigate("topic_selection") },
+                onHome = { navController.navigate(Routes.MAIN_DANH) }
+            )
+        }
+
 
         composable(Routes.SETTINGS) {
             SettingScreen()

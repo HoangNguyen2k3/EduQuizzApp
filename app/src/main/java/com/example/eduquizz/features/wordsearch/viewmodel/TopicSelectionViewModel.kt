@@ -22,7 +22,6 @@ class TopicSelectionViewModel @Inject constructor(
 
     private val _topics = mutableStateOf<List<Topic>>(emptyList())
     val topics: State<List<Topic>> get() = _topics
-
     private val _isLoading = mutableStateOf(false)
     val isLoading: State<Boolean> get() = _isLoading
 
@@ -48,7 +47,7 @@ class TopicSelectionViewModel @Inject constructor(
                                 "StudyWork" -> Icons.Default.Work
                                 else -> Icons.Default.Flight
                             },
-                            wordCount = 25, // Giả định, có thể lấy từ repository
+                            wordCount = 25,
                             difficulty = "Easy",
                             isCompleted = completions[id] ?: false,
                             backgroundColor = when (id) {

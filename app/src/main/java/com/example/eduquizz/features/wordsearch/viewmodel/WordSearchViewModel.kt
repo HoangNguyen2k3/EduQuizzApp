@@ -97,15 +97,17 @@ class WordSearchViewModel @Inject constructor(
 
     private fun initializeDefaultWords() {
         _wordsToFind.clear()
-        _wordsToFind.addAll(listOf(
-            Word("ANDROID"),
-            Word("KOTLIN"),
-            Word("COMPOSE"),
-            Word("JETPACK"),
-            Word("MOBILE"),
-            Word("APP"),
-            Word("GAME")
-        ))
+        _wordsToFind.addAll(
+            listOf(
+                Word("ANDROID"),
+                Word("KOTLIN"),
+                Word("COMPOSE"),
+                Word("JETPACK"),
+                Word("MOBILE"),
+                Word("APP"),
+                Word("GAME")
+            )
+        )
         initializeGrid()
     }
 
@@ -168,18 +170,21 @@ class WordSearchViewModel @Inject constructor(
                     rowIncrement = 0
                     colIncrement = 1
                 }
+
                 Direction.VERTICAL -> {
                     startRow = (0..currentGridSize - word.length).random()
                     startCol = (0 until currentGridSize).random()
                     rowIncrement = 1
                     colIncrement = 0
                 }
+
                 Direction.DIAGONAL_DOWN -> {
                     startRow = (0..currentGridSize - word.length).random()
                     startCol = (0..currentGridSize - word.length).random()
                     rowIncrement = 1
                     colIncrement = 1
                 }
+
                 Direction.DIAGONAL_UP -> {
                     startRow = (word.length - 1 until currentGridSize).random()
                     startCol = (0..currentGridSize - word.length).random()
@@ -357,7 +362,7 @@ class WordSearchViewModel @Inject constructor(
         val currentGridSize = _gridSize.value
         val wordCells = mutableListOf<Cell>()
 
-        for (row in 0 until currentGridSize){
+        for (row in 0 until currentGridSize) {
             for (col in 0 until currentGridSize) {
                 if (col + word.length <= currentGridSize) {
                     if (checkWordMatch(word, row, col, 0, 1)) {
