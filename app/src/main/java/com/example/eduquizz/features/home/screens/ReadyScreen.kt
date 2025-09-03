@@ -294,6 +294,7 @@ fun ReadyScreen(
                                         userViewModel.setUserName(userName.trim())
                                         onStartClick(userName.trim())
                                         dataViewModel.updatePlayerName(userName.trim())
+                                        dataViewModel.updateGold(1000)
                                     } else {
                                         isError = true
                                     }
@@ -324,6 +325,7 @@ fun ReadyScreen(
                                 userViewModel.setUserName(userName.trim())
                                 onStartClick(userName.trim())
                                 dataViewModel.updatePlayerName(userName.trim())
+                                dataViewModel.updateGold(1000)
                             } else {
                                 isError = true
                             }

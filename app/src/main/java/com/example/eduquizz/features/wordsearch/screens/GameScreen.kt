@@ -33,6 +33,7 @@ import com.example.eduquizz.R
 import com.example.eduquizz.data_save.AudioManager
 import androidx.compose.runtime.DisposableEffect
 import com.example.eduquizz.data.local.UserViewModel
+import com.example.eduquizz.navigation.Routes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,7 +93,7 @@ fun WordSearchGame(
     LaunchedEffect(isGameCompleted) {
         if (isGameCompleted && currentTopic != null) {
             val coinsEarned = 50 // Có thể tính toán dựa trên hiệu suất
-            navController.navigate("completion/$currentTopic/$totalWords/$timeSpent/$coinsEarned")
+            navController.navigate("result/$currentTopic/$totalWords/${Routes.INTRO_WORD_SEARCH}/${Routes.GAME_WORD_SEARCH}")
         }
     }
 

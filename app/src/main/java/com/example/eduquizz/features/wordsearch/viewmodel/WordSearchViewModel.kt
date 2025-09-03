@@ -47,7 +47,7 @@ class WordSearchViewModel @Inject constructor(
 
     val selectedWord: String get() = _selectedCells.joinToString("") { it.char.toString() }
 
-    private var _coins = mutableStateOf(100)
+    private var _coins = mutableStateOf(1000)
     val coins: State<Int> get() = _coins
 
     private var _hintCell = mutableStateOf<Cell?>(null)
