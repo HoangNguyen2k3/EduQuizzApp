@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.async
 import javax.inject.Inject
 
 @HiltViewModel
@@ -34,7 +35,12 @@ class TopicSelectionViewModel @Inject constructor(
             _error.value = null
 
             try {
-                val completionsResult = repository.getAllTopicCompletions(userName)
+                val completionsDeferred = async { repository.getAllTopicCompletions(userName) }
+                val topicsDeferred = async { repository.getAllTopics() }
+
+                val completionsResult = completionsDeferred.await()
+                val topicsResult = topicsDeferred.await()
+
                 completionsResult.onSuccess { completions ->
                     val topicIds = listOf("Travel", "FunAndGames", "StudyWork")
                     _topics.value = topicIds.map { id ->

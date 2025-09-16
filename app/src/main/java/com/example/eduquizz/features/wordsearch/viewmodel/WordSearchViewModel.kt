@@ -72,6 +72,8 @@ class WordSearchViewModel @Inject constructor(
             try {
                 val result = repository.getWordsByTopic(topicId)
                 result.onSuccess { wordSearchData ->
+                    println("Loaded topic: ${wordSearchData.topicId}, Grid size: ${wordSearchData.gridSize}, Words: ${wordSearchData.words.size}")
+
                     _gridSize.value = wordSearchData.gridSize
                     _wordsToFind.clear()
                     _wordsToFind.addAll(wordSearchData.words.map { Word(it) })
@@ -85,6 +87,21 @@ class WordSearchViewModel @Inject constructor(
                 initializeDefaultWords()
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    fun testBackendConnection() {
+        viewModelScope.launch {
+            try {
+                val result = repository.healthCheck()
+                result.onSuccess { status ->
+                    println("Backend connection successful: $status")
+                }.onFailure { error ->
+                    println("Backend connection failed: ${error.message}")
+                }
+            } catch (e: Exception) {
+                println("Backend connection error: ${e.message}")
             }
         }
     }
