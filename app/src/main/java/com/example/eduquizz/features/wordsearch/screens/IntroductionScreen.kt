@@ -38,9 +38,11 @@ import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.eduquizz.features.wordsearch.components.GameDescriptionCard
 import com.example.eduquizz.features.wordsearch.components.GamePreviewCard
 import com.example.eduquizz.features.wordsearch.components.StatisticsRow
+import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
 import com.example.wordsearch.ui.theme.Primary
 import com.example.wordsearch.ui.theme.WordSearchGameTheme
 import kotlinx.coroutines.delay
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,38 +50,51 @@ fun IntroductionScreen(
     onPlayClicked: () -> Unit,
     onBackPressed: () -> Unit,
     showContinueButton: Boolean = false,
-    loadingViewModel: LoadingViewModel = viewModel()
+    loadingViewModel: LoadingViewModel = viewModel(),
+    wordSearchViewModel: WordSearchViewModel = hiltViewModel()
 ) {
+
+    val wordSearchViewModel: WordSearchViewModel = viewModel()
+
     val context = LocalContext.current
     val loadingState by loadingViewModel.loadingState.collectAsState()
+
+    val topicCount by wordSearchViewModel.topicCount
+    val totalWordCount by wordSearchViewModel.totalWordCount
 
     var isVisible by remember { mutableStateOf(false) }
     var isDataLoaded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        loadingViewModel.showLoading("Đang tải Word Search...", showProgress = true)
+        try {
+            loadingViewModel.showLoading("Đang tải Word Search...", showProgress = true)
 
-        loadingViewModel.updateProgress(0.2f, "Đang tải từ vựng...")
-        delay(800)
+            loadingViewModel.updateProgress(0.2f, "Đang tải từ vựng...")
 
-        loadingViewModel.updateProgress(0.5f, "Đang tạo bảng chữ...")
-        delay(800)
+            wordSearchViewModel.loadStatistics()
+            delay(800)
 
-        loadingViewModel.updateProgress(0.8f, "Đang chuẩn bị game...")
-        delay(600)
+            loadingViewModel.updateProgress(0.5f, "Đang tạo bảng chữ...")
+            delay(800)
 
-        loadingViewModel.updateProgress(1.0f, "Hoàn thành!")
-        delay(400)
+            loadingViewModel.updateProgress(0.8f, "Đang chuẩn bị game...")
+            delay(600)
 
-        loadingViewModel.hideLoading()
-        isDataLoaded = true
+            loadingViewModel.updateProgress(1.0f, "Hoàn thành!")
+            delay(400)
 
-        delay(300)
-        isVisible = true
+            loadingViewModel.hideLoading()
+            isDataLoaded = true
 
-
-        delay(300)
-        isVisible = true
+            delay(300)
+            isVisible = true
+        } catch (e: Exception) {
+            println("Error in IntroductionScreen LaunchedEffect: ${e.message}")
+            e.printStackTrace()
+            loadingViewModel.hideLoading()
+            isDataLoaded = true
+            isVisible = true
+        }
     }
 
     WithLoading(
@@ -182,7 +197,7 @@ fun IntroductionScreen(
                     }
 
                     item {
-                        //Statistics Row
+                        //Statistics Row with database values
                         AnimatedVisibility(
                             visible = isVisible && isDataLoaded,
                             enter = slideInVertically(
@@ -194,7 +209,10 @@ fun IntroductionScreen(
                                 )
                             ) + fadeIn(animationSpec = tween(800, delayMillis = 400))
                         ) {
-                            StatisticsRow()
+                            StatisticsRow(
+                                topicCount = topicCount,
+                                totalWordCount = totalWordCount
+                            )
                         }
                         Spacer(modifier = Modifier.height(32.dp))
                     }
@@ -230,12 +248,14 @@ fun IntroductionScreen(
 fun IntroductionScreenSimple(
     onPlayClicked: () -> Unit,
     onBackPressed: () -> Unit,
-    showContinueButton: Boolean = false
+    showContinueButton: Boolean = false,
+    wordSearchViewModel: WordSearchViewModel = viewModel()
 ){
     var isLoading by remember {mutableStateOf(true)}
     var isVisible by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
+        wordSearchViewModel.loadStatistics()
         delay(2500) // Simulate data loading
         isLoading = false
         delay(300)
@@ -251,7 +271,8 @@ fun IntroductionScreenSimple(
             onPlayClicked = onPlayClicked,
             onBackPressed = onBackPressed,
             showContinueButton = showContinueButton,
-            isVisible = isVisible
+            isVisible = isVisible,
+            wordSearchViewModel = wordSearchViewModel
         )
     }
 }
@@ -263,8 +284,13 @@ private fun IntroductionScreenContent(
     onPlayClicked: () -> Unit,
     onBackPressed: () -> Unit,
     showContinueButton: Boolean,
-    isVisible: Boolean
+    isVisible: Boolean,
+    wordSearchViewModel: WordSearchViewModel
 ) {
+    // Get statistics from ViewModel
+    val topicCount by wordSearchViewModel.topicCount
+    val totalWordCount by wordSearchViewModel.totalWordCount
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -356,7 +382,7 @@ private fun IntroductionScreenContent(
                 }
 
                 item {
-                    //Statistics Row
+                    //Statistics Row with database values
                     AnimatedVisibility(
                         visible = isVisible,
                         enter = slideInVertically(
@@ -368,7 +394,10 @@ private fun IntroductionScreenContent(
                             )
                         ) + fadeIn(animationSpec = tween(800, delayMillis = 400))
                     ) {
-                        StatisticsRow()
+                        StatisticsRow(
+                            topicCount = topicCount,
+                            totalWordCount = totalWordCount
+                        )
                     }
                     Spacer(modifier = Modifier.height(32.dp))
                 }
@@ -398,7 +427,6 @@ private fun IntroductionScreenContent(
         }
     }
 }
-
 
 @Composable
 private fun GameTitle() {

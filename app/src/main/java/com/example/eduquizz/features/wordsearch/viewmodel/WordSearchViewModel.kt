@@ -63,6 +63,49 @@ class WordSearchViewModel @Inject constructor(
     private val _timeSpent = mutableStateOf("00:00")
     val timeSpent: State<String> get() = _timeSpent
 
+    private val _topicCount = mutableStateOf(0)
+    val topicCount: State<Int> get() = _topicCount
+
+    private val _totalWordCount = mutableStateOf(0)
+    val totalWordCount: State<Int> get() = _totalWordCount
+
+    private val _statisticsLoaded = mutableStateOf(false)
+    val statisticsLoaded: State<Boolean> get() = _statisticsLoaded
+
+    fun loadStatistics() {
+        viewModelScope.launch {
+            try {
+                println("Starting to load statistics...")
+                _statisticsLoaded.value = false
+
+                val result = repository.getAllTopics()
+                result.onSuccess { topics ->
+                    println("Successfully loaded ${topics.size} topics")
+                    _topicCount.value = topics.size
+                    _totalWordCount.value = topics.sumOf { topic ->
+                        topic.wordCount.takeIf { it > 0 } ?: 0
+                    }
+                    _statisticsLoaded.value = true
+                    println("Statistics loaded: Topics=${_topicCount.value}, Words=${_totalWordCount.value}")
+                }.onFailure { exception ->
+                    println("Failed to load statistics: ${exception.message}")
+                    exception.printStackTrace()
+                    // Set safe default values
+                    _topicCount.value = 1
+                    _totalWordCount.value = 7
+                    _statisticsLoaded.value = true
+                }
+            } catch (e: Exception) {
+                println("Exception in loadStatistics: ${e.message}")
+                e.printStackTrace()
+                // Set safe default values
+                _topicCount.value = 1
+                _totalWordCount.value = 7
+                _statisticsLoaded.value = true
+            }
+        }
+    }
+
     fun loadWordsFromFirebase(topicId: String) {
         viewModelScope.launch {
             _isLoading.value = true
