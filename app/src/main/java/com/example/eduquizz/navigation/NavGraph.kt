@@ -235,9 +235,9 @@ fun NavGraph(
                 onGameClick = {
                         game ->
                     when(game.id){
-                        "level_easy"->navController.navigate("batchu/LevelEasy")
-                        "level_normal"->navController.navigate("batchu/LevelNormal")
-                        "level_hard"->navController.navigate("batchu/LevelHard")
+                        "LevelEasy"->navController.navigate("batchu/LevelEasy")
+                        "LevelNormal"->navController.navigate("batchu/LevelNormal")
+                        "LevelHard"->navController.navigate("batchu/LevelHard")
                     }
                 }
             )

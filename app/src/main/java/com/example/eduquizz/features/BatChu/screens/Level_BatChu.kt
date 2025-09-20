@@ -4,35 +4,14 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -41,29 +20,64 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.eduquizz.R
 import com.example.eduquizz.data.models.Game
-import com.example.eduquizz.features.home.english.EnglishGamesScreen
+import com.example.eduquizz.features.BatChu.repository.BatChuLevel
+import com.example.eduquizz.features.BatChu.viewmodel.ViewModelBatChu
 import com.example.quizapp.ui.theme.QuizAppTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
-fun LevelChoiceBatChu(    onBackClick: () -> Unit = {},
-                    onGameClick: (Game) -> Unit = {}
-){
+fun LevelChoiceBatChu(
+    onBackClick: () -> Unit = {},
+    onGameClick: (Game) -> Unit = {},
+    viewModel: ViewModelBatChu = hiltViewModel()
+) {
     // System UI Controller for status bar
     val systemUiController = rememberSystemUiController()
-
     var showRipple by remember { mutableStateOf(false) }
     var pendingGameClick by remember { mutableStateOf<Game?>(null) }
 
+    // State to hold levels from repository
+    var levels by remember { mutableStateOf<List<BatChuLevel>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val coroutineScope = rememberCoroutineScope()
+
+    // Load levels from repository through ViewModel
     LaunchedEffect(Unit) {
         systemUiController.setStatusBarColor(
             color = Color(0xFF5A4FCF),
             darkIcons = false
         )
+
+        // Use coroutineScope instead of viewModelScope
+        coroutineScope.launch {
+            try {
+                // Call through ViewModel to get levels
+                val result = viewModel.getAllLevels()
+                result.onSuccess { fetchedLevels ->
+                    levels = fetchedLevels
+                    isLoading = false
+                }.onFailure { error ->
+                    errorMessage = error.message
+                    isLoading = false
+                    // Fallback to default levels if API call fails
+                    levels = getDefaultLevels()
+                }
+            } catch (e: Exception) {
+                errorMessage = e.message
+                isLoading = false
+                levels = getDefaultLevels()
+            }
+        }
     }
+
+    // Handle ripple effect
     LaunchedEffect(showRipple) {
         if (showRipple) {
             delay(500)
@@ -73,49 +87,26 @@ fun LevelChoiceBatChu(    onBackClick: () -> Unit = {},
             showRipple = false
         }
     }
-    val games = listOf(
+
+    // Map BatChuLevel to Game for UI
+    val games = levels.map { level ->
         Game(
-            id = "level_easy",
-            name = "Easy",
-            iconRes = R.drawable.eng,
-            progress = 8,
-            totalQuestions = 20,
-            completedQuestions = 8,
-            totalLessons = 11,
-            gradientColors = listOf(
-                Color(0xFF4A85F5),
-                Color(0xFF7B61FF),
-                Color(0xFF7B61FF)
-            )
-        ),
-        Game(
-            id = "level_normal",
-            name = "Normal",
-            iconRes = R.drawable.eng,
-            progress = 20,
-            totalQuestions = 25,
-            completedQuestions = 23,
-            totalLessons = 56,
-            gradientColors = listOf(
-                Color(0xFF00C9FF), // Bright Blue
-                Color(0xFF92FE9D)  // Light Green
-            )
-        ),
-        Game(
-            id = "level_hard",
-            name = "Hard",
-            iconRes = R.drawable.eng,
-            progress = 15,
-            totalQuestions = 30,
-            completedQuestions = 15,
-            totalLessons = 10,
-            gradientColors = listOf(
-                Color(0xFFFF6B9D), // Vibrant Pink
-                Color(0xFFFF8E9E), // Light Pink
-                Color(0xFFFFB4A2)  // Peach
-            )
+            id = level.levelId,
+            name = level.title,
+            iconRes = R.drawable.eng, // Replace with appropriate icon if needed
+            progress = 0, // You can fetch progress from repository if needed
+            totalQuestions = level.questionCount, // Use actual questionCount from database
+            completedQuestions = 0, // Fetch from repository if needed
+            totalLessons = 1, // Adjust based on your data model
+            gradientColors = when (level.difficulty) {
+                "Easy" -> listOf(Color(0xFF4A85F5), Color(0xFF7B61FF), Color(0xFF7B61FF))
+                "Normal" -> listOf(Color(0xFF00C9FF), Color(0xFF92FE9D))
+                "Hard" -> listOf(Color(0xFFFF6B9D), Color(0xFFFF8E9E), Color(0xFFFFB4A2))
+                else -> listOf(Color.Gray, Color.LightGray)
+            }
         )
-    )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -129,38 +120,85 @@ fun LevelChoiceBatChu(    onBackClick: () -> Unit = {},
                 )
             )
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // Header with modern gradient background
-            EnglishGamesHeader(
-                onBackClick = onBackClick
-            )
-
-            // Games list
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
-                contentPadding = PaddingValues(vertical = 20.dp)
+        if (isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                items(games) { game ->
-                    EnhancedGameCard(
-                        game = game,
-                        onClick = { onGameClick(game) }
+                CircularProgressIndicator(color = Color.White)
+            }
+        } else if (errorMessage != null) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "Lỗi tải dữ liệu: $errorMessage",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
                     )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = {
+                            isLoading = true
+                            errorMessage = null
+                            coroutineScope.launch {
+                                val result = viewModel.getAllLevels()
+                                result.onSuccess { fetchedLevels ->
+                                    levels = fetchedLevels
+                                    isLoading = false
+                                }.onFailure { error ->
+                                    errorMessage = error.message
+                                    isLoading = false
+                                    levels = getDefaultLevels()
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Thử lại")
+                    }
                 }
             }
-        }
+        } else {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // Header with modern gradient background
+                EnglishGamesHeader(
+                    onBackClick = onBackClick
+                )
 
-        if (showRipple) {
-            FullscreenRippleEffect()
+                // Games list
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    contentPadding = PaddingValues(vertical = 20.dp)
+                ) {
+                    items(games) { game ->
+                        EnhancedGameCard(
+                            game = game,
+                            onClick = {
+                                showRipple = true
+                                pendingGameClick = game
+                            }
+                        )
+                    }
+                }
+            }
+
+            if (showRipple) {
+                FullscreenRippleEffect()
+            }
         }
     }
 }
+
 @Composable
-private fun FullscreenRippleEffect(){
+private fun FullscreenRippleEffect() {
     val radius = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
@@ -202,7 +240,6 @@ private fun EnglishGamesHeader(
             .padding(top = 48.dp, bottom = 24.dp, start = 16.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Back button with modern styling
         IconButton(
             onClick = onBackClick,
             modifier = Modifier
@@ -263,7 +300,6 @@ private fun EnhancedGameCard(
                     )
                 )
         ) {
-            // Add subtle overlay pattern
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -284,7 +320,6 @@ private fun EnhancedGameCard(
                     .padding(24.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Game icon with modern background
                 Box(
                     modifier = Modifier
                         .size(70.dp)
@@ -294,7 +329,6 @@ private fun EnhancedGameCard(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    // You can replace this with actual game icon
                     Text(
                         text = game.name.first().toString(),
                         fontSize = 32.sp,
@@ -305,7 +339,6 @@ private fun EnhancedGameCard(
 
                 Spacer(modifier = Modifier.width(24.dp))
 
-                // Game info
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -318,6 +351,7 @@ private fun EnhancedGameCard(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    // Hiển thị số câu hỏi từ database
                     Text(
                         text = "${game.totalQuestions} câu hỏi • ${game.totalLessons} bài học",
                         color = Color.White.copy(alpha = 0.9f),
@@ -327,11 +361,9 @@ private fun EnhancedGameCard(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Progress indicators
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Progress indicator
                         Box(
                             modifier = Modifier
                                 .background(
@@ -350,7 +382,6 @@ private fun EnhancedGameCard(
 
                         Spacer(modifier = Modifier.width(12.dp))
 
-                        // Completion indicator
                         Box(
                             modifier = Modifier
                                 .background(
@@ -369,7 +400,6 @@ private fun EnhancedGameCard(
                     }
                 }
 
-                // Arrow indicator
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -390,6 +420,34 @@ private fun EnhancedGameCard(
         }
     }
 }
+
+// Helper function for default levels
+private fun getDefaultLevels(): List<BatChuLevel> {
+    return listOf(
+        BatChuLevel(
+            levelId = "LevelEasy",
+            title = "Easy Level",
+            difficulty = "Easy",
+            questionCount = 0, // Sẽ được cập nhật từ database
+            questions = emptyList()
+        ),
+        BatChuLevel(
+            levelId = "LevelNormal",
+            title = "Normal Level",
+            difficulty = "Normal",
+            questionCount = 0, // Sẽ được cập nhật từ database
+            questions = emptyList()
+        ),
+        BatChuLevel(
+            levelId = "LevelHard",
+            title = "Hard Level",
+            difficulty = "Hard",
+            questionCount = 0, // Sẽ được cập nhật từ database
+            questions = emptyList()
+        )
+    )
+}
+
 @Preview(showBackground = true)
 @Composable
 fun EnglishGamesScreenPreview() {
