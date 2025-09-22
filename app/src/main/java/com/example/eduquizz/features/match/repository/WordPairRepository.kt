@@ -1,14 +1,84 @@
 package com.example.eduquizz.features.match.repository
 
 import android.content.Context
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.firestore.FirebaseFirestore
 import com.example.eduquizz.features.match.model.WordPair
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.*
 import javax.inject.Inject
 import javax.inject.Singleton
+
+// API Response Models
+data class MatchWordPair(
+    val word: String,
+    val definition: String
+)
+
+data class MatchLevelResponse(
+    val levelId: String,
+    val title: String,
+    val difficulty: String,
+    val pairCount: Int,
+    val pairs: List<MatchWordPair>
+)
+
+data class MatchLevel(
+    val levelId: String,
+    val title: String,
+    val difficulty: String,
+    val pairCount: Int,
+    val pairs: List<MatchWordPair>
+)
+
+data class CompletionRequest(
+    val userName: String,
+    val levelId: String,
+    val completed: Boolean,
+    val timeSpent: String
+)
+
+data class CompletionResponse(
+    val completed: Boolean
+)
+
+data class UserProgressResponse(
+    val username: String,
+    val levelId: String,
+    val completed: Boolean,
+    val timeSpent: String?
+)
+
+// API Service Interface
+interface MatchGameApiService {
+    @GET("api/matchgame/levels")
+    suspend fun getAllLevels(): Response<List<MatchLevel>>
+
+    @GET("api/matchgame/levels/{levelId}")
+    suspend fun getLevelById(@Path("levelId") levelId: String): Response<MatchLevelResponse>
+
+    @POST("api/matchgame/progress")
+    suspend fun saveLevelCompletion(@Body request: CompletionRequest): Response<UserProgressResponse>
+
+    @GET("api/matchgame/progress/{userName}/{levelId}")
+    suspend fun getLevelCompletion(
+        @Path("userName") userName: String,
+        @Path("levelId") levelId: String
+    ): Response<CompletionResponse>
+
+    @GET("api/matchgame/progress/{userName}")
+    suspend fun getAllLevelCompletions(
+        @Path("userName") userName: String
+    ): Response<Map<String, Boolean>>
+
+    @GET("api/matchgame/users/{userName}/stats")
+    suspend fun getUserStatistics(
+        @Path("userName") userName: String
+    ): Response<Map<String, Any>>
+}
 
 data class WordMatchData(
     val difficulty: String = "",
@@ -28,114 +98,88 @@ data class LevelData(
 
 @Singleton
 class WordPairRepository @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val firestore: FirebaseFirestore
+    @ApplicationContext private val context: Context
 ) {
-    private val database = FirebaseDatabase.getInstance().getReference("English/MatchGame")
+    // Thay đổi BASE_URL thành địa chỉ server Spring Boot của bạn
+    private val BASE_URL = "http://192.168.1.100:8080/"  // Thay đổi IP này
+
+    private val apiService: MatchGameApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(MatchGameApiService::class.java)
+    }
 
     suspend fun getWordPairsByTopic(topicId: String): Result<WordMatchData> {
         return try {
-            val snapshot = database.child(topicId).get().await()
-            if (snapshot.exists()) {
-                val wordPairs = parseWordPairsFromSnapshot(snapshot)
-                val data = WordMatchData(
-                    difficulty = "Medium",
-                    levelCount = 4,
-                    title = topicId,
-                    pairCount = wordPairs.size,
-                    wordPairs = wordPairs
-                )
-                Result.success(data)
-            } else {
-                Result.failure(Exception("Topic not found"))
+            withContext(Dispatchers.IO) {
+                val response = apiService.getLevelById(topicId)
+                if (response.isSuccessful && response.body() != null) {
+                    val levelData = response.body()!!
+                    val wordPairs = levelData.pairs.map {
+                        WordPair(word = it.word, definition = it.definition)
+                    }
+                    val data = WordMatchData(
+                        difficulty = levelData.difficulty,
+                        levelCount = 4,
+                        title = levelData.title,
+                        pairCount = levelData.pairCount,
+                        wordPairs = wordPairs
+                    )
+                    Result.success(data)
+                } else {
+                    Result.failure(Exception("Level not found: ${response.message()}"))
+                }
             }
         } catch (e: Exception) {
+            // Fallback to local data on network error
             Result.failure(e)
         }
     }
 
     suspend fun getAllWordPairs(): List<WordPair> {
         return try {
-            // Lấy từ Firebase Realtime Database
-            val snapshot = database.get().await()
-            if (snapshot.exists()) {
-                parseWordPairsFromSnapshot(snapshot)
-            } else {
-                getWordPairsFromFirestore()
-            }
-        } catch (e: Exception) {
-            try {
-                getWordPairsFromFirestore()
-            } catch (firestoreException: Exception) {
-                getDefaultWordPairs()
-            }
-        }
-    }
-
-    // Hàm mới để parse dữ liệu từ Firebase Realtime Database
-    private fun parseWordPairsFromSnapshot(snapshot: DataSnapshot): List<WordPair> {
-        val wordPairs = mutableListOf<WordPair>()
-
-        // Duyệt qua tất cả các child (wordPair_1, wordPair_2, ...)
-        snapshot.children.forEach { childSnapshot ->
-            val key = childSnapshot.key
-            if (key != null && key.startsWith("wordPair_")) {
-                try {
-                    val word = childSnapshot.child("word").getValue(String::class.java)
-                    val definition = childSnapshot.child("definition").getValue(String::class.java)
-
-                    if (word != null && definition != null) {
-                        wordPairs.add(WordPair(word = word, definition = definition))
+            withContext(Dispatchers.IO) {
+                val response = apiService.getAllLevels()
+                if (response.isSuccessful && response.body() != null) {
+                    val allWordPairs = mutableListOf<WordPair>()
+                    response.body()!!.forEach { level ->
+                        level.pairs.forEach { pair ->
+                            allWordPairs.add(WordPair(word = pair.word, definition = pair.definition))
+                        }
                     }
-                } catch (e: Exception) {
-                    // Bỏ qua nếu có lỗi với item này
-                    println("Error parsing word pair ${key}: ${e.message}")
+                    allWordPairs.shuffled()
+                } else {
+                    getDefaultWordPairs()
                 }
             }
-        }
-
-        return wordPairs.ifEmpty { getDefaultWordPairs() }
-    }
-
-    // Hàm lấy dữ liệu từ Firestore (backup)
-    private suspend fun getWordPairsFromFirestore(): List<WordPair> {
-        return try {
-            val englishDoc = firestore.collection("English")
-                .document("MatchGame")
-                .get()
-                .await()
-
-            val wordPairs = mutableListOf<WordPair>()
-            val data = englishDoc.data
-
-            data?.forEach { (key, value) ->
-                if (key.startsWith("wordPair_")) {
-                    val pairData = value as? Map<String, Any>
-                    val word = pairData?.get("word") as? String
-                    val definition = pairData?.get("definition") as? String
-
-                    if (word != null && definition != null) {
-                        wordPairs.add(WordPair(word = word, definition = definition))
-                    }
-                }
-            }
-
-            wordPairs.ifEmpty { getDefaultWordPairs() }
         } catch (e: Exception) {
+            // Fallback to default data on network error
             getDefaultWordPairs()
         }
     }
 
     suspend fun getWordPairsByLevel(level: Int): List<WordPair> {
         return try {
-            val allPairs = getAllWordPairs()
-            val start = level * 5
-            val end = minOf((level + 1) * 5, allPairs.size)
-
-            if (start < allPairs.size) {
-                allPairs.subList(start, end)
-            } else {
-                emptyList()
+            withContext(Dispatchers.IO) {
+                val levelId = "Level${level + 1}"
+                val response = apiService.getLevelById(levelId)
+                if (response.isSuccessful && response.body() != null) {
+                    response.body()!!.pairs.map {
+                        WordPair(word = it.word, definition = it.definition)
+                    }
+                } else {
+                    // Fallback: lấy từ tất cả levels
+                    val allPairs = getAllWordPairs()
+                    val start = level * 5
+                    val end = minOf((level + 1) * 5, allPairs.size)
+                    if (start < allPairs.size) {
+                        allPairs.subList(start, end)
+                    } else {
+                        emptyList()
+                    }
+                }
             }
         } catch (e: Exception) {
             // Fallback: lấy 5 cặp từ dữ liệu mặc định
@@ -143,51 +187,82 @@ class WordPairRepository @Inject constructor(
         }
     }
 
-    suspend fun saveLevelCompletion(userName: String, levelId: String, isCompleted: Boolean): Result<Unit> {
+    suspend fun saveLevelCompletion(userName: String, levelId: String, isCompleted: Boolean, timeSpent: String = ""): Result<Unit> {
         return try {
-            val sharedPreferences = context.getSharedPreferences("word_match_prefs", Context.MODE_PRIVATE)
-            sharedPreferences.edit()
-                .putBoolean("user_${userName}_level_${levelId}_completed", isCompleted)
-                .apply()
-            Result.success(Unit)
+            withContext(Dispatchers.IO) {
+                val request = CompletionRequest(
+                    userName = userName,
+                    levelId = levelId,
+                    completed = isCompleted,
+                    timeSpent = timeSpent
+                )
+                val response = apiService.saveLevelCompletion(request)
+                if (response.isSuccessful) {
+                    // Cũng lưu vào SharedPreferences làm backup
+                    saveToLocalStorage(userName, levelId, isCompleted)
+                    Result.success(Unit)
+                } else {
+                    // Lưu vào local storage nếu API call thất bại
+                    saveToLocalStorage(userName, levelId, isCompleted)
+                    Result.failure(Exception("Failed to save to server: ${response.message()}"))
+                }
+            }
         } catch (e: Exception) {
+            // Lưu vào local storage nếu có lỗi network
+            saveToLocalStorage(userName, levelId, isCompleted)
             Result.failure(e)
         }
     }
 
     suspend fun getLevelCompletion(userName: String, levelId: String): Result<Boolean> {
         return try {
-            val sharedPreferences = context.getSharedPreferences("word_match_prefs", Context.MODE_PRIVATE)
-            val isCompleted = sharedPreferences.getBoolean("user_${userName}_level_${levelId}_completed", false)
-            Result.success(isCompleted)
+            withContext(Dispatchers.IO) {
+                val response = apiService.getLevelCompletion(userName, levelId)
+                if (response.isSuccessful && response.body() != null) {
+                    Result.success(response.body()!!.completed)
+                } else {
+                    // Fallback to local storage
+                    val isCompleted = getFromLocalStorage(userName, levelId)
+                    Result.success(isCompleted)
+                }
+            }
         } catch (e: Exception) {
-            Result.failure(e)
+            // Fallback to local storage
+            val isCompleted = getFromLocalStorage(userName, levelId)
+            Result.success(isCompleted)
         }
     }
 
     suspend fun getAllLevelCompletions(userName: String): Result<Map<String, Boolean>> {
         return try {
-            val sharedPreferences = context.getSharedPreferences("word_match_prefs", Context.MODE_PRIVATE)
-            val completions = mutableMapOf<String, Boolean>()
-            val levels = listOf("level_1", "level_2", "level_3", "level_4")
-            levels.forEach { levelId ->
-                completions[levelId] = sharedPreferences.getBoolean("user_${userName}_level_${levelId}_completed", false)
+            withContext(Dispatchers.IO) {
+                val response = apiService.getAllLevelCompletions(userName)
+                if (response.isSuccessful && response.body() != null) {
+                    Result.success(response.body()!!)
+                } else {
+                    // Fallback to local storage
+                    val completions = getAllFromLocalStorage(userName)
+                    Result.success(completions)
+                }
             }
-            Result.success(completions)
         } catch (e: Exception) {
-            Result.failure(e)
+            // Fallback to local storage
+            val completions = getAllFromLocalStorage(userName)
+            Result.success(completions)
         }
     }
 
     suspend fun saveUserProgress(userName: String, level: Int, totalRight: Int, totalQuestions: Int): Result<Unit> {
         return try {
-            val sharedPreferences = context.getSharedPreferences("word_match_prefs", Context.MODE_PRIVATE)
-            sharedPreferences.edit()
-                .putInt("user_${userName}_current_level", level)
-                .putInt("user_${userName}_total_right", totalRight)
-                .putInt("user_${userName}_total_questions", totalQuestions)
-                .apply()
-            Result.success(Unit)
+            withContext(Dispatchers.IO) {
+                val sharedPreferences = context.getSharedPreferences("word_match_prefs", Context.MODE_PRIVATE)
+                sharedPreferences.edit()
+                    .putInt("user_${userName}_current_level", level)
+                    .putInt("user_${userName}_total_right", totalRight)
+                    .putInt("user_${userName}_total_questions", totalQuestions)
+                    .apply()
+                Result.success(Unit)
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -195,11 +270,13 @@ class WordPairRepository @Inject constructor(
 
     suspend fun getUserProgress(userName: String): Result<Triple<Int, Int, Int>> {
         return try {
-            val sharedPreferences = context.getSharedPreferences("word_match_prefs", Context.MODE_PRIVATE)
-            val currentLevel = sharedPreferences.getInt("user_${userName}_current_level", 0)
-            val totalRight = sharedPreferences.getInt("user_${userName}_total_right", 0)
-            val totalQuestions = sharedPreferences.getInt("user_${userName}_total_questions", 0)
-            Result.success(Triple(currentLevel, totalRight, totalQuestions))
+            withContext(Dispatchers.IO) {
+                val sharedPreferences = context.getSharedPreferences("word_match_prefs", Context.MODE_PRIVATE)
+                val currentLevel = sharedPreferences.getInt("user_${userName}_current_level", 0)
+                val totalRight = sharedPreferences.getInt("user_${userName}_total_right", 0)
+                val totalQuestions = sharedPreferences.getInt("user_${userName}_total_questions", 0)
+                Result.success(Triple(currentLevel, totalRight, totalQuestions))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -207,31 +284,56 @@ class WordPairRepository @Inject constructor(
 
     suspend fun getAvailableLevels(): Result<List<LevelData>> {
         return try {
-            val snapshot = database.child("levels").get().await()
-            if (snapshot.exists()) {
-                val levels = mutableListOf<LevelData>()
-                snapshot.children.forEach { levelSnapshot ->
-                    val levelData = levelSnapshot.getValue(LevelData::class.java)
-                    if (levelData != null) {
-                        levels.add(levelData)
+            withContext(Dispatchers.IO) {
+                val response = apiService.getAllLevels()
+                if (response.isSuccessful && response.body() != null) {
+                    val levels = response.body()!!.map { level ->
+                        LevelData(
+                            id = level.levelId,
+                            title = level.title,
+                            difficulty = level.difficulty,
+                            pairCount = level.pairCount
+                        )
                     }
+                    Result.success(levels)
+                } else {
+                    Result.success(getDefaultLevels())
                 }
-                Result.success(levels)
-            } else {
-                // Trả về levels mặc định
-                Result.success(getDefaultLevels())
             }
         } catch (e: Exception) {
             Result.success(getDefaultLevels())
         }
     }
 
+    // Helper methods for local storage
+    private fun saveToLocalStorage(userName: String, levelId: String, isCompleted: Boolean) {
+        val sharedPreferences = context.getSharedPreferences("word_match_prefs", Context.MODE_PRIVATE)
+        sharedPreferences.edit()
+            .putBoolean("user_${userName}_level_${levelId}_completed", isCompleted)
+            .apply()
+    }
+
+    private fun getFromLocalStorage(userName: String, levelId: String): Boolean {
+        val sharedPreferences = context.getSharedPreferences("word_match_prefs", Context.MODE_PRIVATE)
+        return sharedPreferences.getBoolean("user_${userName}_level_${levelId}_completed", false)
+    }
+
+    private fun getAllFromLocalStorage(userName: String): Map<String, Boolean> {
+        val sharedPreferences = context.getSharedPreferences("word_match_prefs", Context.MODE_PRIVATE)
+        val completions = mutableMapOf<String, Boolean>()
+        val levels = listOf("Level1", "Level2", "Level3", "Level4")
+        levels.forEach { levelId ->
+            completions[levelId] = sharedPreferences.getBoolean("user_${userName}_level_${levelId}_completed", false)
+        }
+        return completions
+    }
+
     private fun getDefaultLevels(): List<LevelData> {
         return listOf(
-            LevelData("level_1", "Beginner", "Easy", 5),
-            LevelData("level_2", "Intermediate", "Medium", 5),
-            LevelData("level_3", "Advanced", "Hard", 5),
-            LevelData("level_4", "Expert", "Expert", 5)
+            LevelData("Level1", "Beginner", "Easy", 5),
+            LevelData("Level2", "Intermediate", "Medium", 5),
+            LevelData("Level3", "Advanced", "Hard", 5),
+            LevelData("Level4", "Expert", "Expert", 5)
         )
     }
 

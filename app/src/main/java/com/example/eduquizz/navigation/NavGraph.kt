@@ -45,6 +45,7 @@ import com.example.eduquizz.features.bubbleshot.screen.BubbleShotScreen
 import com.example.eduquizz.features.bubbleshot.screen.BubbleShotDescriptionScreen
 import com.example.eduquizz.features.bubbleshot.viewmodel.BubbleShot
 import com.example.eduquizz.features.home.screens.ReadyScreen
+import com.example.eduquizz.features.match.repository.WordPairRepository
 import com.example.eduquizz.features.quizzGame.screens.LevelChoice
 import com.example.eduquizz.features.wordsearch.screens.CompletionScreen
 import com.example.eduquizz.features.wordsearch.screens.TopicSelectionScreen
@@ -279,10 +280,13 @@ fun NavGraph(
             arguments = listOf(navArgument("from") { defaultValue = Routes.ENGLISH_GAMES_SCENE; type = NavType.StringType })
         ) { backStackEntry ->
             val from = backStackEntry.arguments?.getString("from") ?: Routes.ENGLISH_GAMES_SCENE
+            val viewModel: WordMatchGame = hiltViewModel()
             GameDescriptionScreen(
                 onPlayClick = { navController.navigate(Routes.GAME_THONG) },
                 onBackPressed = { navController.navigate(from) },
-                subject = "English"
+                subject = "English",
+                wordPairRepository = viewModel.wordPairRepository
+
             )
         }
       
