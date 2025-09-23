@@ -46,13 +46,23 @@ import androidx.compose.runtime.DisposableEffect
 
 @SuppressLint("SuspiciousIndentation")
 @Composable
-fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,navController: NavController,questionViewModel: QuestionViewModel
-,dataviewModel: DataViewModel = hiltViewModel(),loadingViewModel: LoadingViewModel = viewModel()) {
+fun MainView(
+    currentLevel: String,
+    name: String,
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    questionViewModel: QuestionViewModel = hiltViewModel(),
+    dataViewModel: DataViewModel = hiltViewModel(),
+    loadingViewModel: LoadingViewModel = viewModel()
+) {
     val loadingState by loadingViewModel.loadingState.collectAsState()
     var isVisible by remember { mutableStateOf(false) }
     var isDataLoaded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    // Khởi tạo game và lấy dữ liệu từ backend
     LaunchedEffect(key1 = true) {
-        questionViewModel.Init(dataviewModel,currentLevel)
+        questionViewModel.Init(dataViewModel, currentLevel)
         loadingViewModel.showLoading("Đang tải Quiz Game...", showProgress = true)
 
         loadingViewModel.updateProgress(0.2f, "Đang tải câu hỏi...")
@@ -69,39 +79,38 @@ fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,nav
 
         loadingViewModel.hideLoading()
         isDataLoaded = true
-        delay(100)
         isVisible = true
     }
+
+    // Quan sát trạng thái dữ liệu từ ViewModel
+    val questionsState = questionViewModel.data.value
     val count = questionViewModel.count
     val score = questionViewModel.score
     val choiceSelected = questionViewModel.choiceSelected
     val resetTimeTrigger = questionViewModel.resetTimeTrigger
-    val questions = questionViewModel.data.value.data
     val usedQuestions = questionViewModel.usedQuestions
-    val reserveQuestions = questionViewModel.reserveQuestions
     val usedHelperThisQuestion = questionViewModel.usedHelperThisQuestion
     val showExpertDialog = questionViewModel.showExpertDialog
     val choiceAttempts = questionViewModel.choiceAttempts
-    val gold by dataviewModel.gold.observeAsState(-1)
-    LaunchedEffect(questions) {
-       // if (questions != null && usedQuestions.isEmpty() && questions.size >= 20) {
-        if (questions != null && usedQuestions.isEmpty()) {
-            usedQuestions.clear()
-            reserveQuestions.clear()
-            val shuffledQuestions = questions.shuffled()
-            usedQuestions.addAll(shuffledQuestions.take(questions.size/2))
-            reserveQuestions.addAll(shuffledQuestions.drop(questions.size/2))
-        }
-    }
+    val gold by dataViewModel.gold.observeAsState(-1)
     val hiddenChoices = questionViewModel.hiddenChoices
     val helperCounts = questionViewModel.helperCounts
     val showResultDialog = questionViewModel.showResultDialog
     val expertAnswer = questionViewModel.expertAnswer
     val twoTimeChoice = questionViewModel.twoTimeChoice
     val coins = questionViewModel.coins
+
+    // Cập nhật coins từ DataViewModel
     LaunchedEffect(gold) {
-        if (gold >-1 && coins.value == -1) {
+        if (gold > -1 && coins.value == -1) {
             coins.value = gold
+        }
+    }
+
+    // Xử lý lỗi từ backend
+    LaunchedEffect(questionsState) {
+        if (!questionsState.loading!! && questionsState.e != null) {
+            Toast.makeText(context, "Lỗi tải dữ liệu: ${questionsState.e?.message}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -114,25 +123,25 @@ fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,nav
             Color(0xFF4ECDC4),
             MaterialTheme.colorScheme.background
         )
-    ){
+    ) {}
 
-    }
-    if(isDataLoaded == false){
+    if (!isDataLoaded) {
         return
     }
+
     Scaffold(
         topBar = {
             IconButton(
                 onClick = {
                     navController.popBackStack()
                 },
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier
+                    .padding(16.dp)
                     .background(
                         Color.Black.copy(alpha = 0.2f),
                         RoundedCornerShape(12.dp)
                     )
                     .size(40.dp)
-
             ) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
@@ -144,12 +153,12 @@ fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,nav
         },
         bottomBar = {
             BottomHelperBar(
-                usedHelperThisQuestion = usedHelperThisQuestion.value, // truyền vào đây
+                usedHelperThisQuestion = usedHelperThisQuestion.value,
                 coins = coins.value,
                 helperCounts = helperCounts,
                 onHelperClick = { index ->
                     if (usedHelperThisQuestion.value) return@BottomHelperBar
-                        questionViewModel.ProcessHelperBar(index)
+                    questionViewModel.ProcessHelperBar(index)
                 },
                 modifier = Modifier.fillMaxWidth().padding(8.dp)
             )
@@ -161,15 +170,14 @@ fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,nav
                 .padding(innerPadding)
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
-                .padding(bottom = 8.dp), // tránh đụng vào BottomHelperBar
+                .padding(bottom = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-          var context = LocalContext.current
             TimerProgressBar(
                 resetTrigger = resetTimeTrigger.value,
                 isAnswered = choiceSelected.value.isNotEmpty(),
                 onTimeOut = {
-                    if(choiceSelected.value.isEmpty()){
+                    if (choiceSelected.value.isEmpty()) {
                         choiceSelected.value = "timeout"
                         usedHelperThisQuestion.value = true
                         Toast.makeText(context, "Đã hết thời gian !!!", Toast.LENGTH_SHORT).show()
@@ -177,11 +185,10 @@ fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,nav
                 }
             )
 
-            if (questionViewModel.data.value.loading==false && usedQuestions.isNotEmpty() && count.value < usedQuestions.size) {
+            if (!questionsState.loading!! && usedQuestions.isNotEmpty() && count.value < usedQuestions.size) {
                 Spacer(modifier = Modifier.height(20.dp))
                 ScoreScreen(
                     count = count,
-                    //totalQuestion = questionViewModel.getTotalQuestionCount(),
                     totalQuestion = usedQuestions.size,
                     score = score
                 )
@@ -197,10 +204,9 @@ fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,nav
                     totalQuestion = usedQuestions.size,
                     onNext = {
                         if (count.value >= usedQuestions.lastIndex) {
-                            //showResultDialog.value = true
-                            val temp :Int = usedQuestions.size
-                            val score_temp = score.value
-                            navController.navigate("result/$score_temp/$temp/${Routes.INTRO}/${Routes.QUIZ_LEVEL}")
+                            val temp = usedQuestions.size
+                            val scoreTemp = score.value
+                            navController.navigate("result/$scoreTemp/$temp/${Routes.INTRO}/${Routes.QUIZ_LEVEL}")
                         } else {
                             count.value++
                             choiceSelected.value = ""
@@ -208,25 +214,32 @@ fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,nav
                             hiddenChoices.clear()
                             usedHelperThisQuestion.value = false
                             twoTimeChoice.value = false
-                            choiceAttempts.value = 0 // RESET CHỌN LẠI
+                            choiceAttempts.value = 0
                         }
                     }
                 )
+            } else if (!(questionsState.loading == true) && questionsState.e != null) {
+                Text(
+                    text = "Lỗi tải câu hỏi: ${questionsState.e?.message}",
+                    color = Color.Red,
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(16.dp)
+                )
             }
         }
+
         if (showExpertDialog.value) {
             AlertDialog(
-             //   modifier = Modifier.height(400.dp).width(200.dp),
                 onDismissRequest = { showExpertDialog.value = false },
                 title = { Text("Ý kiến chuyên gia") },
                 text = {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Image(
-                            painter = painterResource(id = R.drawable.chuyengiabig), // ảnh trong drawable
+                            painter = painterResource(id = R.drawable.chuyengiabig),
                             contentDescription = "Expert",
                             modifier = Modifier
                                 .size(150.dp)
-                                .clip(RoundedCornerShape(16.dp)) // bo góc ảnh mềm mại
+                                .clip(RoundedCornerShape(16.dp))
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Đáp án của tổ tư vấn là ${expertAnswer.value} với tỉ lệ 80% là đúng.")
@@ -250,30 +263,27 @@ fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,nav
                 text = {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Image(
-                            painter = painterResource( id =if(score.value>=10){ R.drawable.congratgif}else{
-                                R.drawable.betterluck
-                            }), // ảnh trong drawable
+                            painter = painterResource(id = if (score.value >= 10) R.drawable.congratgif else R.drawable.betterluck),
                             contentDescription = "Congrat",
                             modifier = Modifier
                                 .size(150.dp)
-                                .clip(RoundedCornerShape(16.dp)) // bo góc ảnh mềm mại
+                                .clip(RoundedCornerShape(16.dp))
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        if(score.value<10){
+                        if (score.value < 10) {
                             Text("Try your best later")
                         }
-                        Text("Your score is ${score.value}/${usedQuestions?.size}")
+                        Text("Your score is ${score.value}/${usedQuestions.size}")
                         Text("You earned ${score.value * 10} coins!")
                     }
                 },
-
                 confirmButton = {
                     Button(
                         onClick = {
-                            // Cập nhật xu nếu muốn
                             coins.value += score.value * 10
+                            dataViewModel.updateGold(coins.value)
                             showResultDialog.value = false
-                            navController.navigate(Routes.INTRO) // ← Replace with your destination
+                            navController.navigate(Routes.INTRO)
                         }
                     ) {
                         Text("OK")
@@ -283,7 +293,6 @@ fun MainView(currentLevel:String,name: String, modifier: Modifier = Modifier,nav
         }
     }
 }
-
 
 @Composable
 fun ScoreScreen(count: MutableState<Int>, totalQuestion: Int, score: MutableState<Int>) {
@@ -317,30 +326,27 @@ fun ScoreScreen(count: MutableState<Int>, totalQuestion: Int, score: MutableStat
                 color = Color(0xFF2E7D32),
                 modifier = Modifier.padding(end = 12.dp)
             )
-           // TimerCount(timeTotal = 30, timeWarning = 10)
         }
     }
 }
+
 @Composable
 fun BottomHelperBar(
     modifier: Modifier = Modifier,
     coins: Int,
     helperCounts: List<Pair<Int, Int>>,
-    usedHelperThisQuestion: Boolean, // thêm dòng này
+    usedHelperThisQuestion: Boolean,
     onHelperClick: (index: Int) -> Unit
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-           // .background(Color.White)
             .padding(2.dp)
     ) {
-        // Coins
         Row(verticalAlignment = Alignment.CenterVertically) {
             Image(
                 painter = painterResource(id = R.drawable.coinimg),
                 contentDescription = "Coin",
-                //tint = Color.Unspecified,
                 modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(4.dp))
@@ -354,20 +360,17 @@ fun BottomHelperBar(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Helper items
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             helperCounts.forEachIndexed { index, (iconId, count) ->
-                val helperAlpha = if (usedHelperThisQuestion) 0.3f else 1f // mờ đi nếu đã dùng
-                val helperEnabled = !usedHelperThisQuestion // vô hiệu hóa click nếu đã dùng
+                val helperAlpha = if (usedHelperThisQuestion) 0.3f else 1f
                 Box(
                     modifier = Modifier
-                        .clickable { onHelperClick(index) }
+                        .clickable(enabled = !usedHelperThisQuestion) { onHelperClick(index) }
                         .padding(4.dp)
                         .alpha(helperAlpha),
-
                     contentAlignment = Alignment.BottomEnd
                 ) {
                     Box(
@@ -393,7 +396,7 @@ fun BottomHelperBar(
                             .background(Color.White)
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
-                        Row{
+                        Row {
                             Text(
                                 text = "$count",
                                 fontSize = 15.sp,
@@ -407,13 +410,13 @@ fun BottomHelperBar(
                                 modifier = Modifier.size(23.dp)
                             )
                         }
-
                     }
                 }
             }
         }
     }
 }
+
 @Composable
 fun TimerProgressBar(
     totalTime: Int = 30,
@@ -435,7 +438,7 @@ fun TimerProgressBar(
             timeLeft--
             progress = timeLeft.toFloat() / totalTime.toFloat()
         }
-        if(timeLeft<=0&&!isAnswered){
+        if (timeLeft <= 0 && !isAnswered) {
             onTimeOut()
         }
     }
@@ -453,10 +456,6 @@ fun TimerProgressBar(
         )
     }
 }
-
-
-
-
 
 @Composable
 fun QuestionScreen(questionItem: QuestionItem) {
@@ -479,16 +478,12 @@ fun QuestionScreen(questionItem: QuestionItem) {
                     .height(120.dp)
                     .clip(RoundedCornerShape(12.dp)),
                 contentScale = ContentScale.Fit
-//                placeholder = painterResource(id = R.drawable.placeholder), // ảnh tạm
-//                error = painterResource(id = R.drawable.error_image)        // ảnh lỗi
             )
-
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // ✅ Hiển thị câu hỏi dạng text
         Text(
-            text = questionItem.question,
+            text = questionItem.questionText,
             color = Color(0xFF1A237E),
             fontSize = 22.sp,
             fontWeight = FontWeight.SemiBold,
@@ -501,7 +496,7 @@ fun QuestionScreen(questionItem: QuestionItem) {
 fun ChoiceScreen(
     twoTimeChoice: Boolean = false,
     count: MutableState<Int>,
-    totalQuestion:Int,
+    totalQuestion: Int,
     choiceAttempts: MutableState<Int>,
     questionItem: QuestionItem,
     choiceSelected: MutableState<String>,
@@ -511,7 +506,6 @@ fun ChoiceScreen(
     onNext: () -> Unit
 ) {
     val wrongChoices = remember { mutableStateListOf<String>() }
-    val forceUpdate = remember { mutableStateOf(false) } // để ép recompose nếu cần
 
     Column(
         modifier = Modifier
@@ -529,7 +523,7 @@ fun ChoiceScreen(
                 val isCorrect = if (choiceSelected.value.isNotEmpty()) {
                     choice == questionItem.answer
                 } else null
-                val check_50_50 = hiddenChoice.contains(choice)
+                val isHidden = hiddenChoice.contains(choice)
                 val isWrong = wrongChoices.contains(choice)
 
                 ChoiceButton(
@@ -537,16 +531,15 @@ fun ChoiceScreen(
                     content = choice,
                     isSelected = isSelected,
                     isCorrectAnswer = isCorrect,
-                    isDisabled = check_50_50 || isWrong,
+                    isDisabled = isHidden || isWrong,
                     showAnswer = choiceSelected.value.isNotEmpty(),
                     stt = index + 1,
                     onClick = {
                         if (choiceSelected.value.isEmpty()) {
                             if (choice == questionItem.answer) {
                                 choiceSelected.value = choice
-                                score.value++
+                                score.value += 10
                             } else if (twoTimeChoice && choiceAttempts.value == 0) {
-                                // Cho chọn lại
                                 wrongChoices.add(choice)
                                 choiceAttempts.value++
                                 Toast.makeText(
@@ -558,40 +551,35 @@ fun ChoiceScreen(
                                 choiceSelected.value = choice
                                 wrongChoices.add(choice)
                             }
-                            forceUpdate.value = !forceUpdate.value
                         } else if (choiceSelected.value == "timeout") {
                             Toast.makeText(context, "Bạn đã hết thời gian !!!", Toast.LENGTH_SHORT).show()
                         }
                     }
                 )
             }
-
             Spacer(modifier = Modifier.height(12.dp))
         }
-        val color_btn = when{
-            count.value == (totalQuestion-1) ->  ButtonDefaults.buttonColors(containerColor = Color(
-                0xFF03A9F4
-            )
-            )
-            else ->  ButtonDefaults.buttonColors(containerColor = Color(0xFFEC407A))
+
+        val colorBtn = if (count.value == totalQuestion - 1) {
+            ButtonDefaults.buttonColors(containerColor = Color(0xFF03A9F4))
+        } else {
+            ButtonDefaults.buttonColors(containerColor = Color(0xFFEC407A))
         }
+
         Button(
             onClick = {
                 AudioManager.playClickSfx()
-                onNext() },
+                onNext()
+            },
             shape = RoundedCornerShape(20.dp),
-            colors = color_btn,
+            colors = colorBtn,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 0.dp)
         ) {
-            val text_NextQuestion = when {
-                count.value == (totalQuestion-1) -> "Finish Test"
-                else -> "Next"
-            }
-
+            val textNextQuestion = if (count.value == totalQuestion - 1) "Finish Test" else "Next"
             Text(
-                text = text_NextQuestion,
+                text = textNextQuestion,
                 color = Color.White,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
@@ -611,17 +599,14 @@ fun ChoiceButton(
     isDisabled: Boolean,
     onClick: () -> Unit
 ) {
-     var backgroundColor = when {
-        //isDisabled -> Color(0xFFA9A7A7)
+    val backgroundColor = when {
         isSelected && isCorrectAnswer == true -> Color(0xFF4CAF50)
         isSelected && isCorrectAnswer == false -> Color(0xFF9F3E35)
         showAnswer && isCorrectAnswer == true -> Color(0xFF4CAF50)
-
         else -> Color(0xFFF5F5F5)
     }
 
     val textColor = when {
-        isDisabled -> Color(0xFFFFFFFF)
         isSelected || (showAnswer && isCorrectAnswer == true) -> Color.White
         else -> Color.Black
     }
@@ -637,20 +622,20 @@ fun ChoiceButton(
     Button(
         onClick = {
             AudioManager.playClickSfx()
-            onClick() },
-        enabled = (!isDisabled),
+            onClick()
+        },
+        enabled = !isDisabled,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp, horizontal = 16.dp)
             .then(borderModifier)
             .shadow(4.dp, RoundedCornerShape(12.dp)),
         shape = RoundedCornerShape(12.dp),
-
         colors = ButtonDefaults.buttonColors(
-                containerColor = backgroundColor,
-                contentColor = textColor,
-            disabledContainerColor = Color(0xFF9F3E35),  // Dùng cùng màu nền khi disable
-            disabledContentColor = textColor           // Dùng cùng màu chữ khi disable
+            containerColor = backgroundColor,
+            contentColor = textColor,
+            disabledContainerColor = Color(0xFF9F3E35),
+            disabledContentColor = textColor
         ),
         elevation = ButtonDefaults.buttonElevation(
             defaultElevation = 4.dp,
@@ -685,6 +670,5 @@ fun ChoiceButton(
                 textAlign = TextAlign.Start
             )
         }
-
     }
 }
