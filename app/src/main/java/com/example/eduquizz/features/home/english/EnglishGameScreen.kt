@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -259,9 +260,9 @@ private fun EnhancedGameCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(140.dp),
+            .height(120.dp),
         shape = RoundedCornerShape(28.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
         onClick = onClick
     ) {
         Box(
@@ -271,126 +272,73 @@ private fun EnhancedGameCard(
                     Brush.horizontalGradient(
                         colors = game.gradientColors,
                         startX = 0f,
-                        endX = 1200f
+                        endX = 800f
                     )
                 )
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.1f),
-                                Color.Transparent
-                            ),
-                            radius = 400f
-                        )
-                    )
-            )
-
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(24.dp),
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Icon hoặc chữ cái đại diện game
                 Box(
                     modifier = Modifier
-                        .size(70.dp)
+                        .size(64.dp)
                         .background(
                             Color.White.copy(alpha = 0.25f),
-                            RoundedCornerShape(24.dp)
+                            RoundedCornerShape(20.dp)
                         ),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = game.name.first().toString(),
-                        fontSize = 32.sp,
+                        fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
                 }
 
-                Spacer(modifier = Modifier.width(24.dp))
+                Spacer(modifier = Modifier.width(20.dp))
 
-                // Game info
+                // Chỉ hiển thị tên game và tiến độ (nếu muốn giữ)
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
                         text = game.name,
                         color = Color.White,
-                        fontSize = 24.sp,
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.Bold
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
-                    Text(
-                        text = "${game.totalQuestions} câu hỏi • ${game.totalLessons} bài học",
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
+                    LinearProgressIndicator(
+                        progress = game.progress.toFloat() / game.totalQuestions.toFloat(),
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f)
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = Color.White,
+                        trackColor = Color.White.copy(alpha = 0.3f)
                     )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Progress indicators
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Progress indicator
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    Color.White.copy(alpha = 0.25f),
-                                    RoundedCornerShape(16.dp)
-                                )
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                        ) {
-                            Text(
-                                text = "Tiến độ: ${game.progress}/${game.totalQuestions}",
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        // Completion indicator
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    Color.White.copy(alpha = 0.25f),
-                                    RoundedCornerShape(16.dp)
-                                )
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                        ) {
-                            Text(
-                                text = "Hoàn thành: ${game.completedQuestions}",
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                    }
                 }
 
-                // Arrow indicator
+                // Nút mũi tên
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(36.dp)
                         .background(
                             Color.White.copy(alpha = 0.2f),
-                            RoundedCornerShape(20.dp)
+                            RoundedCornerShape(18.dp)
                         ),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "→",
-                        fontSize = 20.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )

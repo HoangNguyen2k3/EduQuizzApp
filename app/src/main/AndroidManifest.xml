@@ -1,7 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+    <!-- Permissions required for osmdroid (map) and networking -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"
+        tools:ignore="ScopedStorage" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <!-- For Android 13+ (API 33+), scoped storage is used, but including for compatibility -->
+    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION"
+        tools:ignore="CoarseFineLocation" />
     <application
         android:networkSecurityConfig="@xml/network_security_config"
         android:name=".MainApplication"
@@ -14,18 +25,25 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.EduQuizz"
         tools:targetApi="31">
+
+        <!-- Main Activity (Launcher) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.EduQuizz.Splash"
-            android:launchMode="singleTop"
-            >
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- GuessMapActivity for Scene module -->
+<!--        <activity-->
+<!--            android:name=".GuessMapActivity"-->
+<!--            android:exported="false"-->
+<!--            android:label="@string/scene_activity_title"-->
+<!--            android:theme="@style/Theme.EduQuizz" />-->
     </application>
 
 </manifest>

@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.google.gms.google.services)
+    alias(libs.plugins.google.android.libraries.mapsplatform.secrets.gradle.plugin)
 }
 
 android {
@@ -39,36 +40,44 @@ android {
     }
     buildFeatures {
         compose = true
+        viewBinding = true // Kept for compatibility, but not needed for Compose-only UI
     }
 }
 
 dependencies {
+    // DataStore for preferences
     implementation("androidx.datastore:datastore-preferences:1.0.0")
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler) // Updated to use version catalog
 
-    //Firebase
+    // Hilt for dependency injection
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+
+    // Firebase (optional, kept since it's in your original file)
     implementation(libs.firebase.database)
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.androidx.runtime.livedata)
-    ksp(libs.hilt.compiler) // Updated to use version catalog
 
-    //Navigation
+
+    // Navigation for Compose
     implementation("androidx.navigation:navigation-compose:2.7.7")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     implementation("com.google.accompanist:accompanist-navigation-animation:0.32.0")
 
+    // osmdroid for OpenStreetMap
+    implementation("org.osmdroid:osmdroid-android:6.1.14")
 
-    //Retrofit + Gson
+    // Retrofit + Gson for API calls
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.google.code.gson:gson:2.13.1")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
-    //Lottie animation
-    implementation("com.airbnb.android:lottie-compose:6.1.0")
+    // Coil for image loading in Compose
+    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("io.coil-kt:coil-gif:2.4.0")
 
-    //Jetpack Compose
+    // Jetpack Compose
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -79,8 +88,10 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation("androidx.compose.material:material-icons-extended")
 
+    // System UI controller for Compose
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
 
-    //Test
+    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -93,4 +104,7 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.4.0")
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
     implementation("io.coil-kt:coil-gif:2.4.0")
+
+    //Lottie animation
+    implementation("com.airbnb.android:lottie-compose:6.1.0")
 }

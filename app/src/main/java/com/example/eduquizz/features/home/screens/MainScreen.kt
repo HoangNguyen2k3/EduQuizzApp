@@ -37,6 +37,7 @@ import com.example.quizapp.ui.theme.QuizAppTheme
 fun MainScreen(
     onNavigateToEnglish:() -> Unit = {},
     onNavigateToMath:() -> Unit = {},
+    onNavigateToMapping:() -> Unit = {}, // Thêm callback cho Mapping
     dataviewModel: DataViewModel = hiltViewModel(),
     userViewModel: UserViewModel = hiltViewModel()
 ) {
@@ -98,6 +99,21 @@ fun MainScreen(
                 colorResource(id = R.color.math_purple),
                 colorResource(id = R.color.math_light_purple)
             )
+        ),
+        Subject(
+            id = "mapping",
+            name = "Địa Lý", // Tên hiển thị cho subject mới
+            iconRes = R.drawable.description, // Tạm thời dùng icon math, bạn có thể thay bằng icon map/globe
+            progress = 0,
+            totalQuestions = 0,
+            completedQuestions = 0,
+            totalLessons = 5,
+            gradientColors = listOf(
+                Color(0xFF4CAF50), // Green
+                Color(0xFF81C784), // Light Green
+                Color(0xFFA5D6A7)  // Very Light Green
+            ),
+            isRecommended = false
         )
     )
 
@@ -138,11 +154,10 @@ fun MainScreen(
                         HomeScreen(
                             subjects = subjects,
                             onSubjectClick = {subject ->
-                                if(subject.id == "english"){
-                                    onNavigateToEnglish()
-                                }
-                                if(subject.id == "math"){
-                                    onNavigateToMath()
+                                when(subject.id) {
+                                    "english" -> onNavigateToEnglish()
+                                    "math" -> onNavigateToMath()
+                                    "mapping" -> onNavigateToMapping() // Handle mapping navigation
                                 }
                             }
                         )
