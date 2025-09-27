@@ -1,10 +1,13 @@
 package com.example.eduquizz
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import android.graphics.Color
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -23,6 +26,9 @@ import com.example.eduquizz.data_save.AudioManager
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val requestNotifPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> }
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseDatabase.getInstance().setPersistenceEnabled(true)
@@ -36,6 +42,11 @@ class MainActivity : ComponentActivity() {
         WindowInsetsControllerCompat(window, window.decorView).let { controller ->
             controller.hide(WindowInsetsCompat.Type.systemBars())
             controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+
+        // Android 13+ cần xin quyền thông báo
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestNotifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
 
         setContent {

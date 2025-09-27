@@ -8,8 +8,8 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
-class BatChuRepo {
-}
+class BatChuRepo
+
 @Singleton
 class BatChuRepository @Inject constructor() {
     private val database = FirebaseDatabase.getInstance().getReference("English/BatChu")

@@ -50,7 +50,7 @@ class TopicSelectionViewModel @Inject constructor(
                             },
                             wordCount = 25, // Giả định, có thể lấy từ repository
                             difficulty = "Easy",
-                            isCompleted = completions[id] ?: false,
+                            isCompleted = completions[id] == true,
                             backgroundColor = when (id) {
                                 "Travel" -> Color(0xFF4FC3F7)
                                 "FunAndGames" -> Color(0xFF66BB6A)

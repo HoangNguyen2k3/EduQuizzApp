@@ -84,7 +84,7 @@ class WordMatchGame @Inject constructor(
     private fun loadUserProgress() {
         viewModelScope.launch {
             wordPairRepository.getUserProgress(_currentUserName)
-                .onSuccess { (level, totalRight, totalQuestions) ->
+                .onSuccess { (_, _, _) ->
                     // currentLevel.value = level
                     // this@WordMatchGame.totalRight.value = totalRight
                     // this@WordMatchGame.totalQuestion.value = totalQuestions

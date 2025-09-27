@@ -21,6 +21,7 @@ class DataViewModel @Inject constructor(
     val firstTime = userPrefs.firstTimeInGame.asLiveData()
 val music = userPrefs.boolMusicFlow.asLiveData()
     val sfx = userPrefs.boolSfxFlow.asLiveData()
+    val lastSeenTs = userPrefs.lastSeenTsFlow.asLiveData()
     // --- Thống kê ---
     val numTotalQuestions = userPrefs.numTotalQuestionsFlow.asLiveData()
     val numCorrectAnsweredQuestions = userPrefs.numCorrectAnsweredQuestionsFlow.asLiveData()
@@ -37,6 +38,12 @@ val music = userPrefs.boolMusicFlow.asLiveData()
     fun UpdateSfx(flag: Boolean){
         viewModelScope.launch {
             userPrefs.sfxmusic(flag)
+        }
+    }
+
+    fun updateLastSeenNow() {
+        viewModelScope.launch {
+            userPrefs.saveLastSeenTs(System.currentTimeMillis())
         }
     }
     fun updateFirstTime(){

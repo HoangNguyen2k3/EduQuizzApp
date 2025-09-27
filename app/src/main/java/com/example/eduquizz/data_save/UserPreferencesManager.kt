@@ -6,6 +6,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 
 // Extension property để tạo DataStore 1 lần duy nhất
 val Context.dataStore by preferencesDataStore(name = "user_prefs")
@@ -32,7 +33,7 @@ class UserPreferencesManager(private val context: Context) {
         .map { it[UserPreferencesKeys.CURRENT_LEVEL] ?: 1 }
 
     val firstTimeInGame: Flow<Boolean> = context.dataStore.data
-        .map { it[UserPreferencesKeys.FIRST_TIME] ?: false }
+        .map { it[UserPreferencesKeys.FIRST_TIME] == true }
 
     // --- Thống kê ---
     val numTotalQuestionsFlow: Flow<Int> = context.dataStore.data
@@ -50,9 +51,12 @@ class UserPreferencesManager(private val context: Context) {
     val numCorrectBelow50PercentFlow: Flow<Int> = context.dataStore.data
         .map { it[UserPreferencesKeys.NUM_CORRECT_BELOW_50_PERCENT_QUES] ?: 0 }
     val boolMusicFlow: Flow<Boolean> =context.dataStore.data
-        .map { it[UserPreferencesKeys.music] ?: true }
+        .map { it[UserPreferencesKeys.music] != false }
     val boolSfxFlow: Flow<Boolean> =context.dataStore.data
-        .map { it[UserPreferencesKeys.sfx] ?: true }
+        .map { it[UserPreferencesKeys.sfx] != false }
+
+    val lastSeenTsFlow: Flow<Long> = context.dataStore.data
+        .map { it[UserPreferencesKeys.LAST_SEEN_TS] ?: 0L }
     // --- Lưu thông tin người chơi ---
     suspend fun firstTimeInPlayGame(){
         context.dataStore.edit {
@@ -62,6 +66,12 @@ class UserPreferencesManager(private val context: Context) {
     suspend fun savePlayerName(name: String) {
         context.dataStore.edit {
             it[UserPreferencesKeys.PLAYER_NAME] = name
+        }
+    }
+
+    suspend fun saveLastSeenTs(epochMillis: Long) {
+        context.dataStore.edit {
+            it[UserPreferencesKeys.LAST_SEEN_TS] = epochMillis
         }
     }
 

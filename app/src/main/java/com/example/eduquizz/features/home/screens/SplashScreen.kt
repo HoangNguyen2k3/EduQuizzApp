@@ -20,9 +20,12 @@ import com.example.eduquizz.R
 import com.example.quizapp.ui.theme.QuizAppTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.delay
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.eduquizz.data_save.DataViewModel
 
 @Composable
 fun SplashScreen(onNavigateToMain: () -> Unit = {}) {
+    val dataViewModel: DataViewModel = hiltViewModel()
     val composition by rememberLottieComposition(
         LottieCompositionSpec.RawRes(R.raw.splash_animation)
     )
@@ -34,6 +37,8 @@ fun SplashScreen(onNavigateToMain: () -> Unit = {}) {
     )
 
     LaunchedEffect(Unit) {
+        // Cập nhật thời điểm vào app lần cuối để tính toán notification
+        dataViewModel.updateLastSeenNow()
         systemUiController.setStatusBarColor(
             color = Color(0xFFD6EFFF),
             darkIcons = true

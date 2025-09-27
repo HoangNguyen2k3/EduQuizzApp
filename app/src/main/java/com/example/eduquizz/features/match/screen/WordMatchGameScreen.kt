@@ -50,8 +50,6 @@ fun WordMatchGameScreen(
     val showBuyGoldDialog by viewModel.showBuyGoldDialog
     val showFinishDialog by viewModel.showFinishDialog
     val showTimeOutDialog by viewModel.showTimeOutDialog
-    val showLoadingDialog by viewModel.showLoadingDialog
-    val canPass by viewModel.canPass
 
     val cards = viewModel.cards
     val selectedIndices = viewModel.selectedIndices
@@ -61,7 +59,7 @@ fun WordMatchGameScreen(
 
 
 
-    val context = LocalContext.current
+    LocalContext.current
     LaunchedEffect(Unit) {
         AudioManager.setBgmEnabled(true)
     }

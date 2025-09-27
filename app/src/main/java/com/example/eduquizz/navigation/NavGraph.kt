@@ -28,8 +28,6 @@ import com.example.eduquizz.features.home.screens.SettingScreen
 import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.eduquizz.features.home.screens.MainScreen
 import com.example.eduquizz.features.match.viewmodel.WordMatchGame
-
-import com.example.eduquizz.MainActivity
 import com.example.eduquizz.data.local.UserViewModel
 import com.example.eduquizz.features.BatChu.screens.IntroScreenBatChu
 import com.example.eduquizz.features.BatChu.screens.LevelChoiceBatChu
@@ -340,7 +338,6 @@ fun NavGraph(
             )
         }
         composable("topic_selection") {
-            val loadingViewModel: LoadingViewModel = hiltViewModel()
             TopicSelectionScreen(
                 onTopicSelected = { topicId ->
                     navController.navigate("word_search_game/$topicId")

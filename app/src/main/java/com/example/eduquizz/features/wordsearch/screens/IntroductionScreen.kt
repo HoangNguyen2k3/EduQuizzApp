@@ -50,7 +50,7 @@ fun IntroductionScreen(
     showContinueButton: Boolean = false,
     loadingViewModel: LoadingViewModel = viewModel()
 ) {
-    val context = LocalContext.current
+    LocalContext.current
     val loadingState by loadingViewModel.loadingState.collectAsState()
 
     var isVisible by remember { mutableStateOf(false) }

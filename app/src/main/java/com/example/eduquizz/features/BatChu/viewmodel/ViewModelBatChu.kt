@@ -75,7 +75,7 @@ var questionList by mutableStateOf<List<DataBatChu>>(emptyList())
         val answer = question.answer
         val shuffled = question.shuffledLetters
 
-        val alreadySelected = selectedLetters.filterNotNull().toSet()
+        selectedLetters.filterNotNull().toSet()
         val remainingIndices = answer.indices.filter { selectedLetters[it] == null }
 
         for (targetIndex in remainingIndices) {

@@ -91,4 +91,7 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.4.0")
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
     implementation("io.coil-kt:coil-gif:2.4.0")
+
+    // WorkManager (lên lịch nhắc nhở hằng ngày)
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 }

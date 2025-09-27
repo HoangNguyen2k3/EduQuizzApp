@@ -361,7 +361,7 @@ fun BottomHelperBar(
         ) {
             helperCounts.forEachIndexed { index, (iconId, count) ->
                 val helperAlpha = if (usedHelperThisQuestion) 0.3f else 1f // mờ đi nếu đã dùng
-                val helperEnabled = !usedHelperThisQuestion // vô hiệu hóa click nếu đã dùng
+                !usedHelperThisQuestion // vô hiệu hóa click nếu đã dùng
                 Box(
                     modifier = Modifier
                         .clickable { onHelperClick(index) }
