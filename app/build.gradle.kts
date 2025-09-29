@@ -94,4 +94,10 @@ dependencies {
 
     // WorkManager (lên lịch nhắc nhở hằng ngày)
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+    // Glance (tạo widget)
+    implementation ("androidx.glance:glance-appwidget:1.1.0") // hoặc phiên bản mới hơn
+    implementation ("androidx.activity:activity-compose:1.7.2")
+    implementation ("androidx.core:core-ktx:1.10.1")
+    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
 }

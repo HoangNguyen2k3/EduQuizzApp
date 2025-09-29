@@ -55,4 +55,10 @@
     <color name="white_10">#1AFFFFFF</color>
     <color name="white_20">#33FFFFFF</color>
     <color name="white_60">#99FFFFFF</color>
+
+    <!-- Widget Color -->
+    <color name="widget_bg">#1E1E2E</color>
+    <color name="widget_text_primary">#FFFFFF</color>
+    <color name="widget_text_secondary">#E0E0E0</color>
+    <color name="widget_accent">#FFC107</color>
 </resources>
