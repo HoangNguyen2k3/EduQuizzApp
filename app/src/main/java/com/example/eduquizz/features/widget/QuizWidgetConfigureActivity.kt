@@ -5,27 +5,29 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.lifecycleScope
-import androidx.glance.appwidget.GlanceAppWidgetManager
-import androidx.glance.appwidget.state.updateAppWidgetState
-import kotlinx.coroutines.launch
 import androidx.core.content.edit
 
 class QuizWidgetConfigureActivity : ComponentActivity() {
 
-    private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+    private var appWidgetId: Int = AppWidgetManager.INVALID_APPWIDGET_ID
 
+    @OptIn(ExperimentalFoundationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Lấy appWidgetId
-        appWidgetId = intent?.extras?.getInt(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
-            ?: AppWidgetManager.INVALID_APPWIDGET_ID
+        appWidgetId = intent?.extras?.getInt(
+            AppWidgetManager.EXTRA_APPWIDGET_ID,
+            AppWidgetManager.INVALID_APPWIDGET_ID
+        ) ?: AppWidgetManager.INVALID_APPWIDGET_ID
 
         if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
             finish()
@@ -33,79 +35,89 @@ class QuizWidgetConfigureActivity : ComponentActivity() {
         }
 
         setContent {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = "Chọn chế độ widget:")
-                Spacer(modifier = Modifier.height(12.dp))
+            val widgets = listOf(
+                "📖 Word of the Day" to 1,
+                "❓ Quick Quiz" to 2,
+                "🔥 Streak" to 3,
+                "🎮 Mini Game" to 4,
+                "🗂️ Topic Word" to 5
+            )
+            val pagerState = rememberPagerState(pageCount = { widgets.size })
 
-                Button(onClick = { onTypeSelected(1) }, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                    Text("1 - Word of the Day")
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(Modifier.height(16.dp))
+
+                // Pager hiển thị preview
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                ) { page ->
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = widgets[page].first)
+                    }
                 }
-                Button(onClick = { onTypeSelected(2) }, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                    Text("2 - Quick Quiz")
+
+                // Indicator
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(8.dp)
+                ) {
+                    repeat(widgets.size) { index ->
+                        Box(
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .size(if (pagerState.currentPage == index) 12.dp else 8.dp)
+                        ) {
+                            androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                                drawCircle(
+                                    color = if (pagerState.currentPage == index)
+                                        androidx.compose.ui.graphics.Color.Blue
+                                    else
+                                        androidx.compose.ui.graphics.Color.Gray
+                                )
+                            }
+                        }
+                    }
                 }
-                Button(onClick = { onTypeSelected(3) }, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                    Text("3 - Streak")
-                }
-                Button(onClick = { onTypeSelected(4) }, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                    Text("4 - Mini Game")
-                }
-                Button(onClick = { onTypeSelected(5) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("5 - Topic Word")
+
+                // Button chọn widget
+                Button(
+                    onClick = {
+                        val type = widgets[pagerState.currentPage].second
+                        onTypeSelected(type)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text("➕ Thêm tiện ích")
                 }
             }
         }
     }
 
     private fun onTypeSelected(type: Int) {
-        // vì updateAppWidgetState và update(...) là suspend, dùng lifecycleScope
-        lifecycleScope.launch {
-            val manager = GlanceAppWidgetManager(this@QuizWidgetConfigureActivity)
-            val glanceIds = manager.getGlanceIds(QuizWidget::class.java)
+        // Lưu cấu hình đơn giản theo appWidgetId
+        val prefs = getSharedPreferences("quiz_widget_prefs", MODE_PRIVATE)
+        prefs.edit { putInt("widget_type_$appWidgetId", type) }
 
-            // tìm GlanceId tương ứng với appWidgetId
-            val targetGlanceId = glanceIds.firstOrNull { gid ->
-                manager.getAppWidgetId(gid) == appWidgetId
-            }
-
-            if (targetGlanceId != null) {
-                // lưu type vào store của thư viện Glance cho instance này
-                updateAppWidgetState(this@QuizWidgetConfigureActivity, targetGlanceId) { prefs ->
-                    prefs[WidgetKeys.WIDGET_TYPE] = type
-                }
-                // cập nhật UI của widget instance đó
-                QuizWidget().update(this@QuizWidgetConfigureActivity, targetGlanceId)
-            } else {
-                // fallback (hiếm xảy ra): lưu tạm vào SharedPreferences app theo appWidgetId
-                val sp = getSharedPreferences("legacy_widget_prefs", MODE_PRIVATE)
-                sp.edit {
-                    putInt("widget_type_${'$'}appWidgetId", type)
-                }
-                // cập nhật tất cả widget của lớp này thủ công
-                val allIds = manager.getGlanceIds(QuizWidget::class.java)
-                allIds.forEach { gid ->
-                    QuizWidget().update(this@QuizWidgetConfigureActivity, gid)
-                }
-            }
-
-            // trả về cho system biết cấu hình thành công
-            val resultValue = Intent().apply {
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-            }
-            setResult(RESULT_OK, resultValue)
-            finish()
+        // Trả kết quả OK cho host
+        val result = Intent().apply {
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
         }
-    }
+        setResult(RESULT_OK, result)
 
-    override fun onDestroy() {
-        // nếu user thoát mà không chọn -> hủy
-        if (isFinishing && resultCodeIsSetToOkNot()) {
-            setResult(RESULT_CANCELED)
-        }
-        super.onDestroy()
-    }
-
-    private fun resultCodeIsSetToOkNot(): Boolean {
-        // đơn giản: không implement tracking riêng ở đây; Android system sẽ xử lý nếu không setResult OK
-        return false
+        finish()
     }
 }
