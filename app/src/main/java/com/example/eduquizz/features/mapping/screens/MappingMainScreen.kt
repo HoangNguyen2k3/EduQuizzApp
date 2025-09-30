@@ -71,8 +71,8 @@ fun MappingMainScreen(
                     setTileSource(TileSourceFactory.MAPNIK)
                     setMultiTouchControls(true)
 
-                    controller.setZoom(2.0)
-                    controller.setCenter(GeoPoint(0.0, 0.0))
+                    controller.setZoom(6.0)
+                    controller.setCenter(GeoPoint(16.0, 107.0))
 
                     mapView = this
                     mapController = controller
