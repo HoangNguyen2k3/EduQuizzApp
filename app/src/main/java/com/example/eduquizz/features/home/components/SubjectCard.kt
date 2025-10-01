@@ -24,18 +24,18 @@ import com.example.eduquizz.R
 import com.example.eduquizz.data.models.Subject
 
 @Composable
-public fun SubjectCard(
+fun SubjectCard(
     subject: Subject,
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(dimensionResource(id = com.example.eduquizz.R.dimen.subject_card_height))
+            .height(dimensionResource(id = R.dimen.subject_card_height))
             .clickable { onClick() },
-        shape = RoundedCornerShape(dimensionResource(id = com.example.eduquizz.R.dimen.subject_card_corner)),
+        shape = RoundedCornerShape(dimensionResource(id = R.dimen.subject_card_corner)),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = dimensionResource(id = com.example.eduquizz.R.dimen.subject_card_elevation)
+            defaultElevation = dimensionResource(id = R.dimen.subject_card_elevation)
         )
     ) {
         Box(
@@ -56,7 +56,7 @@ public fun SubjectCard(
                     .background(
                         Brush.radialGradient(
                             colors = listOf(
-                                colorResource(id = com.example.eduquizz.R.color.white_10),
+                                colorResource(id = R.color.white_10),
                                 Color.Transparent
                             ),
                             radius = 300f
@@ -67,27 +67,27 @@ public fun SubjectCard(
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(dimensionResource(id = com.example.eduquizz.R.dimen.spacing_xxl)),
+                    .padding(dimensionResource(id = R.dimen.spacing_xxl)),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Subject icon
                 Box(
                     modifier = Modifier
-                        .size(dimensionResource(id = com.example.eduquizz.R.dimen.icon_subject))
+                        .size(dimensionResource(id = R.dimen.icon_subject))
                         .background(
-                            colorResource(id = com.example.eduquizz.R.color.white_20),
-                            RoundedCornerShape(dimensionResource(id = com.example.eduquizz.R.dimen.corner_medium))
+                            colorResource(id = R.color.white_20),
+                            RoundedCornerShape(dimensionResource(id = R.dimen.corner_medium))
                         ),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
                         painter = painterResource(id = subject.iconRes),
-                        contentDescription = stringResource(id = com.example.eduquizz.R.string.subject_icon_desc),
-                        modifier = Modifier.size(dimensionResource(id = com.example.eduquizz.R.dimen.icon_large))
+                        contentDescription = stringResource(id = R.string.subject_icon_desc),
+                        modifier = Modifier.size(dimensionResource(id = R.dimen.icon_large))
                     )
                 }
 
-                Spacer(modifier = Modifier.width(dimensionResource(id = com.example.eduquizz.R.dimen.spacing_xxl)))
+                Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.spacing_xxl)))
 
                 // Subject info
                 Column(
@@ -96,11 +96,11 @@ public fun SubjectCard(
                     Text(
                         text = subject.name,
                         color = Color.White,
-                        fontSize = dimensionResource(id = com.example.eduquizz.R.dimen.text_large).value.sp,
+                        fontSize = dimensionResource(id = R.dimen.text_large).value.sp,
                         fontWeight = FontWeight.Bold
                     )
 
-                    Spacer(modifier = Modifier.height(dimensionResource(id = com.example.eduquizz.R.dimen.spacing_normal)))
+                    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_normal)))
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically
@@ -110,51 +110,51 @@ public fun SubjectCard(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .background(
-                                    colorResource(id = com.example.eduquizz.R.color.white_20),
-                                    RoundedCornerShape(dimensionResource(id = com.example.eduquizz.R.dimen.corner_small))
+                                    colorResource(id = R.color.white_20),
+                                    RoundedCornerShape(dimensionResource(id = R.dimen.corner_small))
                                 )
                                 .padding(
-                                    horizontal = dimensionResource(id = com.example.eduquizz.R.dimen.badge_small_horizontal_padding),
-                                    vertical = dimensionResource(id = com.example.eduquizz.R.dimen.badge_small_vertical_padding)
+                                    horizontal = dimensionResource(id = R.dimen.badge_small_horizontal_padding),
+                                    vertical = dimensionResource(id = R.dimen.badge_small_vertical_padding)
                                 )
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Star,
                                 contentDescription = null,
                                 tint = Color.White,
-                                modifier = Modifier.size(dimensionResource(id = com.example.eduquizz.R.dimen.icon_small))
+                                modifier = Modifier.size(dimensionResource(id = R.dimen.icon_small))
                             )
-                            Spacer(modifier = Modifier.width(dimensionResource(id = com.example.eduquizz.R.dimen.spacing_tiny)))
+                            Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.spacing_tiny)))
                             Text(
                                 text = "${subject.progress}/${subject.totalQuestions}",
                                 color = Color.White,
-                                fontSize = dimensionResource(id = com.example.eduquizz.R.dimen.text_small).value.sp,
+                                fontSize = dimensionResource(id = R.dimen.text_small).value.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(dimensionResource(id = com.example.eduquizz.R.dimen.spacing_normal)))
+                        Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.spacing_normal)))
 
                         // Lessons indicator
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .background(
-                                    colorResource(id = com.example.eduquizz.R.color.white_20),
-                                    RoundedCornerShape(dimensionResource(id = com.example.eduquizz.R.dimen.corner_small))
+                                    colorResource(id = R.color.white_20),
+                                    RoundedCornerShape(dimensionResource(id = R.dimen.corner_small))
                                 )
                                 .padding(
-                                    horizontal = dimensionResource(id = com.example.eduquizz.R.dimen.badge_small_horizontal_padding),
-                                    vertical = dimensionResource(id = com.example.eduquizz.R.dimen.badge_small_vertical_padding)
+                                    horizontal = dimensionResource(id = R.dimen.badge_small_horizontal_padding),
+                                    vertical = dimensionResource(id = R.dimen.badge_small_vertical_padding)
                                 )
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = null,
                                 tint = Color.White,
-                                modifier = Modifier.size(dimensionResource(id = com.example.eduquizz.R.dimen.icon_small))
+                                modifier = Modifier.size(dimensionResource(id = R.dimen.icon_small))
                             )
-                            Spacer(modifier = Modifier.width(dimensionResource(id = com.example.eduquizz.R.dimen.spacing_tiny)))
+                            Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.spacing_tiny)))
                             Text(
                                 text = "${subject.completedQuestions}/6",
                                 color = Color.White,

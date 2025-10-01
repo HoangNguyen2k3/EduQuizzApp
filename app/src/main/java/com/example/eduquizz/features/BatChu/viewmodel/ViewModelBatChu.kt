@@ -106,7 +106,7 @@ class ViewModelBatChu @Inject constructor(
         val answer = question.answer
         val shuffled = question.shuffledLetters
 
-        val alreadySelected = selectedLetters.filterNotNull().toSet()
+        selectedLetters.filterNotNull().toSet()
         val remainingIndices = answer.indices.filter { selectedLetters[it] == null }
 
         for (targetIndex in remainingIndices) {

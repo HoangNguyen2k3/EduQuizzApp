@@ -15,4 +15,10 @@
     <color name="blue_grey">#cadae7</color>
     <color name="dark_blue_grey">#273244</color>
     <color name="green">#43B100</color>
+
+    <!-- Widget Color -->
+    <color name="widget_bg">#1E1E2E</color>
+    <color name="widget_text_primary">#FFFFFF</color>
+    <color name="widget_text_secondary">#E0E0E0</color>
+    <color name="widget_accent">#FFC107</color>
 </resources>

@@ -360,7 +360,10 @@ fun BottomHelperBar(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             helperCounts.forEachIndexed { index, (iconId, count) ->
+
                 val helperAlpha = if (usedHelperThisQuestion) 0.3f else 1f
+                !usedHelperThisQuestion
+
                 Box(
                     modifier = Modifier
                         .clickable(enabled = !usedHelperThisQuestion) { onHelperClick(index) }

@@ -50,16 +50,6 @@ fun CompletionScreen(
         label = "celebration_scale"
     )
 
-    val celebrationRotation by infiniteTransition.animateFloat(
-        initialValue = -5f,
-        targetValue = 5f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "celebration_rotation"
-    )
-
     LaunchedEffect(Unit) {
         delay(300)
         isVisible = true

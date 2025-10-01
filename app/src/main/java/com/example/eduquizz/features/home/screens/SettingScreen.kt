@@ -34,8 +34,6 @@ import com.example.quizapp.ui.theme.QuizAppTheme
 fun SettingScreen(
     dataViewModel: DataViewModel = hiltViewModel(),
 ) {
-    var isBgmEnabled by remember { mutableStateOf(true) }
-    var isSfxEnabled by remember { mutableStateOf(true) }
     val musicEnabled by dataViewModel.music.observeAsState(true)
     val sfxEnabled by dataViewModel.sfx.observeAsState(true)
     var selectedLanguage by remember { mutableStateOf("Tiếng Việt") }

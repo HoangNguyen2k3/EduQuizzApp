@@ -54,9 +54,11 @@ fun IntroductionScreen(
     wordSearchViewModel: WordSearchViewModel = hiltViewModel()
 ) {
 
+
     val wordSearchViewModel: WordSearchViewModel = viewModel()
 
     val context = LocalContext.current
+
     val loadingState by loadingViewModel.loadingState.collectAsState()
 
     val topicCount by wordSearchViewModel.topicCount

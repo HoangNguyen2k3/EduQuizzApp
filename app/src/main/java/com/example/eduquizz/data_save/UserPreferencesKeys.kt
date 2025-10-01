@@ -3,6 +3,7 @@ package com.example.eduquizz.data_save
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 
 object UserPreferencesKeys {
     //Thông tin người chơi
@@ -22,4 +23,6 @@ object UserPreferencesKeys {
 
     val music = booleanPreferencesKey("music")
     val sfx = booleanPreferencesKey("sfx")
+    // Thời điểm vào app lần cuối (epoch millis)
+    val LAST_SEEN_TS = longPreferencesKey("last_seen_ts")
 }

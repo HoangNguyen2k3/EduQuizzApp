@@ -51,7 +51,7 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
     val isGameOver by viewModel.isGameOver
     val isLoading by viewModel.isLoading
 
-    val context = LocalContext.current
+    LocalContext.current
     LaunchedEffect(Unit) {
         AudioManager.setBgmEnabled(true)
     }

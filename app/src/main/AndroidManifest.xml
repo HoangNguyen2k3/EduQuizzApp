@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+
     <!-- Permissions required for osmdroid (map) and networking -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
@@ -26,7 +31,6 @@
         android:theme="@style/Theme.EduQuizz"
         tools:targetApi="31">
 
-        <!-- Main Activity (Launcher) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -38,12 +42,26 @@
             </intent-filter>
         </activity>
 
-        <!-- GuessMapActivity for Scene module -->
-<!--        <activity-->
-<!--            android:name=".GuessMapActivity"-->
-<!--            android:exported="false"-->
-<!--            android:label="@string/scene_activity_title"-->
-<!--            android:theme="@style/Theme.EduQuizz" />-->
+        <receiver
+            android:name="com.example.eduquizz.features.widget.QuizWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_infor"/>
+        </receiver>
+
+        <activity
+            android:name=".features.widget.QuizWidgetConfigureActivity"
+            android:exported="true"
+            android:theme="@style/Theme.EduQuizz">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
+            </intent-filter>
+        </activity>
+
     </application>
 
 </manifest>

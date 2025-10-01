@@ -28,16 +28,11 @@ import com.example.eduquizz.features.home.screens.SettingScreen
 import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.eduquizz.features.home.screens.MainScreen
 import com.example.eduquizz.features.match.viewmodel.WordMatchGame
-
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.eduquizz.data_save.DataViewModel
-import com.example.eduquizz.MainActivity
 import com.example.eduquizz.data.local.UserViewModel
 import com.example.eduquizz.features.BatChu.screens.IntroScreenBatChu
 import com.example.eduquizz.features.BatChu.screens.LevelChoiceBatChu
 import com.example.eduquizz.features.BatChu.screens.Main_BatChu
 import com.example.eduquizz.features.home.screens.SplashScreen
-
 import com.example.eduquizz.features.wordsearch.screens.IntroductionScreen
 import com.example.eduquizz.features.wordsearch.screens.WordSearchGame
 import com.example.wordsearch.ui.theme.WordSearchGameTheme
@@ -51,7 +46,7 @@ import com.example.eduquizz.features.mapping.screens.MappingMainScreen
 import com.example.eduquizz.features.quizzGame.screens.LevelChoice
 import com.example.eduquizz.features.wordsearch.screens.TopicSelectionScreen
 import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
-
+import com.example.eduquizz.data_save.DataViewModel
 
 object Routes {
     //Main
@@ -106,7 +101,7 @@ fun NavGraph(
         composable(Routes.SPLASH) {
             SplashScreen(
                 onNavigateToMain = {
-                    if(firstTime==false){
+                    if(firstTime == false){
                         navController.navigate(Routes.READY) {
                             popUpTo(Routes.SPLASH) { inclusive = true }
                         }
@@ -410,7 +405,6 @@ fun NavGraph(
             )
         }
         composable("topic_selection") {
-            val loadingViewModel: LoadingViewModel = hiltViewModel()
             TopicSelectionScreen(
                 onTopicSelected = { topicId ->
                     navController.navigate("word_search_game/$topicId")

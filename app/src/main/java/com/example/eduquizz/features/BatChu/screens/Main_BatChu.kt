@@ -141,7 +141,7 @@ fun Main_BatChu(navController: NavController,
     val answerLength = question.answer.length
 
     //Dữ liệu đưa vào màn hình kết quả
-    val num_question = viewModelBatChu.questionList.size;
+    val num_question = viewModelBatChu.questionList.size
     var num_question_correct by remember { mutableStateOf(0) }
 
     val selectedLetters = remember(question) {
@@ -477,7 +477,7 @@ fun ModernWordGrid(
     usedIndices: List<Int>,
     onCellSelected: (Cell) -> Unit
 ) {
-    val gridSize = sqrt(grid.size.toFloat()).toInt()
+    sqrt(grid.size.toFloat()).toInt()
     LazyVerticalGrid(
         //columns = GridCells.Fixed(gridSize),
         columns = GridCells.Fixed(4),

@@ -40,6 +40,7 @@ class TopicSelectionViewModel @Inject constructor(
             _error.value = null
 
             try {
+
                 val completionsDeferred = async { repository.getAllTopicCompletions(userName) }
                 val topicsDeferred = async { repository.getAllTopics() }
 

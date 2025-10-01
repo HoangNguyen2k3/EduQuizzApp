@@ -42,7 +42,7 @@ fun ThongKe(
     val winBelow50 by dataViewModel.numCorrectBelow50Percent.observeAsState(0)
     val winPerfect by dataViewModel.numCorrectAllQuestions.observeAsState(0)
 
-    val successRate = remember(totalQuestions, correctAnswers) {
+    remember(totalQuestions, correctAnswers) {
         if (totalQuestions == 0) 0f else correctAnswers.toFloat() / totalQuestions
     }
     val pieChartData = listOf(
