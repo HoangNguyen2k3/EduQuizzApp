@@ -9,14 +9,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.features.BatChu.model.DataBatChu
+import com.example.eduquizz.features.BatChu.repository.BatChuLevel
 import com.example.eduquizz.features.BatChu.repository.BatChuRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
 @HiltViewModel
 class ViewModelBatChu @Inject constructor(
-private val repository: BatChuRepository
+    private val repository: BatChuRepository
 ): ViewModel() {
+
     val sampleQuestions = listOf(
         DataBatChu(
             question = "What is this?",
@@ -40,8 +43,13 @@ private val repository: BatChuRepository
             shuffledLetters = listOf('B', 'A', 'P', 'O', 'A', 'B', 'C', 'D', 'F', 'G', 'O', 'I', 'J', 'K')
         )
     )
-var questionList by mutableStateOf<List<DataBatChu>>(emptyList())
-    private set
+
+    var questionList by mutableStateOf<List<DataBatChu>>(emptyList())
+        private set
+
+    // State for levels
+    var levelList by mutableStateOf<List<BatChuLevel>>(emptyList())
+        private set
 
     fun loadLevel(level: String) {
         viewModelScope.launch {
@@ -50,23 +58,46 @@ var questionList by mutableStateOf<List<DataBatChu>>(emptyList())
                 questionList = list
             }.onFailure {
                 questionList = sampleQuestions
-    //            e -> Log.e("BatChu", "Error: ${e.message}")
+                // e -> Log.e("BatChu", "Error: ${e.message}")
             }
         }
     }
+
+    // Method to get all levels from repository
+    suspend fun getAllLevels(): Result<List<BatChuLevel>> {
+        return repository.getAllLevels()
+    }
+
+    // Alternative method to load levels into state
+    fun loadAllLevels() {
+        viewModelScope.launch {
+            val result = repository.getAllLevels()
+            result.onSuccess { levels ->
+                levelList = levels
+            }.onFailure { error ->
+                Log.e("BatChu", "Error loading levels: ${error.message}")
+                // Fallback to empty list or default levels
+                levelList = emptyList()
+            }
+        }
+    }
+
     var gold = mutableStateOf(-1)
         private set
     val coins = mutableStateOf(-1)
-    val resetTimeTrigger =   mutableStateOf(0)
+    val resetTimeTrigger = mutableStateOf(0)
     private lateinit var dataViewModel: DataViewModel
+
     fun Init(data: DataViewModel) {
         this.dataViewModel = data
         gold = mutableStateOf(data.gold.value ?: 0)
     }
+
     fun spendCoins(amount: Int) {
         coins.value = (coins.value ?: 0) - amount
         dataViewModel.updateGold(coins.value ?: 0) // <-- chỉ update khi cần
     }
+
     fun autoSuggestLetter(
         selectedLetters: SnapshotStateList<Char?>,
         usedIndices: SnapshotStateList<Pair<Int, Char>>,
@@ -91,7 +122,4 @@ var questionList by mutableStateOf<List<DataBatChu>>(emptyList())
             }
         }
     }
-
 }
-
-

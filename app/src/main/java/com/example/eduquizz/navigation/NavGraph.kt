@@ -40,6 +40,9 @@ import com.example.eduquizz.features.bubbleshot.screen.BubbleShotScreen
 import com.example.eduquizz.features.bubbleshot.screen.BubbleShotDescriptionScreen
 import com.example.eduquizz.features.bubbleshot.viewmodel.BubbleShot
 import com.example.eduquizz.features.home.screens.ReadyScreen
+import com.example.eduquizz.features.mapping.screens.MappingGamesIntroductionScreen
+import com.example.eduquizz.features.mapping.screens.MappingLevelSelectionScreen
+import com.example.eduquizz.features.mapping.screens.MappingMainScreen
 import com.example.eduquizz.features.quizzGame.screens.LevelChoice
 import com.example.eduquizz.features.wordsearch.screens.TopicSelectionScreen
 import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
@@ -49,6 +52,9 @@ object Routes {
     //Main
     const val ENGLISH_GAMES_SCENE = "english_games_scene"
     const val MATH_GAMES_SCENE = "math_games_scene"
+    const val MAPPING_GAMES_SCENE = "mapping_games_scene"
+    const val MAPPING_LEVEL_SELECTION = "mapping_level_selection"
+    const val MAPPING_MAIN_GAME = "mapping_main_game/{levelId}"
     //Hoang
     const val INTRO = "intro"
     const val QUIZ_LEVEL = "quiz_level"
@@ -71,6 +77,8 @@ object Routes {
     const val BatChu = "batchu"
     const val IntroBatChu = "introbatchu"
     const val LevelBatChu = "levelbatchu"
+    //Mapping - Thêm routes cho Mapping feature
+
 }
 
 @Composable
@@ -119,7 +127,13 @@ fun NavGraph(
         composable(Routes.MAIN_DANH) {
             MainScreen(
                 onNavigateToEnglish = {
-                    navController.navigate(Routes.GAME_SCENE)
+                    navController.navigate(Routes.ENGLISH_GAMES_SCENE)
+                },
+                onNavigateToMath = {
+                    navController.navigate(Routes.MATH_GAMES_SCENE)
+                },
+                onNavigateToMapping = {
+                    navController.navigate(Routes.MAPPING_GAMES_SCENE)
                 },
                 userViewModel = userViewModel
             )
@@ -154,16 +168,6 @@ fun NavGraph(
             ResultsScreen(navController, correctAnswers = correct, totalQuestions = total, back_route = route_back, play_agian_route = route_again)
         }
 
-        composable(Routes.MAIN_DANH) {
-            MainScreen(
-                onNavigateToEnglish = {
-                    navController.navigate(Routes.ENGLISH_GAMES_SCENE)
-                },
-                onNavigateToMath = {
-                    navController.navigate(Routes.MATH_GAMES_SCENE)
-                }
-            )
-        }
         composable(Routes.ENGLISH_GAMES_SCENE) {
             EnglishGamesScreen(
                 onBackClick = {
@@ -196,6 +200,66 @@ fun NavGraph(
                         "bubble_shot" -> navController.navigate("${Routes.BUBBLE_SHOT_INTRO}?from=${Routes.MATH_GAMES_SCENE}")
                         else -> {
                             // Handle other games or show an error
+                        }
+                    }
+                }
+            )
+        }
+
+        // Updated navigation composables
+        composable(Routes.MAPPING_GAMES_SCENE) {
+            MappingGamesIntroductionScreen(
+                onPlayClicked = {
+                    // Navigate to level selection instead of directly to main game
+                    navController.navigate(Routes.MAPPING_LEVEL_SELECTION) {
+                        popUpTo(Routes.MAPPING_GAMES_SCENE) {
+                            inclusive = false
+                        }
+                    }
+                },
+                onBackPressed = {
+                    navController.navigate(Routes.MAIN_DANH) {
+                        popUpTo(Routes.MAIN_DANH) {
+                            inclusive = false
+                        }
+                    }
+                },
+                showContinueButton = false
+            )
+        }
+
+        composable(Routes.MAPPING_LEVEL_SELECTION) {
+            MappingLevelSelectionScreen(
+                onLevelSelected = { levelId ->
+                    // Navigate to main game with selected level ID
+                    navController.navigate("mapping_main_game/$levelId") {
+                        popUpTo(Routes.MAPPING_LEVEL_SELECTION) {
+                            inclusive = false
+                        }
+                    }
+                },
+                onBackPressed = {
+                    navController.navigate(Routes.MAPPING_GAMES_SCENE) {
+                        popUpTo(Routes.MAPPING_GAMES_SCENE) {
+                            inclusive = false
+                        }
+                    }
+                }
+            )
+        }
+
+        composable(
+            route = "mapping_main_game/{levelId}",
+            arguments = listOf(navArgument("levelId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val levelId = backStackEntry.arguments?.getString("levelId") ?: "LevelEasy"
+
+            MappingMainScreen(
+                levelId = levelId, // Pass levelId to your main screen
+                onBackPressed = {
+                    navController.navigate(Routes.MAPPING_LEVEL_SELECTION) {
+                        popUpTo(Routes.MAPPING_LEVEL_SELECTION) {
+                            inclusive = false
                         }
                     }
                 }
@@ -277,13 +341,16 @@ fun NavGraph(
             arguments = listOf(navArgument("from") { defaultValue = Routes.ENGLISH_GAMES_SCENE; type = NavType.StringType })
         ) { backStackEntry ->
             val from = backStackEntry.arguments?.getString("from") ?: Routes.ENGLISH_GAMES_SCENE
+            val viewModel: WordMatchGame = hiltViewModel()
             GameDescriptionScreen(
                 onPlayClick = { navController.navigate(Routes.GAME_THONG) },
                 onBackPressed = { navController.navigate(from) },
-                subject = "English"
+                subject = "English",
+                wordPairRepository = viewModel.wordPairRepository
+
             )
         }
-      
+
         composable(
             route = "${Routes.BUBBLE_SHOT_INTRO}?from={from}",
             arguments = listOf(navArgument("from") { defaultValue = Routes.ENGLISH_GAMES_SCENE; type = NavType.StringType })
@@ -343,7 +410,7 @@ fun NavGraph(
                     navController.navigate("word_search_game/$topicId")
                 },
                 onBackPressed = { navController.navigate(Routes.INTRO_WORD_SEARCH) },
-           //     loadingViewModel = loadingViewModel
+                //     loadingViewModel = loadingViewModel
             )
         }
 

@@ -36,15 +36,22 @@ fun GamePreviewCard() {
 }
 
 @Composable
-fun StatisticsRow() {
+fun StatisticsRow(
+    topicCount: Int = 0,
+    totalWordCount: Int = 0
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        StatisticItem("7", "Questions")
-        StatisticItem("0", "Played")
-        StatisticItem("0", "Favourited")
-        StatisticItem("0", "Shared")
+        StatisticItem(
+            value = if (topicCount > 0) topicCount.toString() else "0",
+            label = "Topics"
+        )
+        StatisticItem(
+            value = if (totalWordCount > 0) totalWordCount.toString() else "0",
+            label = "Total Words"
+        )
     }
 }
 

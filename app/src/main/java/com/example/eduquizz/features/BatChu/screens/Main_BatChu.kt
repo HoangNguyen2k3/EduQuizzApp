@@ -147,9 +147,10 @@ fun Main_BatChu(navController: NavController,
     val selectedLetters = remember(question) {
         mutableStateListOf<Char?>(*Array(question.answer.length) { null })
     }
+    //danh sách các chữ cái người chơi đã chọn.
 
     val usedIndices = remember(question) { mutableStateListOf<Pair<Int, Char>>() }
-
+//lưu index của các chữ cái đã được chọn
     var hintUsedForCurrentQuestion by remember(question) { mutableStateOf(false) }
 
     /*    // Reset khi đổi câu
@@ -258,7 +259,7 @@ fun Main_BatChu(navController: NavController,
             ) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = question.question ?: "", // nếu bạn có title câu hỏi
+                    text =  "What is this?",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.Black,

@@ -29,18 +29,48 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.eduquizz.R
+import com.example.eduquizz.features.match.repository.WordPairRepository
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GameDescriptionScreen(
     onPlayClick: () -> Unit,
     onBackPressed: () -> Unit = {},
-    subject: String = "English"
+    subject: String = "English",
+    wordPairRepository: WordPairRepository
 ) {
     var isVisible by remember { mutableStateOf(false) }
+    var wordPairCount by remember { mutableStateOf(0) }
+    var levelCount by remember { mutableStateOf(0) }
+    var isLoading by remember { mutableStateOf(true) }
+    val coroutineScope = rememberCoroutineScope()
 
+    // Load data from repository
     LaunchedEffect(Unit) {
         isVisible = true
+        coroutineScope.launch {
+            try {
+                // Get word pairs count
+                val wordPairs = wordPairRepository.getAllWordPairs()
+                wordPairCount = wordPairs.size
+
+                // Get levels count
+                wordPairRepository.getAvailableLevels().onSuccess { levels ->
+                    levelCount = levels.size
+                }.onFailure {
+                    // Fallback to default level count if API fails
+                    levelCount = 4
+                }
+            } catch (e: Exception) {
+                // Handle error - could show error state or use defaults
+                wordPairCount = 0
+                levelCount = 4
+            } finally {
+                isLoading = false
+            }
+        }
     }
 
     Box(
@@ -142,7 +172,7 @@ fun GameDescriptionScreen(
                 }
 
                 item {
-                    // Statistics Row
+                    // Statistics Card - Shows data from database
                     AnimatedVisibility(
                         visible = isVisible,
                         enter = slideInVertically(
@@ -154,7 +184,11 @@ fun GameDescriptionScreen(
                             )
                         ) + fadeIn(animationSpec = tween(800, delayMillis = 400))
                     ) {
-                        StatisticsCard()
+                        StatisticsCard(
+                            wordPairCount = wordPairCount,
+                            levelCount = levelCount,
+                            isLoading = isLoading
+                        )
                     }
                     Spacer(modifier = Modifier.height(24.dp))
                 }
@@ -228,7 +262,11 @@ private fun SubjectImageCard(image: Int, title: String) {
 }
 
 @Composable
-private fun StatisticsCard() {
+private fun StatisticsCard(
+    wordPairCount: Int,
+    levelCount: Int,
+    isLoading: Boolean = false
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -242,13 +280,37 @@ private fun StatisticsCard() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            StatItem("10", "Questions")
-            StatItem("20", "Played")
-            StatItem("16", "Favourited")
-            StatItem("10", "Shared")
+            StatItem(
+                count = if (isLoading) "-" else wordPairCount.toString(),
+                label = "Word Pairs"
+            )
+            StatItem(
+                count = if (isLoading) "-" else levelCount.toString(),
+                label = "Levels"
+            )
         }
+    }
+}
+
+@Composable
+private fun StatItem(count: String, label: String) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(8.dp)
+    ) {
+        Text(
+            text = count,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = label,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
     }
 }
 
@@ -359,26 +421,6 @@ private fun SampleQuestionsCard(subject: String) {
 }
 
 @Composable
-private fun StatItem(count: String, label: String) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(8.dp)
-    ) {
-        Text(
-            count,
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Text(
-            label,
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-        )
-    }
-}
-
-@Composable
 private fun PlayButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -478,7 +520,8 @@ fun GameDescriptionScreenPreview() {
     MaterialTheme {
         GameDescriptionScreen(
             onPlayClick = {},
-            onBackPressed = {}
+            onBackPressed = {},
+            wordPairRepository = WordPairRepository(context = android.content.ContextWrapper(androidx.compose.ui.platform.LocalContext.current))
         )
     }
 }
