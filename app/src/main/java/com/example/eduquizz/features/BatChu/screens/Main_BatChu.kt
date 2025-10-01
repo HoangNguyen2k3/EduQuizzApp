@@ -259,7 +259,7 @@ fun Main_BatChu(navController: NavController,
             ) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = question.question ?: "", // nếu bạn có title câu hỏi
+                    text =  "What is this?",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.Black,

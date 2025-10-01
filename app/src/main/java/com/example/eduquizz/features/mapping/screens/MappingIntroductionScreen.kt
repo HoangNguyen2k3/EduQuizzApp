@@ -1,4 +1,4 @@
-package com.example.eduquizz.features.wordsearch.screens
+package com.example.eduquizz.features.mapping.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -6,14 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -35,49 +28,46 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.eduquizz.features.home.screens.WithLoading
 import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
-import com.example.eduquizz.features.wordsearch.components.GameDescriptionCard
-import com.example.eduquizz.features.wordsearch.components.GamePreviewCard
-import com.example.eduquizz.features.wordsearch.components.StatisticsRow
-import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
-import com.example.wordsearch.ui.theme.Primary
-import com.example.wordsearch.ui.theme.WordSearchGameTheme
+import com.example.eduquizz.features.mapping.components.GeographyPreviewCard
+import com.example.eduquizz.features.mapping.components.GeographyDescriptionCard
+import com.example.eduquizz.features.mapping.components.GeographyStatisticsRow
+import com.example.eduquizz.features.mapping.viewmodel.MappingViewModel
+import com.example.quizapp.ui.theme.QuizAppTheme
 import kotlinx.coroutines.delay
 import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun IntroductionScreen(
+fun MappingGamesIntroductionScreen(
     onPlayClicked: () -> Unit,
     onBackPressed: () -> Unit,
     showContinueButton: Boolean = false,
     loadingViewModel: LoadingViewModel = viewModel(),
-    wordSearchViewModel: WordSearchViewModel = hiltViewModel()
+    mappingViewModel: MappingViewModel = hiltViewModel()
 ) {
-
-    val wordSearchViewModel: WordSearchViewModel = viewModel()
-
     val context = LocalContext.current
     val loadingState by loadingViewModel.loadingState.collectAsState()
 
-    val topicCount by wordSearchViewModel.topicCount
-    val totalWordCount by wordSearchViewModel.totalWordCount
+    val countryCount by mappingViewModel.countryCount
+    val continentCount by mappingViewModel.continentCount
+    val totalQuestions by mappingViewModel.totalQuestions
 
     var isVisible by remember { mutableStateOf(false) }
     var isDataLoaded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         try {
-            loadingViewModel.showLoading("Đang tải Word Search...", showProgress = true)
+            loadingViewModel.showLoading("Đang tải Geography Games...", showProgress = true)
 
-            loadingViewModel.updateProgress(0.2f, "Đang tải từ vựng...")
+            loadingViewModel.updateProgress(0.2f, "Đang tải bản đồ...")
 
-            wordSearchViewModel.loadStatistics()
+            mappingViewModel.loadStatistics()
             delay(800)
 
-            loadingViewModel.updateProgress(0.5f, "Đang tạo bảng chữ...")
+            loadingViewModel.updateProgress(0.5f, "Đang chuẩn bị các quốc gia...")
             delay(800)
 
-            loadingViewModel.updateProgress(0.8f, "Đang chuẩn bị game...")
+            loadingViewModel.updateProgress(0.8f, "Đang thiết lập game...")
             delay(600)
 
             loadingViewModel.updateProgress(1.0f, "Hoàn thành!")
@@ -89,7 +79,7 @@ fun IntroductionScreen(
             delay(300)
             isVisible = true
         } catch (e: Exception) {
-            println("Error in IntroductionScreen LaunchedEffect: ${e.message}")
+            println("Error in MappingGamesIntroductionScreen LaunchedEffect: ${e.message}")
             e.printStackTrace()
             loadingViewModel.hideLoading()
             isDataLoaded = true
@@ -101,9 +91,9 @@ fun IntroductionScreen(
         isLoading = loadingState.isLoading,
         isDarkTheme = false,
         backgroundColors = listOf(
-            Color(0xFF4A85F5),
-            Color(0xFF7B61FF),
-            MaterialTheme.colorScheme.background
+            Color(0xFF4CAF50),
+            Color(0xFF66BB6A),
+            Color(0xFFE8F5E8)
         )
     ) {
         Box(
@@ -112,9 +102,9 @@ fun IntroductionScreen(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xFF4A85F5),
-                            Color(0xFF7B61FF),
-                            MaterialTheme.colorScheme.background
+                            Color(0xFF4CAF50),
+                            Color(0xFF66BB6A),
+                            Color(0xFFE8F5E8)
                         )
                     )
                 )
@@ -164,7 +154,7 @@ fun IntroductionScreen(
                     item {
                         Spacer(modifier = Modifier.height(20.dp))
 
-                        //Game Preview Card
+                        // Geography Preview Card
                         AnimatedVisibility(
                             visible = isVisible && isDataLoaded,
                             enter = slideInVertically(
@@ -172,13 +162,13 @@ fun IntroductionScreen(
                                 animationSpec = tween(800, easing = FastOutSlowInEasing)
                             ) + fadeIn(animationSpec = tween(800))
                         ) {
-                            GamePreviewCard()
+                            GeographyPreviewCard()
                         }
                         Spacer(modifier = Modifier.height(24.dp))
                     }
 
                     item {
-                        //Game title
+                        // Game title
                         AnimatedVisibility(
                             visible = isVisible && isDataLoaded,
                             enter = slideInVertically(
@@ -197,7 +187,7 @@ fun IntroductionScreen(
                     }
 
                     item {
-                        //Statistics Row with database values
+                        // Statistics Row with database values
                         AnimatedVisibility(
                             visible = isVisible && isDataLoaded,
                             enter = slideInVertically(
@@ -209,16 +199,17 @@ fun IntroductionScreen(
                                 )
                             ) + fadeIn(animationSpec = tween(800, delayMillis = 400))
                         ) {
-                            StatisticsRow(
-                                topicCount = topicCount,
-                                totalWordCount = totalWordCount
+                            GeographyStatisticsRow(
+                                countryCount = countryCount,
+                                continentCount = continentCount,
+                                totalQuestions = totalQuestions
                             )
                         }
                         Spacer(modifier = Modifier.height(32.dp))
                     }
 
                     item {
-                        //Description Section
+                        // Description Section
                         AnimatedVisibility(
                             visible = isVisible && isDataLoaded,
                             enter = slideInVertically(
@@ -230,7 +221,7 @@ fun IntroductionScreen(
                                 )
                             ) + fadeIn(animationSpec = tween(800, delayMillis = 600))
                         ) {
-                            GameDescriptionCard()
+                            GeographyDescriptionCard()
                         }
                         Spacer(modifier = Modifier.height(24.dp))
                     }
@@ -245,17 +236,17 @@ fun IntroductionScreen(
 }
 
 @Composable
-fun IntroductionScreenSimple(
+fun MappingGamesIntroductionScreenSimple(
     onPlayClicked: () -> Unit,
     onBackPressed: () -> Unit,
     showContinueButton: Boolean = false,
-    wordSearchViewModel: WordSearchViewModel = viewModel()
-){
-    var isLoading by remember {mutableStateOf(true)}
+    mappingViewModel: MappingViewModel = viewModel()
+) {
+    var isLoading by remember { mutableStateOf(true) }
     var isVisible by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        wordSearchViewModel.loadStatistics()
+        mappingViewModel.loadStatistics()
         delay(2500) // Simulate data loading
         isLoading = false
         delay(300)
@@ -267,29 +258,29 @@ fun IntroductionScreenSimple(
         isDarkTheme = false
     ) {
         // Original IntroductionScreen content goes here
-        IntroductionScreenContent(
+        MappingGamesIntroductionScreenContent(
             onPlayClicked = onPlayClicked,
             onBackPressed = onBackPressed,
             showContinueButton = showContinueButton,
             isVisible = isVisible,
-            wordSearchViewModel = wordSearchViewModel
+            mappingViewModel = mappingViewModel
         )
     }
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun IntroductionScreenContent(
+private fun MappingGamesIntroductionScreenContent(
     onPlayClicked: () -> Unit,
     onBackPressed: () -> Unit,
     showContinueButton: Boolean,
     isVisible: Boolean,
-    wordSearchViewModel: WordSearchViewModel
+    mappingViewModel: MappingViewModel
 ) {
     // Get statistics from ViewModel
-    val topicCount by wordSearchViewModel.topicCount
-    val totalWordCount by wordSearchViewModel.totalWordCount
+    val countryCount by mappingViewModel.countryCount
+    val continentCount by mappingViewModel.continentCount
+    val totalQuestions by mappingViewModel.totalQuestions
 
     Box(
         modifier = Modifier
@@ -297,9 +288,9 @@ private fun IntroductionScreenContent(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF4A85F5),
-                        Color(0xFF7B61FF),
-                        MaterialTheme.colorScheme.background
+                        Color(0xFF4CAF50),
+                        Color(0xFF66BB6A),
+                        Color(0xFFE8F5E8)
                     )
                 )
             )
@@ -349,7 +340,7 @@ private fun IntroductionScreenContent(
                 item {
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    //Game Preview Card
+                    // Geography Preview Card
                     AnimatedVisibility(
                         visible = isVisible,
                         enter = slideInVertically(
@@ -357,13 +348,13 @@ private fun IntroductionScreenContent(
                             animationSpec = tween(800, easing = FastOutSlowInEasing)
                         ) + fadeIn(animationSpec = tween(800))
                     ) {
-                        GamePreviewCard()
+                        GeographyPreviewCard()
                     }
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
                 item {
-                    //Game title
+                    // Game title
                     AnimatedVisibility(
                         visible = isVisible,
                         enter = slideInVertically(
@@ -382,7 +373,7 @@ private fun IntroductionScreenContent(
                 }
 
                 item {
-                    //Statistics Row with database values
+                    // Statistics Row with database values
                     AnimatedVisibility(
                         visible = isVisible,
                         enter = slideInVertically(
@@ -394,16 +385,17 @@ private fun IntroductionScreenContent(
                             )
                         ) + fadeIn(animationSpec = tween(800, delayMillis = 400))
                     ) {
-                        StatisticsRow(
-                            topicCount = topicCount,
-                            totalWordCount = totalWordCount
+                        GeographyStatisticsRow(
+                            countryCount = countryCount,
+                            continentCount = continentCount,
+                            totalQuestions = totalQuestions
                         )
                     }
                     Spacer(modifier = Modifier.height(32.dp))
                 }
 
                 item {
-                    //Description Section
+                    // Description Section
                     AnimatedVisibility(
                         visible = isVisible,
                         enter = slideInVertically(
@@ -415,7 +407,7 @@ private fun IntroductionScreenContent(
                             )
                         ) + fadeIn(animationSpec = tween(800, delayMillis = 600))
                     ) {
-                        GameDescriptionCard()
+                        GeographyDescriptionCard()
                     }
                     Spacer(modifier = Modifier.height(24.dp))
                 }
@@ -431,7 +423,7 @@ private fun IntroductionScreenContent(
 @Composable
 private fun GameTitle() {
     Text(
-        text = "Word Search Game",
+        text = "Mapping Games",
         style = MaterialTheme.typography.headlineLarge.copy(
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold
@@ -441,8 +433,6 @@ private fun GameTitle() {
         modifier = Modifier.padding(horizontal = 16.dp)
     )
 }
-
-
 
 @Composable
 private fun PlayButton(
@@ -457,7 +447,7 @@ private fun PlayButton(
             .height(56.dp)
             .shadow(8.dp, RoundedCornerShape(28.dp)),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Primary
+            containerColor = Color(0xFF2E7D32)
         ),
         shape = RoundedCornerShape(28.dp)
     ) {
@@ -481,9 +471,9 @@ private fun PlayButton(
 
 @Preview(showBackground = true)
 @Composable
-fun IntroductionScreenPreview() {
-    WordSearchGameTheme {
-        IntroductionScreen(
+fun MappingGamesIntroductionScreenPreview() {
+    QuizAppTheme {
+        MappingGamesIntroductionScreen(
             onPlayClicked = {},
             onBackPressed = {},
             showContinueButton = false

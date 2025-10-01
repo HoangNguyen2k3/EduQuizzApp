@@ -63,6 +63,49 @@ class WordSearchViewModel @Inject constructor(
     private val _timeSpent = mutableStateOf("00:00")
     val timeSpent: State<String> get() = _timeSpent
 
+    private val _topicCount = mutableStateOf(0)
+    val topicCount: State<Int> get() = _topicCount
+
+    private val _totalWordCount = mutableStateOf(0)
+    val totalWordCount: State<Int> get() = _totalWordCount
+
+    private val _statisticsLoaded = mutableStateOf(false)
+    val statisticsLoaded: State<Boolean> get() = _statisticsLoaded
+
+    fun loadStatistics() {
+        viewModelScope.launch {
+            try {
+                println("Starting to load statistics...")
+                _statisticsLoaded.value = false
+
+                val result = repository.getAllTopics()
+                result.onSuccess { topics ->
+                    println("Successfully loaded ${topics.size} topics")
+                    _topicCount.value = topics.size
+                    _totalWordCount.value = topics.sumOf { topic ->
+                        topic.wordCount.takeIf { it > 0 } ?: 0
+                    }
+                    _statisticsLoaded.value = true
+                    println("Statistics loaded: Topics=${_topicCount.value}, Words=${_totalWordCount.value}")
+                }.onFailure { exception ->
+                    println("Failed to load statistics: ${exception.message}")
+                    exception.printStackTrace()
+                    // Set safe default values
+                    _topicCount.value = 1
+                    _totalWordCount.value = 7
+                    _statisticsLoaded.value = true
+                }
+            } catch (e: Exception) {
+                println("Exception in loadStatistics: ${e.message}")
+                e.printStackTrace()
+                // Set safe default values
+                _topicCount.value = 1
+                _totalWordCount.value = 7
+                _statisticsLoaded.value = true
+            }
+        }
+    }
+
     fun loadWordsFromFirebase(topicId: String) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -72,6 +115,8 @@ class WordSearchViewModel @Inject constructor(
             try {
                 val result = repository.getWordsByTopic(topicId)
                 result.onSuccess { wordSearchData ->
+                    println("Loaded topic: ${wordSearchData.topicId}, Grid size: ${wordSearchData.gridSize}, Words: ${wordSearchData.words.size}")
+
                     _gridSize.value = wordSearchData.gridSize
                     _wordsToFind.clear()
                     _wordsToFind.addAll(wordSearchData.words.map { Word(it) })
@@ -89,6 +134,21 @@ class WordSearchViewModel @Inject constructor(
         }
     }
 
+    fun testBackendConnection() {
+        viewModelScope.launch {
+            try {
+                val result = repository.healthCheck()
+                result.onSuccess { status ->
+                    println("Backend connection successful: $status")
+                }.onFailure { error ->
+                    println("Backend connection failed: ${error.message}")
+                }
+            } catch (e: Exception) {
+                println("Backend connection error: ${e.message}")
+            }
+        }
+    }
+
     fun initializeWithTopic(topicId: String) {
         if (_currentTopic.value != topicId) {
             loadWordsFromFirebase(topicId)
@@ -97,15 +157,17 @@ class WordSearchViewModel @Inject constructor(
 
     private fun initializeDefaultWords() {
         _wordsToFind.clear()
-        _wordsToFind.addAll(listOf(
-            Word("ANDROID"),
-            Word("KOTLIN"),
-            Word("COMPOSE"),
-            Word("JETPACK"),
-            Word("MOBILE"),
-            Word("APP"),
-            Word("GAME")
-        ))
+        _wordsToFind.addAll(
+            listOf(
+                Word("ANDROID"),
+                Word("KOTLIN"),
+                Word("COMPOSE"),
+                Word("JETPACK"),
+                Word("MOBILE"),
+                Word("APP"),
+                Word("GAME")
+            )
+        )
         initializeGrid()
     }
 
@@ -168,18 +230,21 @@ class WordSearchViewModel @Inject constructor(
                     rowIncrement = 0
                     colIncrement = 1
                 }
+
                 Direction.VERTICAL -> {
                     startRow = (0..currentGridSize - word.length).random()
                     startCol = (0 until currentGridSize).random()
                     rowIncrement = 1
                     colIncrement = 0
                 }
+
                 Direction.DIAGONAL_DOWN -> {
                     startRow = (0..currentGridSize - word.length).random()
                     startCol = (0..currentGridSize - word.length).random()
                     rowIncrement = 1
                     colIncrement = 1
                 }
+
                 Direction.DIAGONAL_UP -> {
                     startRow = (word.length - 1 until currentGridSize).random()
                     startCol = (0..currentGridSize - word.length).random()
@@ -357,7 +422,7 @@ class WordSearchViewModel @Inject constructor(
         val currentGridSize = _gridSize.value
         val wordCells = mutableListOf<Cell>()
 
-        for (row in 0 until currentGridSize){
+        for (row in 0 until currentGridSize) {
             for (col in 0 until currentGridSize) {
                 if (col + word.length <= currentGridSize) {
                     if (checkWordMatch(word, row, col, 0, 1)) {

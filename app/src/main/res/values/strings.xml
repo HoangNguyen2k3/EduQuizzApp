@@ -49,4 +49,5 @@
     <string name="terms_of_use">Điều khoản sử dụng</string>
     <string name="select_language">Chọn ngôn ngữ</string>
     <string name="close">Đóng</string>
+    <string name="title_activity_maps">MapsActivity</string>
 </resources>

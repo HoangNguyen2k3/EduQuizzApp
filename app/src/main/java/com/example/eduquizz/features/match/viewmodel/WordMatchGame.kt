@@ -16,7 +16,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class WordMatchGame @Inject constructor(
-    private val wordPairRepository: WordPairRepository
+    val wordPairRepository: WordPairRepository
 ) : ViewModel() {
 
     private var _allWordPairs = mutableStateListOf<WordPair>()
@@ -32,6 +32,7 @@ class WordMatchGame @Inject constructor(
     val showFinishDialog = mutableStateOf(false)
     val showTimeOutDialog = mutableStateOf(false)
     val showLoadingDialog = mutableStateOf(false)
+    val showNetworkErrorDialog = mutableStateOf(false)
     val totalRight = mutableStateOf(0)
     val totalQuestion = mutableStateOf(0)
     val canPass = mutableStateOf(false)
@@ -48,31 +49,43 @@ class WordMatchGame @Inject constructor(
     private lateinit var dataViewModel: DataViewModel
 
     init {
-        loadWordPairsFromFirebase()
+        loadWordPairsFromServer()
     }
 
-    private fun loadWordPairsFromFirebase() {
+    private fun loadWordPairsFromServer() {
         showLoadingDialog.value = true
+        showNetworkErrorDialog.value = false
+
         viewModelScope.launch {
             try {
                 val wordPairs = wordPairRepository.getAllWordPairs()
-                _allWordPairs.clear()
-                _allWordPairs.addAll(wordPairs.shuffled())
-                totalQuestion.value = _allWordPairs.size
-                _isDataLoaded.value = true
-                showLoadingDialog.value = false
 
-                // Bắt đầu level đầu tiên sau khi load xong data
-                startLevel(0)
+                if (wordPairs.isNotEmpty()) {
+                    _allWordPairs.clear()
+                    _allWordPairs.addAll(wordPairs.shuffled())
+                    totalQuestion.value = _allWordPairs.size
+                    _isDataLoaded.value = true
+                    showLoadingDialog.value = false
+
+                    // Bắt đầu level đầu tiên sau khi load xong data
+                    startLevel(0)
+                } else {
+                    // Không có dữ liệu từ server, dùng dữ liệu mặc định
+                    showNetworkErrorDialog.value = true
+                    showLoadingDialog.value = false
+                }
             } catch (e: Exception) {
                 showLoadingDialog.value = false
-                // Có thể hiện thông báo lỗi hoặc retry
+                showNetworkErrorDialog.value = true
+                println("Error loading word pairs from server: ${e.message}")
             }
         }
     }
 
-    fun Init(data: DataViewModel) {
+    fun Init(data: DataViewModel, userName: String = "defaultUser") {
         this.dataViewModel = data
+        this._currentUserName = userName
+
         viewModelScope.launch {
             delay(10)
             gold.value = data.gold.value ?: 0
@@ -85,12 +98,14 @@ class WordMatchGame @Inject constructor(
         viewModelScope.launch {
             wordPairRepository.getUserProgress(_currentUserName)
                 .onSuccess { (level, totalRight, totalQuestions) ->
-                    // currentLevel.value = level
+                    // Có thể sử dụng dữ liệu này để khôi phục trạng thái game
+                    // this@WordMatchGame.currentLevel.value = level
                     // this@WordMatchGame.totalRight.value = totalRight
                     // this@WordMatchGame.totalQuestion.value = totalQuestions
                 }
                 .onFailure {
                     // Không có progress hoặc lỗi, bắt đầu từ level 0
+                    println("No previous progress found or error loading: ${it.message}")
                 }
         }
     }
@@ -101,32 +116,61 @@ class WordMatchGame @Inject constructor(
     }
 
     fun startLevel(level: Int) {
-        if (!_isDataLoaded.value || _allWordPairs.isEmpty()) {
-            // Nếu data chưa load xong, đợi
-            viewModelScope.launch {
-                while (!_isDataLoaded.value) {
-                    delay(100)
-                }
-                startLevelInternal(level)
-            }
+        if (!_isDataLoaded.value) {
+            // Nếu data chưa load xong, đợi hoặc dùng dữ liệu mặc định
+            showLoadingDialog.value = true
             return
         }
+
+        if (_allWordPairs.isEmpty()) {
+            showNetworkErrorDialog.value = true
+            return
+        }
+
         startLevelInternal(level)
     }
 
     private fun startLevelInternal(level: Int) {
         currentLevel.value = level
-        val start = level * 5
-        val end = minOf((level + 1) * 5, _allWordPairs.size)
 
-        if (start >= _allWordPairs.size) {
-            // Không đủ data cho level này
-            finishGame()
-            return
+        viewModelScope.launch {
+            try {
+                // Lấy word pairs cho level cụ thể từ server
+                val wordPairs = wordPairRepository.getWordPairsByLevel(level)
+
+                if (wordPairs.isNotEmpty()) {
+                    setupLevelWithWordPairs(wordPairs)
+                } else {
+                    // Fallback: sử dụng dữ liệu đã load trước đó
+                    val start = level * 5
+                    val end = minOf((level + 1) * 5, _allWordPairs.size)
+
+                    if (start >= _allWordPairs.size) {
+                        finishGame()
+                        return@launch
+                    }
+
+                    val fallbackPairs = _allWordPairs.subList(start, end)
+                    setupLevelWithWordPairs(fallbackPairs)
+                }
+            } catch (e: Exception) {
+                println("Error loading level $level: ${e.message}")
+                // Fallback như trước
+                val start = level * 5
+                val end = minOf((level + 1) * 5, _allWordPairs.size)
+
+                if (start >= _allWordPairs.size) {
+                    finishGame()
+                    return@launch
+                }
+
+                val fallbackPairs = _allWordPairs.subList(start, end)
+                setupLevelWithWordPairs(fallbackPairs)
+            }
         }
+    }
 
-        val wordPairs = _allWordPairs.subList(start, end)
-
+    private fun setupLevelWithWordPairs(wordPairs: List<WordPair>) {
         // Tạo cards từ word pairs
         val newCards = mutableListOf<MatchCard>()
         wordPairs.forEachIndexed { idx, pair ->
@@ -160,10 +204,13 @@ class WordMatchGame @Inject constructor(
 
     fun onCardClick(index: Int) {
         if (cards[index].isMatched || selectedIndices.contains(index) || selectedIndices.size == 2) return
+
         selectedIndices.add(index)
+
         if (selectedIndices.size == 2) {
             val first = cards[selectedIndices[0]]
             val second = cards[selectedIndices[1]]
+
             if (first.pairId == second.pairId && first.id != second.id) {
                 // Đúng
                 cards[selectedIndices[0]] = cards[selectedIndices[0]].copy(isMatched = true)
@@ -181,7 +228,7 @@ class WordMatchGame @Inject constructor(
                     viewModelScope.launch {
                         delay(1000)
 
-                        // Lưu level completion
+                        // Lưu level completion lên server
                         saveLevelCompletion(currentLevel.value)
 
                         if (currentLevel.value < 3) {
@@ -208,22 +255,36 @@ class WordMatchGame @Inject constructor(
 
     private fun saveUserProgress() {
         viewModelScope.launch {
-            wordPairRepository.saveUserProgress(
-                _currentUserName,
-                currentLevel.value,
-                totalRight.value,
-                totalQuestion.value
-            )
+            try {
+                wordPairRepository.saveUserProgress(
+                    _currentUserName,
+                    currentLevel.value,
+                    totalRight.value,
+                    totalQuestion.value
+                )
+            } catch (e: Exception) {
+                println("Error saving user progress: ${e.message}")
+            }
         }
     }
 
     private fun saveLevelCompletion(level: Int) {
         viewModelScope.launch {
-            wordPairRepository.saveLevelCompletion(
-                _currentUserName,
-                "level_${level + 1}",
-                true
-            )
+            try {
+                val levelId = "Level${level + 1}"
+                wordPairRepository.saveLevelCompletion(
+                    _currentUserName,
+                    levelId,
+                    true,
+                    "${40 - timerSeconds.value}s"
+                ).onSuccess {
+                    println("Level $levelId completed and saved to server")
+                }.onFailure { e ->
+                    println("Error saving level completion: ${e.message}")
+                }
+            } catch (e: Exception) {
+                println("Error in saveLevelCompletion: ${e.message}")
+            }
         }
     }
 
@@ -240,6 +301,7 @@ class WordMatchGame @Inject constructor(
             spendCoins(20)
             val unmatched = cards.withIndex().filter { !it.value.isMatched }
             val pairs = unmatched.groupBy { it.value.pairId }.values.filter { it.size == 2 }
+
             if (pairs.isNotEmpty()) {
                 val pair = pairs.random()
                 cards[pair[0].index] = cards[pair[0].index].copy(isMatched = true)
@@ -266,7 +328,9 @@ class WordMatchGame @Inject constructor(
                     }
                 }
             }
-        } else showBuyGoldDialog.value = true
+        } else {
+            showBuyGoldDialog.value = true
+        }
     }
 
     fun skipLevel() {
@@ -300,7 +364,9 @@ class WordMatchGame @Inject constructor(
                     finishGame()
                 }
             }
-        } else showBuyGoldDialog.value = true
+        } else {
+            showBuyGoldDialog.value = true
+        }
     }
 
     fun buyGold(amount: Int) {
@@ -346,7 +412,7 @@ class WordMatchGame @Inject constructor(
     }
 
     fun retryLoadData() {
-        loadWordPairsFromFirebase()
+        loadWordPairsFromServer()
     }
 
     fun getLevelCompletionStatus(): Map<String, Boolean> {
@@ -354,6 +420,7 @@ class WordMatchGame @Inject constructor(
         viewModelScope.launch {
             wordPairRepository.getAllLevelCompletions(_currentUserName)
                 .onSuccess { completions = it }
+                .onFailure { println("Error loading level completions: ${it.message}") }
         }
         return completions
     }
@@ -370,11 +437,39 @@ class WordMatchGame @Inject constructor(
                     showLoadingDialog.value = false
                     startLevel(0)
                 }
-                .onFailure {
+                .onFailure { e ->
                     showLoadingDialog.value = false
-                    // Fallback to default data
-                    loadWordPairsFromFirebase()
+                    showNetworkErrorDialog.value = true
+                    println("Error loading topic $topicId: ${e.message}")
+                    // Fallback to loading all word pairs
+                    loadWordPairsFromServer()
                 }
         }
+    }
+
+    fun dismissNetworkErrorDialog() {
+        showNetworkErrorDialog.value = false
+        // Có thể thử load lại data hoặc sử dụng dữ liệu mặc định
+        retryLoadData()
+    }
+
+    fun getUserStatistics(): Map<String, Any> {
+        var stats = emptyMap<String, Any>()
+        viewModelScope.launch {
+            try {
+                // Gọi API để lấy thống kê từ server
+                // wordPairRepository.getUserStatistics(_currentUserName)
+                // Tạm thời trả về thống kê local
+                stats = mapOf(
+                    "completedLevels" to totalRight.value,
+                    "totalLevels" to 4,
+                    "completionRate" to if (totalQuestion.value > 0) (totalRight.value.toDouble() / totalQuestion.value * 100) else 0.0,
+                    "currentGold" to (gold.value ?: 0)
+                )
+            } catch (e: Exception) {
+                println("Error loading user statistics: ${e.message}")
+            }
+        }
+        return stats
     }
 }
