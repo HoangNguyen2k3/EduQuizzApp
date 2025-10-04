@@ -50,4 +50,11 @@
     <string name="select_language">Chọn ngôn ngữ</string>
     <string name="close">Đóng</string>
     <string name="title_activity_maps">MapsActivity</string>
+
+    <string name="widget_description">EduQuizz Learning Widget</string>
+    <string name="widget_streak_label">Day Streak</string>
+    <string name="widget_word_of_day_label">Word of the Day</string>
+    <string name="widget_image_quiz_label">Image Quiz</string>
+
+
 </resources>

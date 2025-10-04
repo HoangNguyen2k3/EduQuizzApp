@@ -1,5 +1,6 @@
 package com.example.eduquizz.features.mapping.viewmodel
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -9,6 +10,7 @@ import com.example.eduquizz.features.mapping.model.SceneLevel
 import com.example.eduquizz.features.mapping.model.SceneLocation
 import com.example.eduquizz.features.mapping.model.SampleLocationData
 import com.example.eduquizz.features.mapping.repositories.SceneRepository
+import com.example.eduquizz.features.widget.WidgetUpdateManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -184,5 +186,9 @@ class MappingViewModel @Inject constructor(
                 Log.e(TAG, "Test failed", e)
             }
         }
+    }
+
+    fun notifyWidgetUpdate(context: Context) {
+        WidgetUpdateManager.updateAllWidgets(context)
     }
 }

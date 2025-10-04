@@ -33,6 +33,8 @@ import com.example.eduquizz.R
 import com.example.eduquizz.data_save.AudioManager
 import androidx.compose.runtime.DisposableEffect
 import com.example.eduquizz.data.local.UserViewModel
+import com.example.eduquizz.features.widget.StreakManager
+import com.example.eduquizz.features.widget.WidgetCacheHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,7 +75,15 @@ fun WordSearchGame(
     }
 
     LaunchedEffect(Unit) {
+        StreakManager.updateStreak(context)
         AudioManager.setBgmEnabled(true)
+    }
+
+    LaunchedEffect(wordsToFind) {
+        if (wordsToFind.isNotEmpty()) {
+            val randomWord = wordsToFind.random().word
+            WidgetCacheHelper.cacheWordOfTheDay(context, randomWord, topicId ?: "")
+        }
     }
 
     DisposableEffect(Unit) {
@@ -89,9 +99,19 @@ fun WordSearchGame(
         }
     }
 
+//    LaunchedEffect(isGameCompleted) {
+//        if (isGameCompleted && currentTopic != null) {
+//            val coinsEarned = 50 // Có thể tính toán dựa trên hiệu suất
+//            navController.navigate("completion/$currentTopic/$totalWords/$timeSpent/$coinsEarned")
+//        }
+//    }
+
     LaunchedEffect(isGameCompleted) {
         if (isGameCompleted && currentTopic != null) {
-            val coinsEarned = 50 // Có thể tính toán dựa trên hiệu suất
+            // Update widget trước khi navigate
+            viewModel.updateWidgetAfterCompletion(context)
+
+            val coinsEarned = 50
             navController.navigate("completion/$currentTopic/$totalWords/$timeSpent/$coinsEarned")
         }
     }
