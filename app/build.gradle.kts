@@ -61,7 +61,6 @@ dependencies {
 
     // Navigation for Compose
     implementation("androidx.navigation:navigation-compose:2.7.7")
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     implementation("com.google.accompanist:accompanist-navigation-animation:0.32.0")
 
     // osmdroid for OpenStreetMap

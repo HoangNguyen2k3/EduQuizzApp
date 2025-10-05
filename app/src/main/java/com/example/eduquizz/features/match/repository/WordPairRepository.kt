@@ -337,7 +337,7 @@ class WordPairRepository @Inject constructor(
         )
     }
 
-    private fun getDefaultWordPairs(): List<WordPair> {
+    fun getDefaultWordPairs(): List<WordPair> {
         return listOf(
             WordPair("Apple", "a round fruit with firm, white flesh and a green, red, or yellow skin"),
             WordPair("Dog", "A domestic animal"),

@@ -1,10 +1,13 @@
 package com.example.eduquizz.features.wordsearch.viewmodel
 
+import android.content.Context
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.eduquizz.features.widget.StreakManager
+import com.example.eduquizz.features.widget.WidgetUpdateManager
 import com.example.eduquizz.features.wordsearch.model.Cell
 import com.example.eduquizz.features.wordsearch.model.Direction
 import com.example.eduquizz.features.wordsearch.model.Word
@@ -71,6 +74,20 @@ class WordSearchViewModel @Inject constructor(
 
     private val _statisticsLoaded = mutableStateOf(false)
     val statisticsLoaded: State<Boolean> get() = _statisticsLoaded
+
+    fun updateWidgetAfterCompletion(context: Context) {
+        StreakManager.updateStreak(context)
+        WidgetUpdateManager.updateAllWidgets(context)
+    }
+
+    fun getWordOfTheDay(): String {
+        return if (_wordsToFind.isNotEmpty()) {
+            _wordsToFind.random().word
+        } else {
+            listOf("ANDROID", "KOTLIN", "COMPOSE", "JETPACK", "MOBILE").random()
+        }
+    }
+
 
     fun loadStatistics() {
         viewModelScope.launch {
@@ -368,6 +385,7 @@ class WordSearchViewModel @Inject constructor(
             _currentTopic.value?.let { topic ->
                 userName?.let { name ->
                     saveTopicCompletion(name, topic)
+
                 } ?: run {
                     println("Lỗi: userName chưa được thiết lập")
                 }

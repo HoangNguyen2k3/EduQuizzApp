@@ -47,6 +47,9 @@ import com.example.eduquizz.features.quizzGame.screens.LevelChoice
 import com.example.eduquizz.features.wordsearch.screens.TopicSelectionScreen
 import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
 import com.example.eduquizz.data_save.DataViewModel
+import com.example.eduquizz.features.soundgame.screen.SoundGameScreen
+import com.example.eduquizz.features.soundgame.screen.SoundGameDescriptionScreen
+import com.example.eduquizz.features.soundgame.viewmodel.SoundGameViewModel
 
 object Routes {
     //Main
@@ -77,8 +80,10 @@ object Routes {
     const val BatChu = "batchu"
     const val IntroBatChu = "introbatchu"
     const val LevelBatChu = "levelbatchu"
-    //Mapping - Thêm routes cho Mapping feature
-
+    //Mapping
+    //Sound Game
+    const val SOUND_GAME = "sound_game/{levelId}"
+    const val SOUND_GAME_INTRO = "sound_game_intro"
 }
 
 @Composable
@@ -180,6 +185,7 @@ fun NavGraph(
                         "quiz" -> navController.navigate("${Routes.INTRO}?from=${Routes.ENGLISH_GAMES_SCENE}")
                         "bubble_shot" -> navController.navigate("${Routes.BUBBLE_SHOT_INTRO}?from=${Routes.ENGLISH_GAMES_SCENE}")
                         "batchu" -> navController.navigate("${Routes.IntroBatChu}?from=${Routes.ENGLISH_GAMES_SCENE}")
+                        "sound_game" -> navController.navigate("${Routes.SOUND_GAME_INTRO}?from=${Routes.ENGLISH_GAMES_SCENE}")
                         else -> {
                             // Handle other games or show an error
                         }
@@ -255,7 +261,7 @@ fun NavGraph(
             val levelId = backStackEntry.arguments?.getString("levelId") ?: "LevelEasy"
 
             MappingMainScreen(
-                levelId = levelId, // Pass levelId to your main screen
+                levelId = levelId,
                 onBackPressed = {
                     navController.navigate(Routes.MAPPING_LEVEL_SELECTION) {
                         popUpTo(Routes.MAPPING_LEVEL_SELECTION) {
@@ -282,7 +288,6 @@ fun NavGraph(
             arguments = listOf(
                 navArgument("level") { type = NavType.StringType },
             )) {
-            // Main_BatChu(navController = navController)
                 backStackEntry ->
             val level = backStackEntry.arguments?.getString("level")?:""
             Main_BatChu(navController, currentLevel = level)
@@ -293,9 +298,9 @@ fun NavGraph(
                 onGameClick = {
                         game ->
                     when(game.id){
-                        "level_easy"->navController.navigate("batchu/LevelEasy")
-                        "level_normal"->navController.navigate("batchu/LevelNormal")
-                        "level_hard"->navController.navigate("batchu/LevelHard")
+                        "LevelEasy"->navController.navigate("batchu/LevelEasy")
+                        "LevelNormal"->navController.navigate("batchu/LevelNormal")
+                        "LevelHard"->navController.navigate("batchu/LevelHard")
                     }
                 }
             )
@@ -367,6 +372,33 @@ fun NavGraph(
             BubbleShotScreen(viewModel = viewModel, navController = navController)
         }
 
+        // Sound Game Routes
+        composable(
+            route = "${Routes.SOUND_GAME_INTRO}?from={from}",
+            arguments = listOf(navArgument("from") { defaultValue = Routes.ENGLISH_GAMES_SCENE; type = NavType.StringType })
+        ) { backStackEntry ->
+            val from = backStackEntry.arguments?.getString("from") ?: Routes.ENGLISH_GAMES_SCENE
+            SoundGameDescriptionScreen(
+                onPlayClick = { levelId ->
+                    navController.navigate("sound_game/$levelId")
+                },
+                onBackPressed = { navController.navigate(from) }
+            )
+        }
+
+        composable(
+            route = "sound_game/{levelId}",
+            arguments = listOf(navArgument("levelId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val levelId = backStackEntry.arguments?.getString("levelId") ?: "LevelEasy"
+            val viewModel: SoundGameViewModel = hiltViewModel()
+            SoundGameScreen(
+                viewModel = viewModel,
+                navController = navController,
+                levelId = levelId
+            )
+        }
+
         composable(
             route = "${Routes.INTRO_WORD_SEARCH}?from={from}",
             arguments = listOf(navArgument("from") { defaultValue = Routes.ENGLISH_GAMES_SCENE; type = NavType.StringType })
@@ -410,7 +442,6 @@ fun NavGraph(
                     navController.navigate("word_search_game/$topicId")
                 },
                 onBackPressed = { navController.navigate(Routes.INTRO_WORD_SEARCH) },
-                //     loadingViewModel = loadingViewModel
             )
         }
 

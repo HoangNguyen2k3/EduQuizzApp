@@ -172,28 +172,6 @@ fun GameDescriptionScreen(
                 }
 
                 item {
-                    // Statistics Card - Shows data from database
-                    AnimatedVisibility(
-                        visible = isVisible,
-                        enter = slideInVertically(
-                            initialOffsetY = { it },
-                            animationSpec = tween(
-                                800,
-                                delayMillis = 400,
-                                easing = FastOutSlowInEasing
-                            )
-                        ) + fadeIn(animationSpec = tween(800, delayMillis = 400))
-                    ) {
-                        StatisticsCard(
-                            wordPairCount = wordPairCount,
-                            levelCount = levelCount,
-                            isLoading = isLoading
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-
-                item {
                     // Description Card
                     AnimatedVisibility(
                         visible = isVisible,
@@ -258,59 +236,6 @@ private fun SubjectImageCard(image: Int, title: String) {
                 contentScale = ContentScale.Fit
             )
         }
-    }
-}
-
-@Composable
-private fun StatisticsCard(
-    wordPairCount: Int,
-    levelCount: Int,
-    isLoading: Boolean = false
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(8.dp, RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.95f)
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            StatItem(
-                count = if (isLoading) "-" else wordPairCount.toString(),
-                label = "Word Pairs"
-            )
-            StatItem(
-                count = if (isLoading) "-" else levelCount.toString(),
-                label = "Levels"
-            )
-        }
-    }
-}
-
-@Composable
-private fun StatItem(count: String, label: String) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(8.dp)
-    ) {
-        Text(
-            text = count,
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Text(
-            text = label,
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-        )
     }
 }
 
