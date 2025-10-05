@@ -101,19 +101,6 @@ fun EnglishGamesScreen(
             )
         ),
         Game(
-            id = "bubble_shot",
-            name = "Bubble Shot",
-            iconRes = R.drawable.eng,
-            progress = 20,
-            totalQuestions = 100,
-            completedQuestions = 23,
-            totalLessons = 56,
-            gradientColors = listOf(
-                Color(0xFF00C9FF),
-                Color(0xFF92FE9D)
-            )
-        ),
-        Game(
             id = "batchu",
             name = "Bắt Chữ",
             iconRes = R.drawable.eng,
@@ -125,6 +112,19 @@ fun EnglishGamesScreen(
                 Color(0xFFFF6B9D),
                 Color(0xFFFF8E9E),
                 Color(0xFFFFB4A2)
+            )
+        ),
+        Game(
+            id = "sound_game",
+            name = "Sound Guessing",
+            iconRes = R.drawable.eng,
+            progress = 0,
+            totalQuestions = 30,
+            completedQuestions = 0,
+            totalLessons = 3,
+            gradientColors = listOf(
+                Color(0xFF00C9FF),
+                Color(0xFF92FE9D)
             )
         )
     )
