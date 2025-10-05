@@ -73,7 +73,7 @@ fun EnglishGamesScreen(
             )
         ),
         Game(
-            id = "connect_blocks",
+            id = "match_game",
             name = "Match Game",
             iconRes = R.drawable.eng,
             progress = 3,

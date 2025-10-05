@@ -174,25 +174,6 @@ fun BubbleShotDescriptionScreen(
                     }
                     Spacer(modifier = Modifier.height(24.dp))
                 }
-
-                item {
-                    // Statistics Row
-                    AnimatedVisibility(
-                        visible = isVisible,
-                        enter = slideInVertically(
-                            initialOffsetY = { it },
-                            animationSpec = tween(
-                                800,
-                                delayMillis = 400,
-                                easing = FastOutSlowInEasing
-                            )
-                        ) + fadeIn(animationSpec = tween(800, delayMillis = 400))
-                    ) {
-                        StatisticsCard()
-                    }
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-
                 item {
                     // Description Card
                     AnimatedVisibility(
@@ -257,31 +238,6 @@ private fun SubjectImageCard(image: Int, title: String) {
                     .padding(16.dp),
                 contentScale = ContentScale.Fit
             )
-        }
-    }
-}
-
-@Composable
-private fun StatisticsCard() {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(8.dp, RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.95f)
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            StatItem("10", "Questions")
-            StatItem("20", "Played")
-            StatItem("16", "Favourited")
-            StatItem("10", "Shared")
         }
     }
 }

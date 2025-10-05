@@ -20,14 +20,11 @@ import com.example.eduquizz.features.quizzGame.screens.IntroScreen
 import com.example.eduquizz.features.quizzGame.screens.MainView
 import com.example.eduquizz.features.quizzGame.screens.ResultsScreen
 import com.example.eduquizz.features.quizzGame.viewmodel.QuestionViewModel
-import com.example.eduquizz.features.match.screen.GameDescriptionScreen
-import com.example.eduquizz.features.match.screen.WordMatchGameScreen
 import com.example.eduquizz.features.home.math.MathGamesScreen
 import com.example.eduquizz.features.home.english.EnglishGamesScreen
 import com.example.eduquizz.features.home.screens.SettingScreen
 import com.example.eduquizz.features.home.viewmodel.LoadingViewModel
 import com.example.eduquizz.features.home.screens.MainScreen
-import com.example.eduquizz.features.match.viewmodel.WordMatchGame
 import com.example.eduquizz.data.local.UserViewModel
 import com.example.eduquizz.features.BatChu.screens.IntroScreenBatChu
 import com.example.eduquizz.features.BatChu.screens.LevelChoiceBatChu
@@ -50,6 +47,10 @@ import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.features.soundgame.screen.SoundGameScreen
 import com.example.eduquizz.features.soundgame.screen.SoundGameDescriptionScreen
 import com.example.eduquizz.features.soundgame.viewmodel.SoundGameViewModel
+// Import Match Game screens
+import com.example.eduquizz.features.match.screen.MatchGameIntroScreen
+import com.example.eduquizz.features.match.screen.MatchLevelSelectionScreen
+import com.example.eduquizz.features.match.screen.MatchMainScreen
 
 object Routes {
     //Main
@@ -84,6 +85,10 @@ object Routes {
     //Sound Game
     const val SOUND_GAME = "sound_game/{levelId}"
     const val SOUND_GAME_INTRO = "sound_game_intro"
+    //Match Game
+    const val MATCH_GAME_INTRO = "match_game_intro"
+    const val MATCH_GAME_LEVEL_SELECTION = "match_game_level_selection"
+    const val MATCH_GAME_MAIN = "match_game_main/{levelId}"
 }
 
 @Composable
@@ -186,6 +191,7 @@ fun NavGraph(
                         "bubble_shot" -> navController.navigate("${Routes.BUBBLE_SHOT_INTRO}?from=${Routes.ENGLISH_GAMES_SCENE}")
                         "batchu" -> navController.navigate("${Routes.IntroBatChu}?from=${Routes.ENGLISH_GAMES_SCENE}")
                         "sound_game" -> navController.navigate("${Routes.SOUND_GAME_INTRO}?from=${Routes.ENGLISH_GAMES_SCENE}")
+                        "match_game" -> navController.navigate("${Routes.MATCH_GAME_INTRO}?from=${Routes.ENGLISH_GAMES_SCENE}")
                         else -> {
                             // Handle other games or show an error
                         }
@@ -204,9 +210,58 @@ fun NavGraph(
                         "connect_blocks" -> navController.navigate("${Routes.INTRO_THONG}?from=${Routes.MATH_GAMES_SCENE}")
                         "quiz" -> navController.navigate("${Routes.INTRO}?from=${Routes.MATH_GAMES_SCENE}")
                         "bubble_shot" -> navController.navigate("${Routes.BUBBLE_SHOT_INTRO}?from=${Routes.MATH_GAMES_SCENE}")
+                        "match_game" -> navController.navigate("${Routes.MATCH_GAME_INTRO}?from=${Routes.MATH_GAMES_SCENE}")
                         else -> {
                             // Handle other games or show an error
                         }
+                    }
+                }
+            )
+        }
+
+        // Match Game Routes
+        composable(
+            route = "${Routes.MATCH_GAME_INTRO}?from={from}",
+            arguments = listOf(navArgument("from") { defaultValue = Routes.ENGLISH_GAMES_SCENE; type = NavType.StringType })
+        ) { backStackEntry ->
+            val from = backStackEntry.arguments?.getString("from") ?: Routes.ENGLISH_GAMES_SCENE
+            MatchGameIntroScreen(
+                onPlayClick = {
+                    navController.navigate(Routes.MATCH_GAME_LEVEL_SELECTION) {
+                        popUpTo(Routes.MATCH_GAME_INTRO) { inclusive = false }
+                    }
+                },
+                onBackPressed = { navController.navigate(from) }
+            )
+        }
+
+        composable(Routes.MATCH_GAME_LEVEL_SELECTION) {
+            MatchLevelSelectionScreen(
+                onLevelSelected = { levelId ->
+                    navController.navigate("match_game_main/$levelId") {
+                        popUpTo(Routes.MATCH_GAME_LEVEL_SELECTION) { inclusive = false }
+                    }
+                },
+                onBackPressed = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            route = "match_game_main/{levelId}",
+            arguments = listOf(navArgument("levelId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val levelId = backStackEntry.arguments?.getString("levelId") ?: "Level1"
+            val userName = userViewModel.userName.value ?: "defaultUser"
+
+            MatchMainScreen(
+                levelId = levelId,
+                navController = navController,
+                userName = userName,
+                onBackPressed = {
+                    navController.navigate(Routes.MATCH_GAME_LEVEL_SELECTION) {
+                        popUpTo(Routes.MATCH_GAME_LEVEL_SELECTION) { inclusive = false }
                     }
                 }
             )
@@ -334,25 +389,6 @@ fun NavGraph(
                         "level_image" -> navController.navigate("main/LevelImage")
                     }
                 }
-            )
-        }
-
-        composable(Routes.GAME_THONG) {
-            val gameViewModel: WordMatchGame = hiltViewModel()
-            WordMatchGameScreen(viewModel = gameViewModel, navController = navController)
-        }
-        composable(
-            route = "${Routes.INTRO_THONG}?from={from}",
-            arguments = listOf(navArgument("from") { defaultValue = Routes.ENGLISH_GAMES_SCENE; type = NavType.StringType })
-        ) { backStackEntry ->
-            val from = backStackEntry.arguments?.getString("from") ?: Routes.ENGLISH_GAMES_SCENE
-            val viewModel: WordMatchGame = hiltViewModel()
-            GameDescriptionScreen(
-                onPlayClick = { navController.navigate(Routes.GAME_THONG) },
-                onBackPressed = { navController.navigate(from) },
-                subject = "English",
-                wordPairRepository = viewModel.wordPairRepository
-
             )
         }
 
