@@ -31,6 +31,7 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.example.eduquizz.R
 import com.example.eduquizz.data.models.Subject
 import com.example.eduquizz.features.ThongKe.ThongKe
+import com.example.eduquizz.features.home.components.FloatingMoodButton
 import com.example.quizapp.ui.theme.QuizAppTheme
 
 @Composable
@@ -175,6 +176,7 @@ fun MainScreen(
                     }
                 }
             }
+            FloatingMoodButton()
         }
     }
 }
