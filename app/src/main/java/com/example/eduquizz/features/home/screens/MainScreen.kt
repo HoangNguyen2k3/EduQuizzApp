@@ -35,6 +35,7 @@ import com.example.eduquizz.features.ContestOnline.ContestPrefs
 import com.example.eduquizz.features.ThongKe.ThongKe
 import com.example.eduquizz.features.home.components.FloatingMoodButton
 import com.example.quizapp.ui.theme.QuizAppTheme
+import com.example.eduquizz.features.chatbox.FloatingChatButton
 
 @Composable
 fun MainScreen(
@@ -204,6 +205,7 @@ fun MainScreen(
                 }
             }
             FloatingMoodButton()
+            FloatingChatButton()
         }
     }
 }
