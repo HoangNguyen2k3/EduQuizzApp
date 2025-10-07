@@ -116,4 +116,10 @@ dependencies {
     //Lottie animation
     implementation("com.airbnb.android:lottie-compose:6.1.0")
 
+    // Gemini AI
+    implementation("com.google.ai.client.generativeai:generativeai:0.3.0")
+
+    // Coroutines (nếu chưa có)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
 }
