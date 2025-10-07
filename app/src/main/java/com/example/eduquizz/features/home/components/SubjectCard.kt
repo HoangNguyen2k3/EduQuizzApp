@@ -8,7 +8,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -28,7 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.example.eduquizz.R
 import com.example.eduquizz.data.models.Subject
 import com.example.eduquizz.features.ContestOnline.ContestPrefs
-import com.example.eduquizz.navigation.Routes
+import com.google.firebase.database.*
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.*
@@ -47,21 +46,8 @@ fun SubjectCard(
             .height(dimensionResource(id = R.dimen.subject_card_height))
             .clickable {
                 if (subject.id == "contest") {
-                    val state = calculateContestState(21, 60)
-                    val hasJoined = ContestPrefs.hasJoinedToday(context)
-
-                    when {
-                        hasJoined -> {
-                            Toast.makeText(context, "Bạn đã tham gia hôm nay rồi!", Toast.LENGTH_SHORT).show()
-                            onClick()
-                        }
-                        state is ContestState.Running -> {
-                            onClick()
-                            //ContestPrefs.saveJoinDate(context)
-                        }
-                        state is ContestState.Waiting -> Toast.makeText(context, "Cuộc thi chưa bắt đầu!", Toast.LENGTH_SHORT).show()
-                        else -> Toast.makeText(context, "Cuộc thi đã kết thúc, hẹn bạn ngày mai!", Toast.LENGTH_SHORT).show()
-                    }
+                    // sẽ xử lý trong ContestCountdown
+                    onClick()
                 } else {
                     onClick()
                 }
@@ -118,11 +104,7 @@ fun SubjectCard(
                     Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_normal)))
 
                     if (subject.id == "contest") {
-                        ContestCountdown(
-                            targetHour = 21,
-                            durationMinutes = 60,
-                            onJoinContest = onJoinContest
-                        )
+                        ContestCountdownRealtime(onJoinContest = onJoinContest)
                     } else {
                         DefaultSubjectInfo(subject)
                     }
@@ -158,7 +140,39 @@ fun InfoBadge(icon: androidx.compose.ui.graphics.vector.ImageVector, text: Strin
 // ---------------- CONTEST ----------------
 
 @Composable
-fun ContestCountdown(
+fun ContestCountdownRealtime(onJoinContest: () -> Unit) {
+    val context = LocalContext.current
+    var targetHour by remember { mutableStateOf(21) }
+    var durationMinutes by remember { mutableStateOf(60) }
+    var firebaseLoaded by remember { mutableStateOf(false) }
+
+    // 🔥 Lấy realtime từ Firebase
+    LaunchedEffect(Unit) {
+        val ref = FirebaseDatabase.getInstance().getReference("data")
+        ref.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                snapshot.child("timestart").getValue(Int::class.java)?.let { targetHour = it }
+                snapshot.child("timedur").getValue(Int::class.java)?.let { durationMinutes = it }
+                firebaseLoaded = true
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
+    if (!firebaseLoaded) {
+        InfoText("🔄 Đang tải dữ liệu cuộc thi...")
+    } else {
+        ContestCountdownDynamic(
+            targetHour = targetHour,
+            durationMinutes = durationMinutes,
+            onJoinContest = onJoinContest
+        )
+    }
+}
+
+@Composable
+fun ContestCountdownDynamic(
     targetHour: Int,
     durationMinutes: Int,
     onJoinContest: () -> Unit
@@ -167,17 +181,12 @@ fun ContestCountdown(
     var state by remember { mutableStateOf(calculateContestState(targetHour, durationMinutes)) }
     var hasJoined by remember { mutableStateOf(ContestPrefs.hasJoinedToday(context)) }
 
-    // Cập nhật trạng thái liên tục
-    LaunchedEffect(Unit) {
+    // Cập nhật trạng thái mỗi giây
+    LaunchedEffect(targetHour, durationMinutes) {
         while (true) {
             delay(1000L)
             state = calculateContestState(targetHour, durationMinutes)
-
-            // 🔁 Reset lại nếu qua ngày mới
-            val stillJoined = ContestPrefs.hasJoinedToday(context)
-            if (hasJoined && !stillJoined) {
-                hasJoined = false
-            }
+            if (hasJoined && !ContestPrefs.hasJoinedToday(context)) hasJoined = false
         }
     }
 
@@ -193,23 +202,21 @@ fun ContestCountdown(
                 Text("🎯 Cuộc thi đang diễn ra!", color = Color.White, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text("Còn lại: $remaining", color = Color.White)
-
                 Spacer(modifier = Modifier.height(8.dp))
+
                 if (hasJoined) {
                     DisabledButton("✅ Bạn đã tham gia hôm nay")
                 } else {
                     ActiveButton("Tham gia ngay") {
                         onJoinContest()
-                        //ContestPrefs.saveJoinDate(context)
+                        ContestPrefs.saveJoinDate(context)
                         hasJoined = true
                     }
                 }
             }
         }
 
-        is ContestState.Ended -> {
-            InfoText("🏁 Cuộc thi đã kết thúc. Hẹn bạn ngày mai!")
-        }
+        is ContestState.Ended -> InfoText("🏁 Cuộc thi đã kết thúc. Hẹn bạn ngày mai!")
     }
 }
 
@@ -266,12 +273,8 @@ fun calculateContestState(targetHour: Int, durationMinutes: Int): ContestState {
     }
 
     return when {
-        now.before(start) -> {
-            ContestState.Waiting(formatMillis(start.timeInMillis - now.timeInMillis))
-        }
-        now.after(start) && now.before(end) -> {
-            ContestState.Running(formatMillis(end.timeInMillis - now.timeInMillis))
-        }
+        now.before(start) -> ContestState.Waiting(formatMillis(start.timeInMillis - now.timeInMillis))
+        now.after(start) && now.before(end) -> ContestState.Running(formatMillis(end.timeInMillis - now.timeInMillis))
         else -> ContestState.Ended
     }
 }
@@ -283,24 +286,3 @@ fun formatMillis(ms: Long): String {
     val s = totalSeconds % 60
     return String.format("%02d:%02d:%02d", h, m, s)
 }
-
-// ---------------- PREFS ----------------
-
-/*object ContestPrefs {
-    private const val PREF_NAME = "contest_prefs"
-    private const val KEY_LAST_JOIN_DATE = "last_join_date"
-
-    private fun todayString(): String =
-        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-
-    fun saveJoinDate(context: Context) {
-        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putString(KEY_LAST_JOIN_DATE, todayString()).apply()
-    }
-
-    fun hasJoinedToday(context: Context): Boolean {
-        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-        val lastDate = prefs.getString(KEY_LAST_JOIN_DATE, null)
-        return lastDate == todayString()
-    }
-}*/
