@@ -37,14 +37,22 @@ import com.google.firebase.database.FirebaseDatabase
 import com.example.eduquizz.data_save.AudioManager
 import com.example.eduquizz.features.widget.StreakManager
 import com.example.eduquizz.features.widget.WidgetUpdateManager
+import androidx.activity.viewModels
+import com.example.eduquizz.data_save.DataViewModel
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val dataViewModel: DataViewModel by viewModels()
+
     private val requestNotifPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> }
-
+        // Lưu thời gian vào app
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        dataViewModel.updateLastSeenNow()
+        Log.d("MainActivity", "✅ Updated lastSeen: ${System.currentTimeMillis()}")
+
         FirebaseDatabase.getInstance().setPersistenceEnabled(true)
         AudioManager.init(this)
         StreakManager.updateStreak(this)
@@ -132,6 +140,9 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         WidgetUpdateManager.updateAllWidgets(this)
+        // Cập nhật lastSeen mỗi khi vào app
+        dataViewModel.updateLastSeenNow()
+        Log.d("MainActivity", "✅ onResume - Updated lastSeen: ${System.currentTimeMillis()}")
     }
 
     override fun onDestroy() {
