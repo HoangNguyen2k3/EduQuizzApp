@@ -44,6 +44,9 @@ import com.example.eduquizz.features.quizzGame.screens.LevelChoice
 import com.example.eduquizz.features.wordsearch.screens.TopicSelectionScreen
 import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
 import com.example.eduquizz.data_save.DataViewModel
+import com.example.eduquizz.features.ContestOnline.LeaderboardScreen
+import com.example.eduquizz.features.contest.screens.ContestScreen
+import com.example.eduquizz.features.mapping.model.Leaderboard
 import com.example.eduquizz.features.soundgame.screen.SoundGameScreen
 import com.example.eduquizz.features.soundgame.screen.SoundGameDescriptionScreen
 import com.example.eduquizz.features.soundgame.viewmodel.SoundGameViewModel
@@ -57,6 +60,8 @@ object Routes {
     const val ENGLISH_GAMES_SCENE = "english_games_scene"
     const val MATH_GAMES_SCENE = "math_games_scene"
     const val MAPPING_GAMES_SCENE = "mapping_games_scene"
+    const val CONTEST_GAMES_SCENE = "contest_games_scene"
+    const val LEADERBOARD_GAMES_SCENE = "leaderboard_games_scene"
     const val MAPPING_LEVEL_SELECTION = "mapping_level_selection"
     const val MAPPING_MAIN_GAME = "mapping_main_game/{levelId}"
     //Hoang
@@ -142,8 +147,14 @@ fun NavGraph(
                 onNavigateToMath = {
                     navController.navigate(Routes.MATH_GAMES_SCENE)
                 },
+                onNavigateToContest = {
+                    navController.navigate(Routes.CONTEST_GAMES_SCENE)
+                },
                 onNavigateToMapping = {
                     navController.navigate(Routes.MAPPING_GAMES_SCENE)
+                },
+                onNavigateToLeaderBoard = {
+                    navController.navigate(Routes.LEADERBOARD_GAMES_SCENE)
                 },
                 userViewModel = userViewModel
             )
@@ -177,7 +188,22 @@ fun NavGraph(
             val route_again = backStackEntry.arguments?.getString("route_again")?:""
             ResultsScreen(navController, correctAnswers = correct, totalQuestions = total, back_route = route_back, play_agian_route = route_again)
         }
-
+        composable(Routes.CONTEST_GAMES_SCENE) {
+            ContestScreen(
+                onBackClick = {
+                    navController.navigate(Routes.MAIN_DANH)
+                },
+                navController = navController,
+                userName = dataViewModel.playerName.observeAsState("User123").value
+            )
+        }
+        composable(Routes.LEADERBOARD_GAMES_SCENE) {
+            LeaderboardScreen(
+                onBackClick = {
+                    navController.navigate(Routes.MAIN_DANH)
+                }
+            )
+        }
         composable(Routes.ENGLISH_GAMES_SCENE) {
             EnglishGamesScreen(
                 onBackClick = {

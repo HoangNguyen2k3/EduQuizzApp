@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -30,6 +31,7 @@ import com.example.eduquizz.data.local.UserViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.example.eduquizz.R
 import com.example.eduquizz.data.models.Subject
+import com.example.eduquizz.features.ContestOnline.ContestPrefs
 import com.example.eduquizz.features.ThongKe.ThongKe
 import com.example.eduquizz.features.home.components.FloatingMoodButton
 import com.example.quizapp.ui.theme.QuizAppTheme
@@ -39,6 +41,8 @@ fun MainScreen(
     onNavigateToEnglish:() -> Unit = {},
     onNavigateToMath:() -> Unit = {},
     onNavigateToMapping:() -> Unit = {}, // Thêm callback cho Mapping
+    onNavigateToContest:() -> Unit = {}, // Thêm callback cho Contest
+    onNavigateToLeaderBoard: () -> Unit = {},
     dataviewModel: DataViewModel = hiltViewModel(),
     userViewModel: UserViewModel = hiltViewModel()
 ) {
@@ -115,9 +119,24 @@ fun MainScreen(
                 Color(0xFFA5D6A7)  // Very Light Green
             ),
             isRecommended = false
+        ),
+        Subject(
+            id = "contest",
+            name = "Cuộc thi Online", // Tên hiển thị cho subject mới
+            iconRes = R.drawable.icon_contest, // Tạm thời dùng icon math, bạn có thể thay bằng icon map/globe
+            progress = 0,
+            totalQuestions = 0,
+            completedQuestions = 0,
+            totalLessons = 5,
+            gradientColors = listOf(
+                Color(0xFFFFC107), // Green
+                Color(0xFFE3D243), // Light Green
+                Color(0xFFB6A72D)  // Very Light Green
+            ),
+            isRecommended = false
         )
     )
-
+    val context = LocalContext.current
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -159,6 +178,14 @@ fun MainScreen(
                                     "english" -> onNavigateToEnglish()
                                     "math" -> onNavigateToMath()
                                     "mapping" -> onNavigateToMapping() // Handle mapping navigation
+                                    "contest" -> {
+                                        if(ContestPrefs.hasJoinedToday(context)){
+                                            onNavigateToLeaderBoard()
+                                        }else{
+                                            //ContestPrefs.saveJoinDate(context)
+                                            onNavigateToContest()
+                                        }
+                                    }
                                 }
                             }
                         )

@@ -21,9 +21,7 @@
     <application
         android:networkSecurityConfig="@xml/network_security_config"
         android:name=".MainApplication"
-        android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
+        android:allowBackup="false"
         android:icon="@drawable/iconeduquizz"
         android:label="@string/app_name"
         android:roundIcon="@drawable/iconeduquizz"
