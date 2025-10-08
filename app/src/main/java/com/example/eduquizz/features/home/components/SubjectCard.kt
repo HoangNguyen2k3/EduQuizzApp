@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.example.eduquizz.R
 import com.example.eduquizz.data.models.Subject
 import com.example.eduquizz.features.ContestOnline.ContestPrefs
+import com.example.eduquizz.features.ContestOnline.ContestRealtimeState
 import com.google.firebase.database.*
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -45,9 +46,37 @@ fun SubjectCard(
             .fillMaxWidth()
             .height(dimensionResource(id = R.dimen.subject_card_height))
             .clickable {
-                if (subject.id == "contest") {
+/*                if (subject.id == "contest") {
                     // sẽ xử lý trong ContestCountdown
                     onClick()
+                } else {
+                    onClick()
+                }*/
+                if (subject.id == "contest") {
+                    // Bắt đầu lắng nghe Firebase nếu chưa
+                    ContestRealtimeState.startListening()
+
+                    if (!ContestRealtimeState.loaded) {
+                        Toast.makeText(context, "🔄 Đang tải dữ liệu cuộc thi...", Toast.LENGTH_SHORT).show()
+                        return@clickable
+                    }
+
+                    val state = calculateContestState(
+                        ContestRealtimeState.targetHour,
+                        ContestRealtimeState.durationMinutes
+                    )
+
+                    when (state) {
+                        is ContestState.Waiting -> {
+                            Toast.makeText(context, "⏳ Cuộc thi chưa bắt đầu!", Toast.LENGTH_SHORT).show()
+                        }
+                        is ContestState.Ended -> {
+                            Toast.makeText(context, "🏁 Cuộc thi đã kết thúc. Hẹn bạn ngày mai!", Toast.LENGTH_SHORT).show()
+                        }
+                        is ContestState.Running -> {
+                            onClick() // ✅ chỉ cho vào nếu đang diễn ra
+                        }
+                    }
                 } else {
                     onClick()
                 }
@@ -142,23 +171,11 @@ fun InfoBadge(icon: androidx.compose.ui.graphics.vector.ImageVector, text: Strin
 @Composable
 fun ContestCountdownRealtime(onJoinContest: () -> Unit) {
     val context = LocalContext.current
-    var targetHour by remember { mutableStateOf(21) }
-    var durationMinutes by remember { mutableStateOf(60) }
-    var firebaseLoaded by remember { mutableStateOf(false) }
+    val targetHour = ContestRealtimeState.targetHour
+    val durationMinutes = ContestRealtimeState.durationMinutes
+    val firebaseLoaded = ContestRealtimeState.loaded
 
-    // 🔥 Lấy realtime từ Firebase
-    LaunchedEffect(Unit) {
-        val ref = FirebaseDatabase.getInstance().getReference("data")
-        ref.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                snapshot.child("timestart").getValue(Int::class.java)?.let { targetHour = it }
-                snapshot.child("timedur").getValue(Int::class.java)?.let { durationMinutes = it }
-                firebaseLoaded = true
-            }
-
-            override fun onCancelled(error: DatabaseError) {}
-        })
-    }
+    LaunchedEffect(Unit) { ContestRealtimeState.startListening() }
 
     if (!firebaseLoaded) {
         InfoText("🔄 Đang tải dữ liệu cuộc thi...")

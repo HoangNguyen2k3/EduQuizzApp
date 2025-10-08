@@ -46,8 +46,8 @@ fun FloatingChatButton(
 
     // Khởi tạo vị trí ở góc phải dưới (khác với mood button)
     LaunchedEffect(Unit) {
-        offsetX = screenWidth - buttonSize - 16f
-        offsetY = screenHeight - buttonSize - 200f // Cao hơn mood button một chút
+        offsetX = buttonSize - 150
+        offsetY = screenHeight - buttonSize - 100f // Cao hơn mood button một chút
     }
 
     Box(modifier = modifier.fillMaxSize()) {
