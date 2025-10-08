@@ -76,7 +76,7 @@ fun WordSearchGame(
 
     LaunchedEffect(Unit) {
         StreakManager.updateStreak(context)
-        AudioManager.setBgmEnabled(true)
+        AudioManager.setBgmEnabled(false)
     }
 
     LaunchedEffect(wordsToFind) {

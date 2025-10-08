@@ -16,7 +16,6 @@ class ChatViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<ChatUiState>(ChatUiState.Idle)
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
-    // 🧩 Thay API key của bạn vào đây hoặc lấy từ BuildConfig.GEMINI_API_KEY
     private val generativeModel = GenerativeModel(
         modelName = "gemini-2.0-flash-lite",
         apiKey = "AIzaSyDUg10h7dIec2Fvj99FfKvtmzIQ0SLjcHs"
