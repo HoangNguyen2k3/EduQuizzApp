@@ -5,6 +5,8 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.eduquizz.features.bubbleshot.model.MathQuestion
+import com.example.eduquizz.features.bubbleshot.model.Bubble
+import com.example.eduquizz.features.bubbleshot.model.BubblePool
 import com.example.eduquizz.features.bubbleshot.repository.ShotQuestionRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -15,7 +17,10 @@ class BubbleShot : ViewModel() {
     private val repository = ShotQuestionRepository()
     private var allQuestions = listOf<MathQuestion>()
 
-    // Fallback questions trong trường hợp không lấy được từ Firebase
+    // ===== THAY ĐỔI CHÍNH: Thêm BubblePool =====
+    private val bubblePool = BubblePool(initialSize = 20)
+
+    // Fallback questions
     private val fallbackQuestions = listOf(
         MathQuestion("5 + 7 = ?", "12"),
         MathQuestion("9 - 3 = ?", "6"),
@@ -23,11 +28,16 @@ class BubbleShot : ViewModel() {
     )
 
     var currentQuestion = mutableStateOf<MathQuestion?>(null)
-    var answers = mutableStateListOf<String?>()
+
+    // ===== THAY ĐỔI: Từ List<String?> sang List<Bubble> =====
+    var answers = mutableStateListOf<Bubble>()
+
     var timer = mutableStateOf(10)
     var score = mutableStateOf(0)
     var job: Job? = null
-    var selectedAnswer = mutableStateOf<String?>(null)
+
+    var selectedAnswer = mutableStateOf<Bubble?>(null)
+
     var isCorrectAnswer = mutableStateOf<Boolean?>(null)
     var questionCount = mutableStateOf(0)
     var isGameOver = mutableStateOf(false)
@@ -60,23 +70,36 @@ class BubbleShot : ViewModel() {
     }
 
     private fun setupInitialAnswers() {
-        val answerPool = allQuestions.map { it.correctAnswer }.shuffled().take(20).toMutableList()
+        bubblePool.releaseAll()
+        answers.clear()
+        val answerPool = allQuestions.map { it.correctAnswer }
+            .shuffled()
+            .take(20)
+            .toMutableList()
         currentQuestion.value?.let { question ->
             if (!answerPool.contains(question.correctAnswer)) {
-                answerPool[Random.nextInt(answerPool.size.coerceAtMost(12))] = question.correctAnswer
+                answerPool[Random.nextInt(answerPool.size.coerceAtMost(12))] =
+                    question.correctAnswer
             }
         }
-        answers.clear()
-        answers.addAll(answerPool.map { it as String? })
+        answerPool.forEachIndexed { index, answer ->
+            val bubble = bubblePool.acquire(answer, index)
+            answers.add(bubble)
+        }
     }
 
+    /**
+     * Xử lý khi user chọn bubble
+     */
     fun onAnswerSelected(index: Int) {
         if (isGameOver.value || currentQuestion.value == null) return
+        if (index >= answers.size) return
+
         job?.cancel()
 
-        val answer = answers[index]
-        val isCorrect = answer == currentQuestion.value?.correctAnswer
-        selectedAnswer.value = answer
+        val bubble = answers[index]
+        val isCorrect = bubble.answer == currentQuestion.value?.correctAnswer
+        selectedAnswer.value = bubble
         isCorrectAnswer.value = isCorrect
 
         if (isCorrect) {
@@ -87,7 +110,11 @@ class BubbleShot : ViewModel() {
 
         viewModelScope.launch {
             delay(500)
-            answers[index] = null
+
+            // ===== THAY ĐỔI: Release bubble về pool thay vì set null =====
+            bubblePool.release(bubble)
+            answers.removeAt(index)
+
             delay(200)
             selectedAnswer.value = null
             isCorrectAnswer.value = null
@@ -100,76 +127,83 @@ class BubbleShot : ViewModel() {
         }
     }
 
+    /**
+     * Chuyển sang câu hỏi tiếp theo
+     */
     fun nextQuestion() {
         if (isGameOver.value || allQuestions.isEmpty()) return
 
         currentQuestion.value = allQuestions.random()
         val correctAnswer = currentQuestion.value?.correctAnswer ?: return
 
-        val nonNullIndices = answers.mapIndexedNotNull { idx, v -> if (v != null) idx else null }
+        // Kiểm tra xem đáp án đúng có trong answers không
+        val hasCorrectAnswer = answers.any { it.answer == correctAnswer }
 
-        if (!answers.filterNotNull().contains(correctAnswer)) {
-            if (nonNullIndices.isNotEmpty()) {
-                val replaceIdx = nonNullIndices.random()
-                answers[replaceIdx] = correctAnswer
-            } else {
-                answers.add(0, correctAnswer)
-            }
+        if (!hasCorrectAnswer) {
+            // Thêm đáp án đúng vào vị trí random
+            val position = (0..15).random()
+            val bubble = bubblePool.acquire(correctAnswer, position)
+            answers.add(bubble)
+
+
         } else {
-            val nonNulls = nonNullIndices.map { answers[it]!! }.toMutableList()
-            val swapCount = Random.nextInt(2, 4)
-            repeat(swapCount) {
-                val i = Random.nextInt(nonNulls.size)
-                val j = Random.nextInt(nonNulls.size)
-                val tmp = nonNulls[i]
-                nonNulls[i] = nonNulls[j]
-                nonNulls[j] = tmp
-            }
-            nonNullIndices.forEachIndexed { order, idx ->
-                answers[idx] = nonNulls[order]
+            // Shuffle vị trí các bubble
+            val shuffledPositions = answers.indices.shuffled()
+            answers.forEachIndexed { index, bubble ->
+                bubble.position = shuffledPositions[index]
+                bubble.offsetY = Random.nextFloat() * 20f
+
+
+
+
+
+
             }
         }
 
-        val existing = answers.filterNotNull().toMutableList()
-        if (existing.size < 8) {
+        // Đảm bảo có ít nhất 8 bubbles
+        val currentCount = answers.size
+        if (currentCount < 8) {
             val pool = allQuestions.map { it.correctAnswer }
-                .filter { it !in existing }
+                .filter { answer -> answers.none { it.answer == answer } }
                 .toMutableList()
 
-            for (i in answers.indices) {
-                if (existing.size >= 8) break
-                if (answers[i] == null && pool.isNotEmpty()) {
-                    val pick = pool.random()
-                    pool.remove(pick)
-                    answers[i] = pick
-                    existing.add(pick)
-                }
+            repeat((8 - currentCount).coerceAtMost(pool.size)) {
+                val answer = pool.random()
+                pool.remove(answer)
+                val position = (0..15).random()
+                val bubble = bubblePool.acquire(answer, position)
+                answers.add(bubble)
+
+
             }
         }
 
+        // Thêm random bubbles để đạt 12-15 bubbles
         val targetCount = (12..15).random()
-        val allExisting = answers.filterNotNull().toMutableSet()
-        for (i in answers.indices) {
-            if (answers.count { it != null } >= targetCount) break
-            if (answers[i] == null) {
-                var rand: String
-                do {
-                    rand = (1..100).random().toString()
-                } while (rand in allExisting)
+        val allAnswers = answers.map { it.answer }.toSet()
 
-                answers[i] = rand
-                allExisting.add(rand)
-            }
-        }
 
-        while (answers.count { it != null } < targetCount) {
-            var rand: String
+
+
+
+
+
+
+
+
+
+
+
+        repeat((targetCount - answers.size).coerceAtLeast(0)) {
+            var randomAnswer: String
             do {
-                rand = (1..100).random().toString()
-            } while (rand in allExisting)
+                randomAnswer = (1..100).random().toString()
+            } while (randomAnswer in allAnswers)
 
-            answers.add(rand)
-            allExisting.add(rand)
+            val position = (0..15).random()
+            val bubble = bubblePool.acquire(randomAnswer, position)
+            answers.add(bubble)
         }
 
         timer.value = 10
@@ -212,5 +246,7 @@ class BubbleShot : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         job?.cancel()
+        // Cleanup pool
+        bubblePool.releaseAll()
     }
 }

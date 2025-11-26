@@ -122,4 +122,6 @@ dependencies {
     // Coroutines (nếu chưa có)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
+    // Google Play integrity
+    implementation("com.google.android.play:integrity:1.3.0")
 }

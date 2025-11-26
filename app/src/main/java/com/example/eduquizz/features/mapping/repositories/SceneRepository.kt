@@ -93,7 +93,15 @@ class SceneRepository @Inject constructor(
         private const val TAG = "SceneRepository"
     }
 
+    private var cachedLevels: List<SceneLevel>? = null
+
     suspend fun getAllLevels(): List<SceneLevel> {
+
+        if (cachedLevels != null && cachedLevels!!.isNotEmpty()) {
+            Log.d(TAG, "Returning levels from cache. Size: ${cachedLevels!!.size}")
+            return cachedLevels!!
+        }
+
         return try {
             Log.d(TAG, "Loading all levels from API...")
             val response = apiService.getAllLevels()
@@ -110,14 +118,14 @@ class SceneRepository @Inject constructor(
 
             val levels = response.map { it.toSceneLevel() }
             Log.d(TAG, "Converted to ${levels.size} SceneLevel objects")
-
-            // Log converted levels for debugging
-            levels.forEach { level ->
-                Log.d(TAG, "Converted Level: ${level.levelId} - ${level.title} with ${level.locations.size} locations")
-                level.locations.take(2).forEach { location ->
-                    Log.d(TAG, "  Location: ${location.locationName} at (${location.latitude}, ${location.longitude})")
-                }
-            }
+            cachedLevels = levels
+            Log.d(TAG, "API call successful, levels cached. Size: ${levels.size}")
+//            levels.forEach { level ->
+//                Log.d(TAG, "Converted Level: ${level.levelId} - ${level.title} with ${level.locations.size} locations")
+//                level.locations.take(2).forEach { location ->
+//                    Log.d(TAG, "  Location: ${location.locationName} at (${location.latitude}, ${location.longitude})")
+//                }
+//            }
 
             levels
         } catch (e: Exception) {
@@ -130,7 +138,20 @@ class SceneRepository @Inject constructor(
         }
     }
 
+    fun clearCache() {
+        cachedLevels = null
+    }
+
     suspend fun getSceneLevel(levelId: String): SceneLevel? {
+
+        val allLevels = cachedLevels ?: getAllLevels()
+
+        val cachedLevel = allLevels.find { it.levelId == levelId }
+        if (cachedLevel != null) {
+            Log.d(TAG, "Returning specific level $levelId from cache.")
+            return cachedLevel
+        }
+
         return try {
             Log.d(TAG, "Loading level $levelId from API...")
             val response = apiService.getSceneLevel(levelId)
@@ -145,9 +166,9 @@ class SceneRepository @Inject constructor(
             Log.d(TAG, "Converted level: ${level.levelId} with ${level.locations.size} locations")
 
             // Log converted locations for debugging
-            level.locations.forEach { location ->
-                Log.d(TAG, "Converted location: ${location.locationName} at (${location.latitude}, ${location.longitude})")
-            }
+//            level.locations.forEach { location ->
+//                Log.d(TAG, "Converted location: ${location.locationName} at (${location.latitude}, ${location.longitude})")
+//            }
 
             level
         } catch (e: Exception) {

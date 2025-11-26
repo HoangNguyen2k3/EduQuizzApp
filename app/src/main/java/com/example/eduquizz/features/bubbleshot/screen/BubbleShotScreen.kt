@@ -6,10 +6,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,7 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
+
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
@@ -30,21 +31,22 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import com.example.eduquizz.R
 import androidx.compose.animation.core.*
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.RepeatMode
+
+
+
+
+
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import com.example.eduquizz.data_save.AudioManager
 import androidx.compose.runtime.LaunchedEffect
 import com.example.eduquizz.navigation.Routes
+import com.example.eduquizz.features.bubbleshot.model.Bubble
 
 @Composable
 fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
-    val answers = viewModel.answers
+    val answers = viewModel.answers  // Bây giờ là List<Bubble>
     val timer by viewModel.timer
     val question by viewModel.currentQuestion
     val score by viewModel.score
@@ -76,7 +78,7 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
                 MaterialTheme.colorScheme.background)))) {
 
         if (isLoading) {
-            // Loading screen
+
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -152,7 +154,7 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Hiển thị câu hỏi nếu có
+
                 question?.let { currentQuestion ->
                     Text(
                         currentQuestion.question,
@@ -167,6 +169,7 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // ===== THAY ĐỔI CHÍNH: Dùng items() với key để tối ưu recomposition =====
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(4),
                     modifier = Modifier
@@ -175,54 +178,54 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
                     verticalArrangement = Arrangement.spacedBy(40.dp),
                     horizontalArrangement = Arrangement.spacedBy(40.dp)
                 ) {
-                    items(answers.size) { idx ->
-                        val answer = answers[idx]
-                        if (answer == null) {
-                            Spacer(modifier = Modifier.size(40.dp))
-                        } else {
-                            val selectedAnswer = viewModel.selectedAnswer.value
+                    items(
+                        items = answers,
+                        key = { bubble -> bubble.id }  // Key giúp Compose track từng bubble
+                    ) { bubble ->
+                        BubbleItem(
+                            bubble = bubble,
+                            isSelected = viewModel.selectedAnswer.value?.id == bubble.id,
+                            onBubbleClick = {
+                                AudioManager.playClickSfx()
+                                // Tìm index của bubble
+                                val index = answers.indexOf(bubble)
+                                if (index != -1) {
+                                    viewModel.onAnswerSelected(index)
+                                }
 
-                            // Thêm hiệu ứng di chuyển lên xuống cho bóng
-                            val infiniteTransition = rememberInfiniteTransition(label = "balloon-move")
-                            val offsetY by infiniteTransition.animateFloat(
-                                initialValue = 0f,
-                                targetValue = 20f, // Độ lệch tối đa (px)
-                                animationSpec = infiniteRepeatable(
-                                    animation = tween<Float>(1200, delayMillis = idx * 200, easing = LinearEasing),
-                                    repeatMode = RepeatMode.Reverse
-                                ),
-                                label = "balloon-offset"
-                            )
 
-                            Box(
-                                modifier = Modifier
-                                    .size(64.dp)
-                                    .offset(y = offsetY.dp)
-                                    .then(
-                                        if (selectedAnswer == null) Modifier.clickable {
-                                            AudioManager.playClickSfx()
-                                            viewModel.onAnswerSelected(idx)
-                                        } else Modifier
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Image(
-                                    painter = painterResource(R.drawable.balloon),
-                                    contentDescription = "Balloon",
-                                )
-                                Text(
-                                    answer,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp,
-                                    color = Color.Yellow,
-                                    modifier = Modifier.offset(y = (-8).dp)
-                                )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                             }
-                        }
+                        )
                     }
                 }
 
-                // Phần dưới cùng với cannon
+                // Cannon
                 Box(
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -242,8 +245,45 @@ fun BubbleShotScreen(viewModel: BubbleShot, navController: NavHostController) {
     }
 }
 
-@Preview(showBackground = true)
+/**
+ * Composable riêng cho mỗi bubble
+ * Chỉ recompose khi bubble đó thay đổi
+ */
 @Composable
-fun BubbleShotScreenPreview() {
-    BubbleShotScreen(BubbleShot(), NavHostController(LocalContext.current))
+fun BubbleItem(
+    bubble: Bubble,
+    isSelected: Boolean,
+    onBubbleClick: () -> Unit
+) {
+    // Animation cho từng bubble
+    val infiniteTransition = rememberInfiniteTransition(label = "balloon-${bubble.id}")
+    val offsetY by infiniteTransition.animateFloat(
+        initialValue = bubble.offsetY,
+        targetValue = bubble.offsetY + 20f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "balloon-offset-${bubble.id}"
+    )
+
+    Box(
+        modifier = Modifier
+            .size(64.dp)
+            .offset(y = offsetY.dp)
+            .clickable(enabled = !isSelected) { onBubbleClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            painter = painterResource(R.drawable.balloon),
+            contentDescription = "Balloon",
+        )
+        Text(
+            bubble.answer,
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp,
+            color = Color.Yellow,
+            modifier = Modifier.offset(y = (-8).dp)
+        )
+    }
 }

@@ -153,15 +153,15 @@ fun Main_BatChu(navController: NavController,
 //lưu index của các chữ cái đã được chọn
     var hintUsedForCurrentQuestion by remember(question) { mutableStateOf(false) }
 
-    /*    // Reset khi đổi câu
-        LaunchedEffect(question) {
-            hintUsedForCurrentQuestion = false
-            selectedLetters.clear()
-            usedIndices.clear()
-            repeat(answerLength) {
-                selectedLetters.add(null)
-            }
-        }*/
+
+
+
+
+
+
+
+
+
 
     // Nội dung UI
     Box(modifier = Modifier.fillMaxSize().background(
@@ -501,7 +501,40 @@ fun ModernWordGrid(
                 )
             }
         }
+        //-----------------------------Đệ quy------------------------------------------
+        item {
+            DrawGridRecursive(
+                grid = grid,
+                usedIndices = usedIndices,
+                index = 0,
+                onCellSelected = onCellSelected
+            )
+        }
     }
+}
+@Composable
+fun DrawGridRecursive(
+    grid: List<Cell>,
+    usedIndices: List<Int>,
+    index: Int = 0,
+    onCellSelected: (Cell) -> Unit
+) {
+    if (index >= grid.size) return
+    val cell = grid[index]
+    if (usedIndices.contains(index)) {
+        Box(modifier = Modifier
+            .padding(4.dp)
+            .size(36.dp))
+    } else {
+        ModernGridCell(
+            cell = cell,
+            onCellSelected = {
+                AudioManager.playClickSfx()
+                onCellSelected(cell)
+            }
+        )
+    }
+    DrawGridRecursive(grid, usedIndices, index + 1, onCellSelected)
 }
 @Composable
 fun Booster(

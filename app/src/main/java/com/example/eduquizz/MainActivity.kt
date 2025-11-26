@@ -4,7 +4,9 @@ import android.Manifest
 import android.os.Build
 import android.os.Bundle
 import android.graphics.Color
+import android.os.Debug
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -39,6 +41,8 @@ import com.example.eduquizz.features.widget.StreakManager
 import com.example.eduquizz.features.widget.WidgetUpdateManager
 import androidx.activity.viewModels
 import com.example.eduquizz.data_save.DataViewModel
+import com.example.eduquizz.security.PlayIntegrityHelper
+import com.example.eduquizz.security.SignatureUtils
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -49,6 +53,26 @@ class MainActivity : ComponentActivity() {
         // Lưu thời gian vào app
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+            PlayIntegrityHelper.checkIntegrity(this) { passed, json ->
+                if (!passed) {
+                    Toast.makeText(this, "App có dấu hiệu bị chỉnh sửa!", Toast.LENGTH_LONG).show()
+                    finish()
+                    return@checkIntegrity
+                }
+
+                Log.d("Integrity", "JSON: $json")
+            }
+
+            if (!SignatureUtils.verifyAppSignature(this)) {
+                Toast.makeText(this, "App đã bị chỉnh sửa!", Toast.LENGTH_LONG).show()
+                finish()
+                return
+            }
+
+            if (Debug.isDebuggerConnected() || Debug.waitingForDebugger()) {
+                android.os.Process.killProcess(android.os.Process.myPid())
+            }
 
         dataViewModel.updateLastSeenNow()
         Log.d("MainActivity", "✅ Updated lastSeen: ${System.currentTimeMillis()}")

@@ -60,6 +60,10 @@
             </intent-filter>
         </activity>
 
+        <meta-data
+            android:name="androidx.work.WorkManagerInitializer"
+            tools:node="remove" />
+
     </application>
 
 </manifest>

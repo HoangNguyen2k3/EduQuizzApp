@@ -31,6 +31,8 @@ class QuestionViewModel @Inject constructor(
     var coins = mutableStateOf(-1)
         private set
     val hiddenChoices = mutableStateListOf<String>()
+
+    //val hiddenChoices = mutableStateOf(mutableSetOf<String>())
     val helperCounts = mutableStateListOf(
         R.drawable.nammuoi_vip to 15,
         R.drawable.exchange to 20,
@@ -121,7 +123,7 @@ class QuestionViewModel @Inject constructor(
             val wrongAnswers = currentQuestion.choices.filter { it != correctAnswer }
 
             fun getLetter(index: Int): String {
-                return when(index) {
+                return when (index) {
                     0 -> "A"
                     1 -> "B"
                     2 -> "C"
