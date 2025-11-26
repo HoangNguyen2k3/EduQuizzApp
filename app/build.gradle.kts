@@ -57,7 +57,11 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.androidx.runtime.livedata)
+    // Firebase BoM (Bill of Materials)
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
 
+    // Firebase Auth
+    implementation("com.google.firebase:firebase-auth-ktx")
 
     // Navigation for Compose
     implementation("androidx.navigation:navigation-compose:2.7.7")
@@ -124,4 +128,13 @@ dependencies {
 
     // Google Play integrity
     implementation("com.google.android.play:integrity:1.3.0")
+
+    // Google Sign In
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+
+    // OkHttp for API calls
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // Security Crypto for encrypted storage
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 }
