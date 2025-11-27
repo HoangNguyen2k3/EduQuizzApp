@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.eduquizz.features.auth.viewmodel.AuthViewModel
 import android.widget.Toast
+import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun RegisterScreen(
@@ -408,3 +409,4 @@ fun RegisterScreen(
         }
     }
 }
+

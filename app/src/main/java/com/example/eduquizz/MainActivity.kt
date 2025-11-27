@@ -54,25 +54,25 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-            PlayIntegrityHelper.checkIntegrity(this) { passed, json ->
-                if (!passed) {
-                    Toast.makeText(this, "App có dấu hiệu bị chỉnh sửa!", Toast.LENGTH_LONG).show()
-                    finish()
-                    return@checkIntegrity
-                }
-
-                Log.d("Integrity", "JSON: $json")
-            }
-
-            if (!SignatureUtils.verifyAppSignature(this)) {
-                Toast.makeText(this, "App đã bị chỉnh sửa!", Toast.LENGTH_LONG).show()
-                finish()
-                return
-            }
-
-            if (Debug.isDebuggerConnected() || Debug.waitingForDebugger()) {
-                android.os.Process.killProcess(android.os.Process.myPid())
-            }
+//            PlayIntegrityHelper.checkIntegrity(this) { passed, json ->
+//                if (!passed) {
+//                    Toast.makeText(this, "App có dấu hiệu bị chỉnh sửa!", Toast.LENGTH_LONG).show()
+//                    finish()
+//                    return@checkIntegrity
+//                }
+//
+//                Log.d("Integrity", "JSON: $json")
+//            }
+//
+//            if (!SignatureUtils.verifyAppSignature(this)) {
+//                Toast.makeText(this, "App đã bị chỉnh sửa!", Toast.LENGTH_LONG).show()
+//                finish()
+//                return
+//            }
+//
+//            if (Debug.isDebuggerConnected() || Debug.waitingForDebugger()) {
+//                android.os.Process.killProcess(android.os.Process.myPid())
+//            }
 
         dataViewModel.updateLastSeenNow()
         Log.d("MainActivity", "✅ Updated lastSeen: ${System.currentTimeMillis()}")
