@@ -45,6 +45,7 @@ import com.example.eduquizz.features.wordsearch.screens.TopicSelectionScreen
 import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
 import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.features.ContestOnline.LeaderboardScreen
+
 import com.example.eduquizz.features.contest.screens.ContestScreen
 import com.example.eduquizz.features.mapping.model.Leaderboard
 import com.example.eduquizz.features.soundgame.screen.SoundGameScreen
@@ -55,7 +56,13 @@ import com.example.eduquizz.features.match.screen.MatchGameIntroScreen
 import com.example.eduquizz.features.match.screen.MatchLevelSelectionScreen
 import com.example.eduquizz.features.match.screen.MatchMainScreen
 
+import com.example.eduquizz.features.auth.screens.LoginScreen
+import com.example.eduquizz.features.auth.screens.RegisterScreen
+
 object Routes {
+    //Auth
+    const val LOGIN = "login"
+    const val REGISTER = "register"
     //Main
     const val ENGLISH_GAMES_SCENE = "english_games_scene"
     const val MATH_GAMES_SCENE = "math_games_scene"
@@ -116,14 +123,24 @@ fun NavGraph(
         composable(Routes.SPLASH) {
             SplashScreen(
                 onNavigateToMain = {
-                    if(firstTime == false){
-                        navController.navigate(Routes.READY) {
+                    // Check if user is logged in
+                    val isLoggedIn = false // TODO: Check from DataStore/SharedPreferences
+
+                    if (isLoggedIn) {
+                        if (firstTime == false) {
+                            navController.navigate(Routes.READY) {
+                                popUpTo(Routes.SPLASH) { inclusive = true }
+                            }
+                        } else {
+                            navController.navigate(Routes.MAIN_DANH) {
+                                popUpTo(Routes.SPLASH) { inclusive = true }
+                            }
+                        }
+                    } else {
+                        navController.navigate(Routes.LOGIN) {
                             popUpTo(Routes.SPLASH) { inclusive = true }
                         }
-                    }else{
-                        navController.navigate(Routes.MAIN_DANH)
                     }
-
                 }
             )
         }
@@ -136,6 +153,31 @@ fun NavGraph(
                     }
                 },
                 userViewModel = userViewModel
+            )
+        }
+        composable(Routes.LOGIN) {
+            LoginScreen(
+                onLoginSuccess = {
+                    navController.navigate(Routes.MAIN_DANH) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                    }
+                },
+                onNavigateToRegister = {
+                    navController.navigate(Routes.REGISTER)
+                }
+            )
+        }
+
+        composable(Routes.REGISTER) {
+            RegisterScreen(
+                onRegisterSuccess = {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.REGISTER) { inclusive = true }
+                    }
+                },
+                onNavigateToLogin = {
+                    navController.popBackStack()
+                }
             )
         }
 
