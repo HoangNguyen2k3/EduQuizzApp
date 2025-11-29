@@ -7,21 +7,27 @@ import com.google.android.play.core.integrity.IntegrityManager
 import com.google.android.play.core.integrity.IntegrityManagerFactory
 import com.google.android.play.core.integrity.IntegrityTokenRequest
 import org.json.JSONObject
+import java.security.SecureRandom
 
 object PlayIntegrityHelper {
 
-    private const val API_KEY = "AIzaSyC54a169pl8U-L7TopgN3pnmgWGpPudm7c"
-    private const val PROJECT_NUMBER = 177486006662
+    private const val PROJECT_NUMBER = 177486006662L
 
     fun checkIntegrity(context: Context, onResult: (Boolean, JSONObject?) -> Unit) {
 
         val manager = IntegrityManagerFactory.create(context)
 
-        val nonce = generateNonce()
+        val nonceBytes = ByteArray(32)
+        SecureRandom().nextBytes(nonceBytes)
+
+        val nonceBase64 = Base64.encodeToString(
+            nonceBytes,
+            Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
+        )
 
         val request = IntegrityTokenRequest.builder()
             .setCloudProjectNumber(PROJECT_NUMBER)
-            .setNonce(nonce)
+            .setNonce(nonceBase64)
             .build()
 
         manager.requestIntegrityToken(request)
@@ -33,18 +39,17 @@ object PlayIntegrityHelper {
                 onResult(passed, payload)
             }
             .addOnFailureListener { e ->
-                e.printStackTrace()
+                Log.e("Integrity", "FAILED: ${e.message}")
                 onResult(false, null)
             }
-    }
 
-    private fun generateNonce(): String {
-        return "nonce_" + System.currentTimeMillis().toString()
     }
 
     /** Giải mã JSON từ JWS dạng header.payload.signature */
-    private fun decodeJwsPayload(jws: String): JSONObject? {
+    private fun decodeJwsPayload(jws: String?): JSONObject? {
         return try {
+            if (jws == null) return null
+
             val parts = jws.split(".")
             if (parts.size != 3) return null
 
@@ -57,23 +62,26 @@ object PlayIntegrityHelper {
         }
     }
 
-    /** Kiểm tra các trường integrity */
+    /** Kiểm tra Integrity */
     private fun verifyPayload(json: JSONObject?): Boolean {
         if (json == null) return false
 
         return try {
             val appIntegrity = json.getJSONObject("appIntegrity")
-            val verdict = appIntegrity.getString("appRecognitionVerdict")
-
             val deviceIntegrity = json.getJSONObject("deviceIntegrity")
+
+            val verdict = appIntegrity.getString("appRecognitionVerdict")
             val deviceVerdicts = deviceIntegrity.getJSONArray("deviceRecognitionVerdict")
 
-            val appOk = verdict == "UNEVALUATED" || verdict == "PLAY_RECOGNIZED"
-            val deviceOk = deviceVerdicts.toString().contains("MEETS_DEVICE_INTEGRITY")
+            val isAppOk = verdict == "PLAY_RECOGNIZED"
+            val isDeviceOk = (0 until deviceVerdicts.length())
+                .map { deviceVerdicts.getString(it) }
+                .contains("MEETS_DEVICE_INTEGRITY")
 
-            appOk && deviceOk
+            isAppOk && isDeviceOk
 
         } catch (e: Exception) {
+            Log.e("Integrity", "Verify error: ${e.message}")
             false
         }
     }
