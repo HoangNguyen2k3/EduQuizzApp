@@ -162,9 +162,9 @@ fun NavGraph(
                     }
                 },
                 onRegisterSuccess = {
-                    android.util.Log.d("NavGraph", "Register success callback")
-                    // New users always go to Ready screen
-                    navController.navigate(Routes.READY) {
+                    android.util.Log.d("NavGraph", "Register success - navigating to LOGIN")
+                    // After successful registration, navigate to login screen
+                    navController.navigate(Routes.LOGIN) {
                         popUpTo(Routes.REGISTER) { inclusive = true }
                     }
                 }

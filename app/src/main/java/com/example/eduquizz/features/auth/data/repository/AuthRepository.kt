@@ -56,10 +56,17 @@ class AuthRepository @Inject constructor(
                     AuthResult.Success(user)
                 } ?: AuthResult.Error("User data not found")
             } else {
-                AuthResult.Error(response.body()?.message ?: "Registration failed")
+                // Parse error message from backend
+                val errorMsg = response.body()?.message ?: when (response.code()) {
+                    400 -> "Invalid registration data"
+                    409 -> "Username or email already exists"
+                    else -> "Registration failed"
+                }
+                AuthResult.Error(errorMsg)
             }
         } catch (e: Exception) {
-            AuthResult.Error(e.message ?: "Network error")
+            Log.e("AuthRepository", "Register exception: ${e.message}", e)
+            AuthResult.Error("Network error. Please check your connection.")
         }
     }
 
@@ -67,6 +74,9 @@ class AuthRepository @Inject constructor(
         return try {
             val request = LoginRequest(usernameOrEmail, password)
             val response = apiService.login(request)
+
+            Log.d("AuthRepository", "Login response code: ${response.code()}")
+            Log.d("AuthRepository", "Login response success: ${response.body()?.success}")
 
             if (response.isSuccessful && response.body()?.success == true) {
                 response.body()?.user?.let { user ->
@@ -80,13 +90,23 @@ class AuthRepository @Inject constructor(
                         authToken = null,
                         loginMethod = "email"
                     )
+                    Log.d("AuthRepository", "Login successful: ${user.username}")
                     AuthResult.Success(user)
                 } ?: AuthResult.Error("User data not found")
             } else {
-                AuthResult.Error(response.body()?.message ?: "Login failed")
+                // Parse detailed error message from backend
+                val errorMsg = response.body()?.message ?: when (response.code()) {
+                    400 -> "Invalid login credentials"
+                    401 -> "Incorrect password. Please try again."
+                    404 -> "Account not found. Please check your username/email."
+                    else -> "Login failed. Please try again."
+                }
+                Log.e("AuthRepository", "Login failed: $errorMsg")
+                AuthResult.Error(errorMsg)
             }
         } catch (e: Exception) {
-            AuthResult.Error(e.message ?: "Network error")
+            Log.e("AuthRepository", "Login exception: ${e.message}", e)
+            AuthResult.Error("Network error. Please check your connection.")
         }
     }
 
@@ -103,24 +123,6 @@ class AuthRepository @Inject constructor(
             }
         } catch (e: Exception) {
             AuthResult.Error(e.message ?: "Network error")
-        }
-    }
-
-    suspend fun checkUsernameAvailability(username: String): Boolean {
-        return try {
-            val response = apiService.checkUsername(username)
-            response.body()?.get("exists") == false
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    suspend fun checkEmailAvailability(email: String): Boolean {
-        return try {
-            val response = apiService.checkEmail(email)
-            response.body()?.get("exists") == false
-        } catch (e: Exception) {
-            false
         }
     }
 
@@ -161,15 +163,15 @@ class AuthRepository @Inject constructor(
                 AuthResult.Success(firebaseUser)
             } ?: run {
                 Log.e("AuthRepository", "❌ Firebase user is null")
-                AuthResult.Error("Firebase user is null")
+                AuthResult.Error("Google sign-in failed. Please try again.")
             }
         } catch (e: Exception) {
             Log.e("AuthRepository", "❌ Exception occurred", e)
-            AuthResult.Error(e.message ?: "Unknown error")
+            AuthResult.Error(e.message ?: "Google sign-in error")
         }
     }
 
-    suspend fun signInWithEmailPassword(email: String, password: String): AuthResult<com.google.firebase.auth.FirebaseUser> {
+    suspend fun signInWithEmailPassword(email: String, password: String): AuthResult<FirebaseUser> {
         return try {
             val authResult = firebaseAuth.signInWithEmailAndPassword(email, password).await()
 
@@ -181,7 +183,7 @@ class AuthRepository @Inject constructor(
         }
     }
 
-    suspend fun registerWithEmailPassword(email: String, password: String): AuthResult<com.google.firebase.auth.FirebaseUser> {
+    suspend fun registerWithEmailPassword(email: String, password: String): AuthResult<FirebaseUser> {
         return try {
             val authResult = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
 

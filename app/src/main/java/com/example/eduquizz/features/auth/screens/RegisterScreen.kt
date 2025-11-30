@@ -18,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -29,25 +28,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.eduquizz.R
-import com.example.eduquizz.data.local.UserViewModel
-import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.features.auth.viewmodel.AuthViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
     onRegisterSuccess: () -> Unit,
-    viewModel: AuthViewModel = hiltViewModel(),
-    userViewModel: UserViewModel = hiltViewModel(),
-    dataViewModel: DataViewModel = hiltViewModel()
+    viewModel: AuthViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val scope = rememberCoroutineScope()
 
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -58,9 +50,8 @@ fun RegisterScreen(
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var agreedToTerms by remember { mutableStateOf(false) }
 
-    // Validation states
-    var usernameError by remember { mutableStateOf<String?>(null) }
-    var emailError by remember { mutableStateOf<String?>(null) }
+    // Chỉ validation format cơ bản, không kiểm tra availability
+    var emailFormatError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
     var confirmPasswordError by remember { mutableStateOf<String?>(null) }
 
@@ -79,47 +70,12 @@ fun RegisterScreen(
         }
     }
 
-    // Navigate on success
+    // Navigate to login on success
     LaunchedEffect(uiState.isLoggedIn) {
         if (uiState.isLoggedIn) {
-            android.util.Log.d("RegisterScreen", "Registration successful, syncing user data")
-
-            // Sync user info to UserViewModel and DataViewModel
-            uiState.currentUser?.let { user ->
-                android.util.Log.d("RegisterScreen", "New user: ${user.username}")
-
-                userViewModel.setUserName(user.username)
-                dataViewModel.updatePlayerName(user.fullName ?: user.username)
-
-                // New user, so first time is false (they need to go to Ready screen)
-                dataViewModel.setFirstTime(false)
-            }
-
-            // Small delay to ensure state updates
+            android.util.Log.d("RegisterScreen", "Registration successful, navigating to login")
             kotlinx.coroutines.delay(300)
-
-            android.util.Log.d("RegisterScreen", "Calling onRegisterSuccess")
-            onRegisterSuccess()
-        }
-    }
-
-    // Validate username availability
-    LaunchedEffect(username) {
-        if (username.length >= 3) {
-            delay(500) // Debounce
-            viewModel.checkUsernameAvailability(username) { isAvailable ->
-                usernameError = if (!isAvailable) "Username already taken" else null
-            }
-        }
-    }
-
-    // Validate email availability
-    LaunchedEffect(email) {
-        if (email.contains("@")) {
-            delay(500) // Debounce
-            viewModel.checkEmailAvailability(email) { isAvailable ->
-                emailError = if (!isAvailable) "Email already registered" else null
-            }
+            onNavigateToLogin()
         }
     }
 
@@ -203,36 +159,16 @@ fun RegisterScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Username Field
+                    // Username Field - không validate availability
                     OutlinedTextField(
                         value = username,
-                        onValueChange = {
-                            username = it
-                            if (it.length < 3) {
-                                usernameError = "Username must be at least 3 characters"
-                            }
-                        },
+                        onValueChange = { username = it },
                         label = { Text("Username") },
                         leadingIcon = {
                             Icon(Icons.Default.Person, contentDescription = null)
                         },
-                        trailingIcon = {
-                            if (username.length >= 3) {
-                                if (usernameError != null) {
-                                    Icon(Icons.Default.Error, contentDescription = null, tint = Color.Red)
-                                } else {
-                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.Green)
-                                }
-                            }
-                        },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        isError = usernameError != null,
-                        supportingText = {
-                            if (usernameError != null) {
-                                Text(usernameError ?: "", color = Color.Red, fontSize = 12.sp)
-                            }
-                        },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Next
@@ -245,36 +181,28 @@ fun RegisterScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Email Field
+                    // Email Field - chỉ validate format
                     OutlinedTextField(
                         value = email,
                         onValueChange = {
                             email = it
-                            if (!android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches() && it.isNotEmpty()) {
-                                emailError = "Invalid email format"
-                            } else if (android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches()) {
-                                emailError = null
+                            // Chỉ kiểm tra format email
+                            if (it.isNotEmpty() && !android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches()) {
+                                emailFormatError = "Invalid email format"
+                            } else {
+                                emailFormatError = null
                             }
                         },
                         label = { Text("Email") },
                         leadingIcon = {
                             Icon(Icons.Default.Email, contentDescription = null)
                         },
-                        trailingIcon = {
-                            if (email.contains("@")) {
-                                if (emailError != null) {
-                                    Icon(Icons.Default.Error, contentDescription = null, tint = Color.Red)
-                                } else {
-                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.Green)
-                                }
-                            }
-                        },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        isError = emailError != null,
+                        isError = emailFormatError != null,
                         supportingText = {
-                            if (emailError != null) {
-                                Text(emailError ?: "", color = Color.Red, fontSize = 12.sp)
+                            if (emailFormatError != null) {
+                                Text(emailFormatError ?: "", color = Color.Red, fontSize = 12.sp)
                             }
                         },
                         keyboardOptions = KeyboardOptions(
@@ -294,11 +222,13 @@ fun RegisterScreen(
                         value = password,
                         onValueChange = {
                             password = it
-                            if (it.length < 6) {
+                            // Kiểm tra độ dài password
+                            if (it.isNotEmpty() && it.length < 6) {
                                 passwordError = "Password must be at least 6 characters"
                             } else {
                                 passwordError = null
                             }
+                            // Kiểm tra khớp với confirm password
                             if (confirmPassword.isNotEmpty() && it != confirmPassword) {
                                 confirmPasswordError = "Passwords do not match"
                             } else if (confirmPassword.isNotEmpty()) {
@@ -346,7 +276,8 @@ fun RegisterScreen(
                         value = confirmPassword,
                         onValueChange = {
                             confirmPassword = it
-                            if (it != password && it.isNotEmpty()) {
+                            // Kiểm tra khớp với password
+                            if (it.isNotEmpty() && it != password) {
                                 confirmPasswordError = "Passwords do not match"
                             } else {
                                 confirmPasswordError = null
@@ -406,7 +337,7 @@ fun RegisterScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Error Message
+                    // Error Message từ backend (username/email đã tồn tại)
                     if (uiState.errorMessage != null) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -414,29 +345,72 @@ fun RegisterScreen(
                                 containerColor = Color(0xFFFEE2E2)
                             )
                         ) {
-                            Text(
-                                text = uiState.errorMessage ?: "",
-                                color = Color(0xFFDC2626),
+                            Row(
                                 modifier = Modifier.padding(12.dp),
-                                fontSize = 14.sp
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Error,
+                                    contentDescription = null,
+                                    tint = Color(0xFFDC2626),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = uiState.errorMessage ?: "",
+                                    color = Color(0xFFDC2626),
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
+                    // Success Message
+                    if (uiState.successMessage != null) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFDCFCE7)
                             )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = Color(0xFF16A34A),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = uiState.successMessage ?: "",
+                                    color = Color(0xFF16A34A),
+                                    fontSize = 14.sp
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
                     // Register Button
+                    // Chỉ kiểm tra validation cơ bản (format, length, match)
                     val isFormValid = username.length >= 3 &&
                             email.contains("@") &&
                             password.length >= 6 &&
                             password == confirmPassword &&
                             fullName.isNotBlank() &&
                             agreedToTerms &&
-                            usernameError == null &&
-                            emailError == null
+                            emailFormatError == null &&
+                            passwordError == null &&
+                            confirmPasswordError == null
 
                     Button(
                         onClick = {
                             if (isFormValid) {
+                                // Gọi register - backend sẽ kiểm tra username/email đã tồn tại
                                 viewModel.register(username, email, password, fullName)
                             }
                         },

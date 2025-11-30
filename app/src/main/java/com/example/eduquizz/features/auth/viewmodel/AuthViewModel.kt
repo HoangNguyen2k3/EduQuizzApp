@@ -67,7 +67,7 @@ class AuthViewModel @Inject constructor(
 
     fun register(username: String, email: String, password: String, fullName: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null, successMessage = null)
 
             when (val result = repository.register(username, email, password, fullName)) {
                 is AuthResult.Success -> {
@@ -75,7 +75,7 @@ class AuthViewModel @Inject constructor(
                         isLoading = false,
                         isLoggedIn = true,
                         currentUser = result.data,
-                        successMessage = "Registration successful!"
+                        successMessage = "Registration successful! Redirecting to login..."
                     )
                 }
                 is AuthResult.Error -> {
@@ -140,20 +140,6 @@ class AuthViewModel @Inject constructor(
                     Log.w("AuthViewModel", "⚠️ Unexpected result type")
                 }
             }
-        }
-    }
-
-    fun checkUsernameAvailability(username: String, onResult: (Boolean) -> Unit) {
-        viewModelScope.launch {
-            val isAvailable = repository.checkUsernameAvailability(username)
-            onResult(isAvailable)
-        }
-    }
-
-    fun checkEmailAvailability(email: String, onResult: (Boolean) -> Unit) {
-        viewModelScope.launch {
-            val isAvailable = repository.checkEmailAvailability(email)
-            onResult(isAvailable)
         }
     }
 

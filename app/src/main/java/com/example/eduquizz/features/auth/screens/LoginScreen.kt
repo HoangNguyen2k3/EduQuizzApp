@@ -4,7 +4,6 @@ import android.app.Activity
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,17 +18,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -50,7 +46,6 @@ fun LoginScreen(
     dataViewModel: DataViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val context = LocalContext.current
 
     var usernameOrEmail by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -63,26 +58,18 @@ fun LoginScreen(
     ) { result ->
         Log.d("LoginScreen", "=== Google Sign-In Result ===")
         Log.d("LoginScreen", "Result code: ${result.resultCode}")
-        Log.d("LoginScreen", "Expected OK: ${Activity.RESULT_OK}")
 
         if (result.resultCode == Activity.RESULT_OK) {
             val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
             try {
                 val account = task.getResult(ApiException::class.java)
-                Log.d("LoginScreen", "✅ Got Google account")
-                Log.d("LoginScreen", "Email: ${account.email}")
-                Log.d("LoginScreen", "Name: ${account.displayName}")
-                Log.d("LoginScreen", "ID Token: ${account.idToken?.take(20)}...")
-
+                Log.d("LoginScreen", "✅ Got Google account: ${account.email}")
                 viewModel.signInWithGoogle(account)
             } catch (e: ApiException) {
-                // Handle error
-                Log.e("LoginScreen", "❌ Google Sign-In failed")
-                Log.e("LoginScreen", "Status code: ${e.statusCode}")
-                Log.e("LoginScreen", "Message: ${e.message}")
+                Log.e("LoginScreen", "❌ Google Sign-In failed: ${e.message}")
                 e.printStackTrace()
             }
-        }else{
+        } else {
             Log.w("LoginScreen", "⚠️ Google Sign-In cancelled or failed")
         }
     }
@@ -92,14 +79,13 @@ fun LoginScreen(
         Log.d("LoginScreen", "=== State Changed ===")
         Log.d("LoginScreen", "isLoggedIn: ${uiState.isLoggedIn}")
         Log.d("LoginScreen", "currentUser: ${uiState.currentUser?.username}")
-        Log.d("LoginScreen", "errorMessage: ${uiState.errorMessage}")
 
         if (uiState.isLoggedIn) {
-            android.util.Log.d("LoginScreen", "Login successful, syncing user data")
+            Log.d("LoginScreen", "Login successful, syncing user data")
 
             // Sync user info to UserViewModel and DataViewModel
             uiState.currentUser?.let { user ->
-                android.util.Log.d("LoginScreen", "User: ${user.username}, ${user.email}")
+                Log.d("LoginScreen", "User: ${user.username}, ${user.email}")
 
                 userViewModel.setUserName(user.username)
                 dataViewModel.updatePlayerName(user.fullName ?: user.username)
@@ -113,7 +99,7 @@ fun LoginScreen(
             // Small delay to ensure state updates
             kotlinx.coroutines.delay(300)
 
-            android.util.Log.d("LoginScreen", "Calling onLoginSuccess")
+            Log.d("LoginScreen", "Calling onLoginSuccess")
             onLoginSuccess()
         }
     }
@@ -271,12 +257,23 @@ fun LoginScreen(
                                 containerColor = Color(0xFFFEE2E2)
                             )
                         ) {
-                            Text(
-                                text = uiState.errorMessage ?: "",
-                                color = Color(0xFFDC2626),
+                            Row(
                                 modifier = Modifier.padding(12.dp),
-                                fontSize = 14.sp
-                            )
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Error,
+                                    contentDescription = null,
+                                    tint = Color(0xFFDC2626),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = uiState.errorMessage ?: "",
+                                    color = Color(0xFFDC2626),
+                                    fontSize = 14.sp
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                     }
