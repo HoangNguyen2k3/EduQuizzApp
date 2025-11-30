@@ -67,6 +67,7 @@ class MainActivity : ComponentActivity() {
 //            if (!SignatureUtils.verifyAppSignature(this)) {
 //                Toast.makeText(this, "App đã bị chỉnh sửa!", Toast.LENGTH_LONG).show()
 //                finish()
+//
 //                return
 //            }
 //

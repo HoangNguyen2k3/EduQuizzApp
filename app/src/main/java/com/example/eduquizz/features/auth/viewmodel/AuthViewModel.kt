@@ -1,201 +1,159 @@
 package com.example.eduquizz.features.auth.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.eduquizz.features.auth.data.api.UserResponse
+import com.example.eduquizz.features.auth.data.repository.AuthRepository
+import com.example.eduquizz.features.auth.data.repository.AuthResult
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONObject
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-import com.example.eduquizz.data.auth.UserSessionManager
+
+data class AuthUiState(
+    val isLoading: Boolean = false,
+    val isLoggedIn: Boolean = false,
+    val currentUser: UserResponse? = null,
+    val errorMessage: String? = null,
+    val successMessage: String? = null
+)
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val sessionManager: UserSessionManager
+    private val repository: AuthRepository
 ) : ViewModel() {
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
-        .build()
+    private val _uiState = MutableStateFlow(AuthUiState())
+    val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
-    private val baseUrl = "http://10.0.2.2:8080/api/auth" // For emulator
-    // For physical device, use: "http://YOUR_COMPUTER_IP:8080/api/auth"
+    init {
+        checkLoginStatus()
+    }
 
-    val isLoggedIn = sessionManager.isLoggedIn
-    val userSession = sessionManager.userSession
-
-    fun register(
-        username: String,
-        email: String,
-        password: String,
-        onSuccess: () -> Unit,
-        onError: (String) -> Unit
-    ) {
+    private fun checkLoginStatus() {
         viewModelScope.launch {
-            try {
-                val result = withContext(Dispatchers.IO) {
-                    val json = JSONObject().apply {
-                        put("username", username)
-                        put("email", email)
-                        put("password", password)
-                    }
+            val isLoggedIn = repository.isUserLoggedIn()
+            _uiState.value = _uiState.value.copy(isLoggedIn = isLoggedIn)
+        }
+    }
 
-                    val requestBody = json.toString()
-                        .toRequestBody("application/json".toMediaType())
+    fun login(usernameOrEmail: String, password: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
 
-                    val request = Request.Builder()
-                        .url("$baseUrl/register")
-                        .post(requestBody)
-                        .build()
-
-                    val response = client.newCall(request).execute()
-                    val responseBody = response.body?.string() ?: ""
-
-                    if (response.isSuccessful) {
-                        val jsonResponse = JSONObject(responseBody)
-                        Result.success(jsonResponse)
-                    } else {
-                        val errorJson = JSONObject(responseBody)
-                        val errorMessage = errorJson.optString("error", "Registration failed")
-                        Result.failure(Exception(errorMessage))
-                    }
+            when (val result = repository.login(usernameOrEmail, password)) {
+                is AuthResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isLoggedIn = true,
+                        currentUser = result.data,
+                        successMessage = "Login successful!"
+                    )
                 }
-
-                result.onSuccess {
-                    onSuccess()
-                }.onFailure { exception ->
-                    onError(exception.message ?: "Registration failed")
+                is AuthResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.message
+                    )
                 }
-            } catch (e: Exception) {
-                onError("Network error: ${e.message}")
+                else -> {}
             }
         }
     }
 
-    fun login(
-        username: String,
-        password: String,
-        onSuccess: () -> Unit,
-        onError: (String) -> Unit
-    ) {
+    fun register(username: String, email: String, password: String, fullName: String) {
         viewModelScope.launch {
-            try {
-                val result = withContext(Dispatchers.IO) {
-                    val json = JSONObject().apply {
-                        put("username", username)
-                        put("password", password)
-                    }
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null, successMessage = null)
 
-                    val requestBody = json.toString()
-                        .toRequestBody("application/json".toMediaType())
-
-                    val request = Request.Builder()
-                        .url("$baseUrl/login")
-                        .post(requestBody)
-                        .build()
-
-                    val response = client.newCall(request).execute()
-                    val responseBody = response.body?.string() ?: ""
-
-                    if (response.isSuccessful) {
-                        val jsonResponse = JSONObject(responseBody)
-                        Result.success(jsonResponse)
-                    } else {
-                        val errorJson = JSONObject(responseBody)
-                        val errorMessage = errorJson.optString("error", "Login failed")
-                        Result.failure(Exception(errorMessage))
-                    }
+            when (val result = repository.register(username, email, password, fullName)) {
+                is AuthResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isLoggedIn = true,
+                        currentUser = result.data,
+                        successMessage = "Registration successful! Redirecting to login..."
+                    )
                 }
-
-                result.onSuccess { jsonResponse ->
-                    // Save user data to local storage or state management
-                    val username = jsonResponse.optString("username")
-                    val email = jsonResponse.optString("email")
-                    // TODO: Save to DataStore or SharedPreferences
-                    onSuccess()
-                }.onFailure { exception ->
-                    onError(exception.message ?: "Login failed")
+                is AuthResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.message
+                    )
                 }
-            } catch (e: Exception) {
-                onError("Network error: ${e.message}")
+                else -> {}
             }
         }
     }
 
-    fun loginWithFirebase(
-        firebaseUid: String,
-        email: String,
-        displayName: String?,
-        photoUrl: String?,
-        onSuccess: () -> Unit,
-        onError: (String) -> Unit
-    ) {
+    fun signInWithGoogle(account: GoogleSignInAccount) {
         viewModelScope.launch {
-            try {
-                val result = withContext(Dispatchers.IO) {
-                    val json = JSONObject().apply {
-                        put("firebaseUid", firebaseUid)
-                        put("email", email)
-                        put("displayName", displayName ?: "")
-                        put("photoUrl", photoUrl ?: "")
-                    }
+            Log.d("AuthViewModel", "=== signInWithGoogle Called ===")
+            Log.d("AuthViewModel", "Account: ${account.email}")
 
-                    val requestBody = json.toString()
-                        .toRequestBody("application/json".toMediaType())
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
 
-                    val request = Request.Builder()
-                        .url("$baseUrl/firebase-login")
-                        .post(requestBody)
-                        .build()
+            when (val result = repository.signInWithGoogle(account)) {
+                is AuthResult.Success -> {
+                    Log.d("AuthViewModel", "✅ Repository returned Success")
+                    val firebaseUser = result.data
+                    // Convert Firebase user to UserResponse
+                    val userResponse = UserResponse(
+                        id = 0,
+                        username = firebaseUser.displayName ?: firebaseUser.email?.substringBefore("@") ?: "user",
+                        email = firebaseUser.email ?: "",
+                        fullName = firebaseUser.displayName,
+                        phoneNumber = firebaseUser.phoneNumber,
+                        profileImageUrl = firebaseUser.photoUrl?.toString(),
+                        createdAt = null,
+                        lastLogin = null
+                    )
 
-                    val response = client.newCall(request).execute()
-                    val responseBody = response.body?.string() ?: ""
+                    Log.d("AuthViewModel", "Setting state: isLoggedIn=true")
 
-                    if (response.isSuccessful) {
-                        val jsonResponse = JSONObject(responseBody)
-                        Result.success(jsonResponse)
-                    } else {
-                        val errorJson = JSONObject(responseBody)
-                        val errorMessage = errorJson.optString("error", "Firebase login failed")
-                        Result.failure(Exception(errorMessage))
-                    }
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isLoggedIn = true,
+                        currentUser = userResponse,
+                        successMessage = "Google sign-in successful!"
+                    )
+
+                    Log.d("AuthViewModel", "✅ State updated successfully")
+
+                    // Force update login state immediately
+                    kotlinx.coroutines.delay(100)
                 }
+                is AuthResult.Error -> {
 
-                result.onSuccess { jsonResponse ->
-                    // Save user data to session
-                    viewModelScope.launch {
-                        sessionManager.saveUserSession(
-                            userId = jsonResponse.optLong("id"),
-                            username = jsonResponse.optString("username"),
-                            email = jsonResponse.optString("email"),
-                            displayName = jsonResponse.optString("displayName"),
-                            photoUrl = jsonResponse.optString("photoUrl"),
-                            authProvider = "local"
-                        )
-                    }
-                    onSuccess()
-                }.onFailure { exception ->
-                    onError(exception.message ?: "Firebase login failed")
+                    Log.e("AuthViewModel", "❌ Repository returned Error")
+                    Log.e("AuthViewModel", "Message: ${result.message}")
+
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.message
+                    )
                 }
-            } catch (e: Exception) {
-                onError("Network error: ${e.message}")
+                else -> {
+                    Log.w("AuthViewModel", "⚠️ Unexpected result type")
+                }
             }
         }
     }
 
-    // Logout function
-    fun logout(onSuccess: () -> Unit) {
-        viewModelScope.launch {
-            sessionManager.clearUserSession()
-            onSuccess()
-        }
+    fun signOut() {
+        repository.signOut()
+        _uiState.value = AuthUiState()
     }
+
+    fun clearMessages() {
+        _uiState.value = _uiState.value.copy(
+            errorMessage = null,
+            successMessage = null
+        )
+    }
+
+    fun getGoogleSignInClient() = repository.getGoogleSignInClient()
 }

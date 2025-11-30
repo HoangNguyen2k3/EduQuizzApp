@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
@@ -45,7 +46,9 @@ import com.example.eduquizz.features.wordsearch.screens.TopicSelectionScreen
 import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
 import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.features.ContestOnline.LeaderboardScreen
-
+import com.example.eduquizz.features.auth.screens.LoginScreen
+import com.example.eduquizz.features.auth.screens.RegisterScreen
+import com.example.eduquizz.features.auth.viewmodel.AuthViewModel
 import com.example.eduquizz.features.contest.screens.ContestScreen
 import com.example.eduquizz.features.mapping.model.Leaderboard
 import com.example.eduquizz.features.soundgame.screen.SoundGameScreen
@@ -56,13 +59,7 @@ import com.example.eduquizz.features.match.screen.MatchGameIntroScreen
 import com.example.eduquizz.features.match.screen.MatchLevelSelectionScreen
 import com.example.eduquizz.features.match.screen.MatchMainScreen
 
-import com.example.eduquizz.features.auth.screens.LoginScreen
-import com.example.eduquizz.features.auth.screens.RegisterScreen
-
 object Routes {
-    //Auth
-    const val LOGIN = "login"
-    const val REGISTER = "register"
     //Main
     const val ENGLISH_GAMES_SCENE = "english_games_scene"
     const val MATH_GAMES_SCENE = "math_games_scene"
@@ -101,6 +98,10 @@ object Routes {
     const val MATCH_GAME_INTRO = "match_game_intro"
     const val MATCH_GAME_LEVEL_SELECTION = "match_game_level_selection"
     const val MATCH_GAME_MAIN = "match_game_main/{levelId}"
+
+    // Auth
+    const val LOGIN = "login"
+    const val REGISTER = "register"
 }
 
 @Composable
@@ -110,7 +111,12 @@ fun NavGraph(
 ) {
     val userViewModel: UserViewModel = hiltViewModel()
     val dataViewModel: DataViewModel = hiltViewModel()
+    val authViewModel: AuthViewModel = hiltViewModel()
+
     val firstTime by dataViewModel.firstTime.observeAsState(0)
+    val authUiState by authViewModel.uiState.collectAsState()
+
+
     NavHost(
         navController = navController,
         startDestination = Routes.SPLASH,
@@ -120,13 +126,56 @@ fun NavGraph(
         popEnterTransition = { fadeIn(animationSpec = tween(200)) },
         popExitTransition = { fadeOut(animationSpec = tween(200)) }
     ) {
+        composable(Routes.LOGIN) {
+            LoginScreen(
+                onNavigateToRegister = {
+                    navController.navigate(Routes.REGISTER)
+                },
+                onLoginSuccess = {
+                    android.util.Log.d("NavGraph", "Login success callback, firstTime=$firstTime")
+
+                    // Re-check firstTime after login
+                    val shouldGoToReady = firstTime == false
+
+                    android.util.Log.d("NavGraph", "shouldGoToReady=$shouldGoToReady")
+
+                    if (shouldGoToReady) {
+                        android.util.Log.d("NavGraph", "Navigating to READY")
+                        navController.navigate(Routes.READY) {
+                            popUpTo(Routes.LOGIN) { inclusive = true }
+                        }
+                    } else {
+                        android.util.Log.d("NavGraph", "Navigating to MAIN_DANH")
+                        navController.navigate(Routes.MAIN_DANH) {
+                            popUpTo(Routes.LOGIN) { inclusive = true }
+                        }
+                    }
+                }
+            )
+        }
+
+        composable(Routes.REGISTER) {
+            RegisterScreen(
+                onNavigateToLogin = {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.REGISTER) { inclusive = true }
+                    }
+                },
+                onRegisterSuccess = {
+                    android.util.Log.d("NavGraph", "Register success - navigating to LOGIN")
+                    // After successful registration, navigate to login screen
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.REGISTER) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(Routes.SPLASH) {
             SplashScreen(
                 onNavigateToMain = {
                     // Check if user is logged in
-                    val isLoggedIn = false // TODO: Check from DataStore/SharedPreferences
-
-                    if (isLoggedIn) {
+                    if (authUiState.isLoggedIn) {
                         if (firstTime == false) {
                             navController.navigate(Routes.READY) {
                                 popUpTo(Routes.SPLASH) { inclusive = true }
@@ -153,31 +202,6 @@ fun NavGraph(
                     }
                 },
                 userViewModel = userViewModel
-            )
-        }
-        composable(Routes.LOGIN) {
-            LoginScreen(
-                onLoginSuccess = {
-                    navController.navigate(Routes.MAIN_DANH) {
-                        popUpTo(Routes.LOGIN) { inclusive = true }
-                    }
-                },
-                onNavigateToRegister = {
-                    navController.navigate(Routes.REGISTER)
-                }
-            )
-        }
-
-        composable(Routes.REGISTER) {
-            RegisterScreen(
-                onRegisterSuccess = {
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(Routes.REGISTER) { inclusive = true }
-                    }
-                },
-                onNavigateToLogin = {
-                    navController.popBackStack()
-                }
             )
         }
 

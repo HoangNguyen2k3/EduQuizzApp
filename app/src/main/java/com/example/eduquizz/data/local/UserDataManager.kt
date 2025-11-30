@@ -55,6 +55,9 @@ class UserViewModel @Inject constructor(
         }
     }
 
+    // Alias cho setUserName để tương thích với AuthScreen
+    fun updateUserName(name: String) = setUserName(name)
+
     fun clearUserName() {
         viewModelScope.launch {
             context.dataStore.edit { preferences ->

@@ -3,13 +3,14 @@ package com.example.eduquizz.security
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import java.security.MessageDigest
 
 object SignatureUtils {
 
     fun verifyAppSignature(context: Context): Boolean {
 
-        val expected = "3C:97:D0:FB:AD:D0:ED:92:78:DA:80:6B:6A:F7:FC:F0:F8:13:D1:3C:DC:58:28:B5:CE:0F:67:94:F4:00:2B:51"
+        val expected = "EC:0E:5E:7D:C8:F3:B2:9B:F1:4F:CA:E4:D1:E9:01:05:4A:23:CD:F2:C5:69:D1:FE:20:E9:9E:C3:40:D4:50:57"
 
         return try {
             val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -37,7 +38,7 @@ object SignatureUtils {
             val hex = md.digest(signatures[0].toByteArray()).joinToString(":") {
                 "%02X".format(it)
             }
-
+            Log.d("SIGNATURE", hex)
             hex == expected
 
         } catch (e: Exception) {
