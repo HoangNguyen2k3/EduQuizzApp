@@ -29,6 +29,7 @@ fun AdminDashboardScreen(
     username: String,
     onBackClick: () -> Unit,
     onGameManagementClick: (GameType) -> Unit,
+    onContestManagementClick: () -> Unit = {},
     viewModel: AdminViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -92,7 +93,8 @@ fun AdminDashboardScreen(
                 is AdminUiState.Success -> {
                     AdminDashboardContent(
                         stats = dashboardStats,
-                        onGameManagementClick = onGameManagementClick
+                        onGameManagementClick = onGameManagementClick,
+                        onContestManagementClick = onContestManagementClick
                     )
                 }
                 is AdminUiState.Error -> {
@@ -109,7 +111,8 @@ fun AdminDashboardScreen(
 @Composable
 private fun AdminDashboardContent(
     stats: com.example.eduquizz.features.admin.data.AdminDashboardStats,
-    onGameManagementClick: (GameType) -> Unit
+    onGameManagementClick: (GameType) -> Unit,
+    onContestManagementClick: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -127,29 +130,66 @@ private fun AdminDashboardContent(
 
         // Stats Grid
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                StatCard(
-                    title = "Total Games",
-                    value = (stats.wordSearchTopics + stats.batChuLevels +
-                            stats.matchLevels + stats.quizLevels +
-                            stats.sceneLevels + stats.soundLevels).toString(),
-                    icon = Icons.Default.Games,
-                    color = Color(0xFF667EEA),
-                    modifier = Modifier.weight(1f)
-                )
-                StatCard(
-                    title = "Total Levels",
-                    value = (stats.wordSearchTopics + stats.batChuLevels +
-                            stats.matchLevels + stats.quizLevels +
-                            stats.sceneLevels + stats.soundLevels).toString(),
-                    icon = Icons.Default.Layers,
-                    color = Color(0xFFFF6B9D),
-                    modifier = Modifier.weight(1f)
-                )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    StatCard(
+                        title = "Total Games",
+                        value = (stats.wordSearchTopics + stats.batChuLevels +
+                                stats.matchLevels + stats.quizLevels +
+                                stats.sceneLevels + stats.soundLevels).toString(),
+                        icon = Icons.Default.Games,
+                        color = Color(0xFF667EEA),
+                        modifier = Modifier.weight(1f)
+                    )
+                    StatCard(
+                        title = "Questions",
+                        value = stats.totalQuestions.toString(),
+                        icon = Icons.Default.QuestionAnswer,
+                        color = Color(0xFF4CAF50),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    StatCard(
+                        title = "Total Contests",
+                        value = stats.totalContests.toString(),
+                        icon = Icons.Default.EmojiEvents,
+                        color = Color(0xFFFFB74D),
+                        modifier = Modifier.weight(1f)
+                    )
+                    StatCard(
+                        title = "Active Now",
+                        value = stats.activeContests.toString(),
+                        icon = Icons.Default.Speed,
+                        color = Color(0xFFFF6B9D),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
+        }
+
+        // Contest Management Section
+        item {
+            Text(
+                "Contest Management",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+            )
+        }
+
+        item {
+            ContestManagementCard(
+                totalContests = stats.totalContests,
+                activeContests = stats.activeContests,
+                onClick = onContestManagementClick
+            )
         }
 
         item {
@@ -176,6 +216,75 @@ private fun AdminDashboardContent(
                 gameName = name,
                 levelCount = count,
                 onClick = { onGameManagementClick(gameType) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ContestManagementCard(
+    totalContests: Int,
+    activeContests: Int,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFFFB74D).copy(alpha = 0.1f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.EmojiEvents,
+                    contentDescription = "Contest",
+                    modifier = Modifier.size(48.dp),
+                    tint = Color(0xFFFFB74D)
+                )
+                Column {
+                    Text(
+                        text = "Online Contests",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF333333)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "$totalContests total",
+                            fontSize = 14.sp,
+                            color = Color(0xFF666666)
+                        )
+                        if (activeContests > 0) {
+                            Text(
+                                text = "• $activeContests active",
+                                fontSize = 14.sp,
+                                color = Color(0xFF4CAF50),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = "Manage",
+                tint = Color(0xFFFFB74D)
             )
         }
     }
