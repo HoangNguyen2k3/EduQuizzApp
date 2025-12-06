@@ -19,7 +19,8 @@ data class AuthUiState(
     val isLoggedIn: Boolean = false,
     val currentUser: UserResponse? = null,
     val errorMessage: String? = null,
-    val successMessage: String? = null
+    val successMessage: String? = null,
+    val isAdmin: Boolean = false  // NEW: Track admin status
 )
 
 @HiltViewModel
@@ -37,7 +38,22 @@ class AuthViewModel @Inject constructor(
     private fun checkLoginStatus() {
         viewModelScope.launch {
             val isLoggedIn = repository.isUserLoggedIn()
+            if (isLoggedIn) {
+                // Load saved user data if logged in
+                loadSavedUserData()
+            }
             _uiState.value = _uiState.value.copy(isLoggedIn = isLoggedIn)
+        }
+    }
+
+    // NEW: Load saved user data from repository
+    private suspend fun loadSavedUserData() {
+        val savedUser = repository.getSavedUser()
+        if (savedUser != null) {
+            _uiState.value = _uiState.value.copy(
+                currentUser = savedUser,
+                isAdmin = savedUser.role == "ADMIN"
+            )
         }
     }
 
@@ -47,10 +63,16 @@ class AuthViewModel @Inject constructor(
 
             when (val result = repository.login(usernameOrEmail, password)) {
                 is AuthResult.Success -> {
+                    val user = result.data
+                    val isAdmin = user.role == "ADMIN"  // NEW: Check admin status
+
+                    Log.d("AuthViewModel", "Login successful - User: ${user.username}, Role: ${user.role}, IsAdmin: $isAdmin")
+
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isLoggedIn = true,
-                        currentUser = result.data,
+                        currentUser = user,
+                        isAdmin = isAdmin,  // NEW: Set admin flag
                         successMessage = "Login successful!"
                     )
                 }
@@ -71,10 +93,14 @@ class AuthViewModel @Inject constructor(
 
             when (val result = repository.register(username, email, password, fullName)) {
                 is AuthResult.Success -> {
+                    val user = result.data
+                    val isAdmin = user.role == "ADMIN"  // NEW: Check admin status
+
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isLoggedIn = true,
-                        currentUser = result.data,
+                        currentUser = user,
+                        isAdmin = isAdmin,  // NEW: Set admin flag
                         successMessage = "Registration successful! Redirecting to login..."
                     )
                 }
@@ -106,6 +132,7 @@ class AuthViewModel @Inject constructor(
                         username = firebaseUser.displayName ?: firebaseUser.email?.substringBefore("@") ?: "user",
                         email = firebaseUser.email ?: "",
                         fullName = firebaseUser.displayName,
+                        role = "USER",  // NEW: Default role for Google sign-in
                         phoneNumber = firebaseUser.phoneNumber,
                         profileImageUrl = firebaseUser.photoUrl?.toString(),
                         createdAt = null,
@@ -118,6 +145,7 @@ class AuthViewModel @Inject constructor(
                         isLoading = false,
                         isLoggedIn = true,
                         currentUser = userResponse,
+                        isAdmin = false,  // NEW: Google users are not admin by default
                         successMessage = "Google sign-in successful!"
                     )
 
@@ -127,7 +155,6 @@ class AuthViewModel @Inject constructor(
                     kotlinx.coroutines.delay(100)
                 }
                 is AuthResult.Error -> {
-
                     Log.e("AuthViewModel", "❌ Repository returned Error")
                     Log.e("AuthViewModel", "Message: ${result.message}")
 
@@ -156,4 +183,14 @@ class AuthViewModel @Inject constructor(
     }
 
     fun getGoogleSignInClient() = repository.getGoogleSignInClient()
+
+    // NEW: Helper function to check if current user is admin
+    fun isCurrentUserAdmin(): Boolean {
+        return _uiState.value.isAdmin
+    }
+
+    // NEW: Get current username (useful for admin API calls)
+    fun getCurrentUsername(): String {
+        return _uiState.value.currentUser?.username ?: ""
+    }
 }

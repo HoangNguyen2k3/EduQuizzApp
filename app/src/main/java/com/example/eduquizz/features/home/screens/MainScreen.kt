@@ -33,27 +33,34 @@ import com.example.eduquizz.R
 import com.example.eduquizz.data.models.Subject
 import com.example.eduquizz.features.ContestOnline.ContestPrefs
 import com.example.eduquizz.features.ThongKe.ThongKe
+import com.example.eduquizz.features.auth.viewmodel.AuthViewModel
 import com.example.eduquizz.features.home.components.FloatingMoodButton
 import com.example.quizapp.ui.theme.QuizAppTheme
 import com.example.eduquizz.features.chatbox.FloatingChatButton
 
 @Composable
 fun MainScreen(
-    onNavigateToEnglish:() -> Unit = {},
-    onNavigateToMath:() -> Unit = {},
-    onNavigateToMapping:() -> Unit = {}, // Thêm callback cho Mapping
-    onNavigateToContest:() -> Unit = {}, // Thêm callback cho Contest
+    onNavigateToEnglish: () -> Unit = {},
+    onNavigateToMath: () -> Unit = {},
+    onNavigateToMapping: () -> Unit = {},
+    onNavigateToContest: () -> Unit = {},
     onNavigateToLeaderBoard: () -> Unit = {},
+    onNavigateToAdmin: () -> Unit = {}, // NEW: Admin navigation
     dataviewModel: DataViewModel = hiltViewModel(),
-    userViewModel: UserViewModel = hiltViewModel()
+    userViewModel: UserViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel() // NEW: Auth viewmodel
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
 
+    // NEW: Check if user is admin
+    val authUiState by authViewModel.uiState.collectAsState()
+    val isAdmin = authUiState.currentUser?.role == "ADMIN"
+
     val tabBackgroundColors = listOf(
-        colorResource(id = R.color.bg_coral), // Tab Home
-        colorResource(id = R.color.secondary_blue), // Tab Courses
-        colorResource(id = R.color.bg_coral), // Tab Statistics
-        colorResource(id = R.color.math_light_purple) // Tab Profile
+        colorResource(id = R.color.bg_coral),
+        colorResource(id = R.color.secondary_blue),
+        colorResource(id = R.color.bg_coral),
+        colorResource(id = R.color.math_light_purple)
     )
 
     // System UI Controller
