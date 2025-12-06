@@ -1,5 +1,6 @@
 package com.example.eduquizz.dI
 
+import com.example.eduquizz.features.auth.data.ApiService
 import com.example.eduquizz.features.mapping.repositories.SceneApiService
 import com.example.eduquizz.features.mapping.repositories.SceneRepository
 import com.example.eduquizz.features.quizzGame.network.QuizGameApi
@@ -64,5 +65,11 @@ object NetworkModule {
     @Singleton
     fun provideSceneRepository(apiService: SceneApiService): SceneRepository {
         return SceneRepository(apiService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideApiService(retrofit: Retrofit): ApiService {
+        return retrofit.create(ApiService::class.java)
     }
 }
