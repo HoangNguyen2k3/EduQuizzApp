@@ -1,0 +1,341 @@
+package com.example.eduquizz.features.admin.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.eduquizz.features.admin.data.AdminUiState
+import com.example.eduquizz.features.admin.viewmodel.AdminViewModel
+import com.example.eduquizz.features.admin.viewmodel.GameType
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AdminDashboardScreen(
+    username: String,
+    onBackClick: () -> Unit,
+    onGameManagementClick: (GameType) -> Unit,
+    viewModel: AdminViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val dashboardStats by viewModel.dashboardStats.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    LaunchedEffect(username) {
+        viewModel.checkAdminStatus(username)
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            "Admin Panel",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "Welcome, $username",
+                            fontSize = 12.sp,
+                            color = Color.White.copy(alpha = 0.7f)
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.Default.ArrowBack, "Back", tint = Color.White)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF667EEA)
+                )
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFFF5F5F5),
+                            Color(0xFFE8E8E8)
+                        )
+                    )
+                )
+        ) {
+            when (uiState) {
+                is AdminUiState.Loading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+                is AdminUiState.AccessDenied -> {
+                    AccessDeniedContent()
+                }
+                is AdminUiState.Success -> {
+                    AdminDashboardContent(
+                        stats = dashboardStats,
+                        onGameManagementClick = onGameManagementClick
+                    )
+                }
+                is AdminUiState.Error -> {
+                    ErrorContent(
+                        message = (uiState as AdminUiState.Error).message,
+                        onRetry = { viewModel.loadDashboardStats(username) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdminDashboardContent(
+    stats: com.example.eduquizz.features.admin.data.AdminDashboardStats,
+    onGameManagementClick: (GameType) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Text(
+                "Dashboard Overview",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
+        // Stats Grid
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                StatCard(
+                    title = "Total Games",
+                    value = (stats.wordSearchTopics + stats.batChuLevels +
+                            stats.matchLevels + stats.quizLevels +
+                            stats.sceneLevels + stats.soundLevels).toString(),
+                    icon = Icons.Default.Games,
+                    color = Color(0xFF667EEA),
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    title = "Total Levels",
+                    value = (stats.wordSearchTopics + stats.batChuLevels +
+                            stats.matchLevels + stats.quizLevels +
+                            stats.sceneLevels + stats.soundLevels).toString(),
+                    icon = Icons.Default.Layers,
+                    color = Color(0xFFFF6B9D),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        item {
+            Text(
+                "Game Management",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+            )
+        }
+
+        // Game Management Cards
+        items(
+            listOf(
+                Triple(GameType.WORD_SEARCH, "Word Search", stats.wordSearchTopics),
+                Triple(GameType.BAT_CHU, "Bat Chu", stats.batChuLevels),
+                Triple(GameType.MATCH_GAME, "Match Game", stats.matchLevels),
+                Triple(GameType.QUIZ, "Quiz Game", stats.quizLevels),
+                Triple(GameType.SCENE, "Scene Game", stats.sceneLevels),
+                Triple(GameType.SOUND, "Sound Game", stats.soundLevels)
+            )
+        ) { (gameType, name, count) ->
+            GameManagementCard(
+                gameName = name,
+                levelCount = count,
+                onClick = { onGameManagementClick(gameType) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatCard(
+    title: String,
+    value: String,
+    icon: ImageVector,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.height(120.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = color)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.8f),
+                modifier = Modifier.size(32.dp)
+            )
+            Column {
+                Text(
+                    text = value,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    text = title,
+                    fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GameManagementCard(
+    gameName: String,
+    levelCount: Int,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = gameName,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF333333)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "$levelCount levels",
+                    fontSize = 14.sp,
+                    color = Color(0xFF666666)
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = "Manage",
+                tint = Color(0xFF667EEA)
+            )
+        }
+    }
+}
+
+@Composable
+private fun AccessDeniedContent() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.Lock,
+            contentDescription = "Access Denied",
+            modifier = Modifier.size(80.dp),
+            tint = Color(0xFFFF6B6B)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Access Denied",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF333333)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "You don't have admin privileges",
+            fontSize = 16.sp,
+            color = Color(0xFF666666)
+        )
+    }
+}
+
+@Composable
+private fun ErrorContent(
+    message: String,
+    onRetry: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.Error,
+            contentDescription = "Error",
+            modifier = Modifier.size(80.dp),
+            tint = Color(0xFFFF6B6B)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Error",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = message,
+            fontSize = 16.sp,
+            color = Color(0xFF666666)
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(
+            onClick = onRetry,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF667EEA)
+            )
+        ) {
+            Text("Retry")
+        }
+    }
+}

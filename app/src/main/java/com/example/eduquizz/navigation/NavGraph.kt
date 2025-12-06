@@ -46,6 +46,9 @@ import com.example.eduquizz.features.wordsearch.screens.TopicSelectionScreen
 import com.example.eduquizz.features.wordsearch.viewmodel.WordSearchViewModel
 import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.features.ContestOnline.LeaderboardScreen
+import com.example.eduquizz.features.admin.screens.AdminDashboardScreen
+import com.example.eduquizz.features.admin.screens.GameManagementScreen
+import com.example.eduquizz.features.admin.viewmodel.GameType
 import com.example.eduquizz.features.auth.screens.LoginScreen
 import com.example.eduquizz.features.auth.screens.RegisterScreen
 import com.example.eduquizz.features.auth.viewmodel.AuthViewModel
@@ -102,6 +105,11 @@ object Routes {
     // Auth
     const val LOGIN = "login"
     const val REGISTER = "register"
+
+    const val ADMIN_DASHBOARD = "admin_dashboard"
+    const val ADMIN_GAME_MANAGEMENT = "admin_game_management/{gameType}"
+
+    fun adminGameManagement(gameType: String) = "admin_game_management/$gameType"
 }
 
 @Composable
@@ -205,6 +213,47 @@ fun NavGraph(
             )
         }
 
+        // Admin Dashboard
+        composable(Routes.ADMIN_DASHBOARD) {
+            val username = authViewModel.getCurrentUsername()
+
+            AdminDashboardScreen(
+                username = username,
+                onBackClick = {
+                    navController.navigate(Routes.MAIN_DANH) {
+                        popUpTo(Routes.ADMIN_DASHBOARD) { inclusive = true }
+                    }
+                },
+                onGameManagementClick = { gameType ->
+                    navController.navigate(Routes.adminGameManagement(gameType.name))
+                }
+            )
+        }
+
+// Admin Game Management
+        composable(
+            route = Routes.ADMIN_GAME_MANAGEMENT,
+            arguments = listOf(navArgument("gameType") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val gameTypeString = backStackEntry.arguments?.getString("gameType") ?: "WORD_SEARCH"
+            val gameType = try {
+                GameType.valueOf(gameTypeString)
+            } catch (e: Exception) {
+                GameType.WORD_SEARCH
+            }
+            val username = authViewModel.getCurrentUsername()
+
+            GameManagementScreen(
+                username = username,
+                gameType = gameType,
+                onBackClick = {
+                    navController.navigate(Routes.ADMIN_DASHBOARD) {
+                        popUpTo(Routes.ADMIN_DASHBOARD) { inclusive = false }
+                    }
+                }
+            )
+        }
+
         composable(Routes.MAIN_DANH) {
             MainScreen(
                 onNavigateToEnglish = {
@@ -222,7 +271,12 @@ fun NavGraph(
                 onNavigateToLeaderBoard = {
                     navController.navigate(Routes.LEADERBOARD_GAMES_SCENE)
                 },
-                userViewModel = userViewModel
+                onNavigateToAdmin = {  // NEW: Admin navigation
+                    navController.navigate(Routes.ADMIN_DASHBOARD)
+                },
+                userViewModel = userViewModel,
+                dataviewModel = dataViewModel,
+                authViewModel = authViewModel  // NEW: Pass authViewModel
             )
         }
 

@@ -67,11 +67,15 @@ data class UserResponse(
     val username: String,
     val email: String,
     val fullName: String?,
+    val role: String = "USER",  // NEW: Added role field with default value
     val phoneNumber: String?,
     val profileImageUrl: String?,
     val createdAt: String?,
     val lastLogin: String?
-)
+){
+    fun isAdmin(): Boolean = role == "ADMIN"
+    fun isUser(): Boolean = role == "USER"
+}
 
 data class MessageResponse(
     val success: Boolean,
