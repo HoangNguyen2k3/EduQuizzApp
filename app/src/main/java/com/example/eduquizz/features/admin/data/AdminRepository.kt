@@ -21,8 +21,10 @@ class AdminRepository @Inject constructor(
     private val apiService: ApiService
 ) {
     companion object {
-        // TODO: Đổi thành false khi backend đã implement Question/Contest endpoints
-        private const val USE_MOCK_DATA = true
+        // Backend PHẢI chạy cho: Login, Check Admin
+        // Mock data CHỈ dùng cho: Questions và Contests management
+        // Set to false khi backend đã implement đầy đủ Question/Contest APIs
+        private const val USE_MOCK_DATA = false  // false = kết nối backend thật
     }
     suspend fun checkAdminStatus(username: String): Result<Boolean> {
         return try {
@@ -39,19 +41,29 @@ class AdminRepository @Inject constructor(
 
     suspend fun getDashboardStats(username: String): Result<AdminDashboardStats> {
         return try {
+            android.util.Log.d("AdminRepository", "Loading dashboard stats for: $username")
             val response = apiService.getAdminDashboard(username)
+            android.util.Log.d("AdminRepository", "Response code: ${response.code()}")
+            
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body?.success == true && body.data != null) {
-                    Result.success(body.data)
+                android.util.Log.d("AdminRepository", "Response body: $body")
+                
+                if (body?.success == true && body.stats != null) {
+                    android.util.Log.d("AdminRepository", "Dashboard loaded successfully")
+                    Result.success(body.stats)
                 } else {
-                    Result.failure(Exception(body?.message ?: "Access denied"))
+                    val errorMsg = body?.message ?: "Access denied"
+                    android.util.Log.e("AdminRepository", "Dashboard error: $errorMsg")
+                    Result.failure(Exception(errorMsg))
                 }
             } else {
-                Result.failure(Exception("Failed to load dashboard"))
+                android.util.Log.e("AdminRepository", "Failed to load dashboard: ${response.code()}")
+                Result.failure(Exception("Failed to load dashboard: HTTP ${response.code()}"))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            android.util.Log.e("AdminRepository", "Dashboard exception: ${e.message}", e)
+            Result.failure(Exception("Cannot connect to server. Please check: 1) Backend is running, 2) Network connection. Error: ${e.message}"))
         }
     }
 
