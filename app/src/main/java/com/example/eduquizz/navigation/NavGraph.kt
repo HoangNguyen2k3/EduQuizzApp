@@ -265,9 +265,7 @@ fun NavGraph(
             AdminDashboardScreen(
                 username = username,
                 onBackClick = {
-                    navController.navigate(Routes.MAIN_DANH) {
-                        popUpTo(Routes.ADMIN_DASHBOARD) { inclusive = true }
-                    }
+                    navController.navigate(Routes.LOGIN)
                 },
                 onGameManagementClick = { gameType ->
                     navController.navigate(Routes.adminGameManagement(gameType.name))
