@@ -48,6 +48,10 @@ import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.features.ContestOnline.LeaderboardScreen
 import com.example.eduquizz.features.admin.screens.AdminDashboardScreen
 import com.example.eduquizz.features.admin.screens.GameManagementScreen
+import com.example.eduquizz.features.admin.screens.QuestionListScreen
+import com.example.eduquizz.features.admin.screens.QuestionEditorScreen
+import com.example.eduquizz.features.admin.screens.ContestManagementScreen
+import com.example.eduquizz.features.admin.screens.ContestEditorScreen
 import com.example.eduquizz.features.admin.viewmodel.GameType
 import com.example.eduquizz.features.auth.screens.LoginScreen
 import com.example.eduquizz.features.auth.screens.RegisterScreen
@@ -106,10 +110,20 @@ object Routes {
     const val LOGIN = "login"
     const val REGISTER = "register"
 
+    // Admin
     const val ADMIN_DASHBOARD = "admin_dashboard"
     const val ADMIN_GAME_MANAGEMENT = "admin_game_management/{gameType}"
+    const val ADMIN_QUESTION_LIST = "admin_question_list/{gameType}/{levelId}"
+    const val ADMIN_QUESTION_EDITOR = "admin_question_editor/{gameType}/{levelId}?questionId={questionId}"
+    const val ADMIN_CONTEST_MANAGEMENT = "admin_contest_management"
+    const val ADMIN_CONTEST_EDITOR = "admin_contest_editor?contestId={contestId}"
 
     fun adminGameManagement(gameType: String) = "admin_game_management/$gameType"
+    fun adminQuestionList(gameType: String, levelId: String) = "admin_question_list/$gameType/$levelId"
+    fun adminQuestionEditor(gameType: String, levelId: String, questionId: String? = null) = 
+        "admin_question_editor/$gameType/$levelId" + if (questionId != null) "?questionId=$questionId" else ""
+    fun adminContestEditor(contestId: String? = null) = 
+        "admin_contest_editor" + if (contestId != null) "?contestId=$contestId" else ""
 }
 
 @Composable
@@ -141,8 +155,21 @@ fun NavGraph(
                 },
                 onLoginSuccess = {
                     android.util.Log.d("NavGraph", "Login success callback, firstTime=$firstTime")
+                    
+                    // Kiểm tra xem user có phải admin không
+                    val isAdmin = authUiState.isAdmin
+                    android.util.Log.d("NavGraph", "User isAdmin: $isAdmin")
+                    
+                    // Nếu là admin, chuyển thẳng đến Admin Dashboard
+                    if (isAdmin) {
+                        android.util.Log.d("NavGraph", "Admin user detected, navigating to Admin Dashboard")
+                        navController.navigate(Routes.ADMIN_DASHBOARD) {
+                            popUpTo(Routes.LOGIN) { inclusive = true }
+                        }
+                        return@LoginScreen
+                    }
 
-                    // Re-check firstTime after login
+                    // Re-check firstTime after login (cho user thường)
                     val shouldGoToReady = firstTime == false
 
                     android.util.Log.d("NavGraph", "shouldGoToReady=$shouldGoToReady")
@@ -226,11 +253,14 @@ fun NavGraph(
                 },
                 onGameManagementClick = { gameType ->
                     navController.navigate(Routes.adminGameManagement(gameType.name))
+                },
+                onContestManagementClick = {
+                    navController.navigate(Routes.ADMIN_CONTEST_MANAGEMENT)
                 }
             )
         }
 
-// Admin Game Management
+        // Admin Game Management
         composable(
             route = Routes.ADMIN_GAME_MANAGEMENT,
             arguments = listOf(navArgument("gameType") { type = NavType.StringType })
@@ -250,6 +280,125 @@ fun NavGraph(
                     navController.navigate(Routes.ADMIN_DASHBOARD) {
                         popUpTo(Routes.ADMIN_DASHBOARD) { inclusive = false }
                     }
+                }
+            )
+        }
+
+        // Admin Question List
+        composable(
+            route = Routes.ADMIN_QUESTION_LIST,
+            arguments = listOf(
+                navArgument("gameType") { type = NavType.StringType },
+                navArgument("levelId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val gameTypeString = backStackEntry.arguments?.getString("gameType") ?: "QUIZ"
+            val levelId = backStackEntry.arguments?.getString("levelId") ?: ""
+            val gameType = try {
+                GameType.valueOf(gameTypeString)
+            } catch (e: Exception) {
+                GameType.QUIZ
+            }
+            val username = authViewModel.getCurrentUsername()
+
+            QuestionListScreen(
+                username = username,
+                gameType = gameType,
+                onBackClick = {
+                    navController.navigateUp()
+                },
+                onQuestionClick = { questionId ->
+                    navController.navigate(
+                        Routes.adminQuestionEditor(gameTypeString, levelId, questionId)
+                    )
+                },
+                onAddQuestionClick = {
+                    navController.navigate(
+                        Routes.adminQuestionEditor(gameTypeString, levelId, null)
+                    )
+                }
+            )
+        }
+
+        // Admin Question Editor
+        composable(
+            route = Routes.ADMIN_QUESTION_EDITOR,
+            arguments = listOf(
+                navArgument("gameType") { type = NavType.StringType },
+                navArgument("levelId") { type = NavType.StringType },
+                navArgument("questionId") { 
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val gameTypeString = backStackEntry.arguments?.getString("gameType") ?: "QUIZ"
+            val levelId = backStackEntry.arguments?.getString("levelId") ?: ""
+            val questionId = backStackEntry.arguments?.getString("questionId")
+            val gameType = try {
+                GameType.valueOf(gameTypeString)
+            } catch (e: Exception) {
+                GameType.QUIZ
+            }
+            val username = authViewModel.getCurrentUsername()
+
+            QuestionEditorScreen(
+                username = username,
+                gameType = gameType,
+                levelId = levelId,
+                questionId = questionId,
+                onBackClick = {
+                    navController.navigateUp()
+                },
+                onSaveSuccess = {
+                    navController.navigateUp()
+                }
+            )
+        }
+
+        // Admin Contest Management
+        composable(Routes.ADMIN_CONTEST_MANAGEMENT) {
+            val username = authViewModel.getCurrentUsername()
+
+            ContestManagementScreen(
+                username = username,
+                onBackClick = {
+                    navController.navigate(Routes.ADMIN_DASHBOARD) {
+                        popUpTo(Routes.ADMIN_DASHBOARD) { inclusive = false }
+                    }
+                },
+                onContestClick = { contestId ->
+                    navController.navigate(Routes.adminContestEditor(contestId))
+                },
+                onCreateContestClick = {
+                    navController.navigate(Routes.adminContestEditor(null))
+                }
+            )
+        }
+
+        // Admin Contest Editor
+        composable(
+            route = Routes.ADMIN_CONTEST_EDITOR,
+            arguments = listOf(
+                navArgument("contestId") { 
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val contestId = backStackEntry.arguments?.getString("contestId")
+            val username = authViewModel.getCurrentUsername()
+
+            ContestEditorScreen(
+                username = username,
+                contestId = contestId,
+                onBackClick = {
+                    navController.navigateUp()
+                },
+                onSaveSuccess = {
+                    navController.navigateUp()
                 }
             )
         }
