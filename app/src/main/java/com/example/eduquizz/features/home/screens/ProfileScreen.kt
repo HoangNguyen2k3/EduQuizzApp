@@ -40,28 +40,54 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.eduquizz.R
 import com.example.eduquizz.data_save.DataViewModel
+import com.example.eduquizz.features.auth.viewmodel.AuthViewModel
 import com.example.quizapp.ui.theme.QuizAppTheme
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
 fun ProfileScreen(
+    onLogout: () -> Unit,
     dataviewModel: DataViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
-    var avatarUri by remember { mutableStateOf<Uri?>(null) }
-  //  var username by remember { mutableStateOf("User123") }
-   // var fullName by remember { mutableStateOf("Nguyễn Văn A") }
-  //  var birthDate by remember { mutableStateOf("01/01/2000") }
+    // Lấy state từ Auth (user backend)
+    val authUiState by authViewModel.uiState.collectAsState()
+    val currentUser = authUiState.currentUser
+
+    // Lấy từ DataStore
+    val storedFullName by dataviewModel.playerHobbiesSubject.observeAsState("English")
+    val storedPlayerName by dataviewModel.playerName.observeAsState("User123")
+    val birthDate by dataviewModel.birthDay.observeAsState("01/01/2000")
+    val storedAvatarUri by dataviewModel.avatarUri.observeAsState("")
+
+    // Chọn giá trị để hiển thị ưu tiên: backend -> datastore
+    val username = currentUser?.username ?: storedPlayerName
+    val fullName = currentUser?.fullName ?: storedFullName
+    val email = currentUser?.email ?: "Chưa có email"
+
+    // State cho avatar (ưu tiên lấy từ DataStore)
+    var avatarUri by remember(storedAvatarUri) {
+        mutableStateOf(
+            storedAvatarUri.takeIf { it.isNotBlank() }?.let { Uri.parse(it) }
+        )
+    }
+
     var showUsernameDialog by remember { mutableStateOf(false) }
     var showFullNameDialog by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
-    val  fullName by dataviewModel.playerHobbiesSubject.observeAsState("English")
-    val username by dataviewModel.playerName.observeAsState("User123")
-    val birthDate by dataviewModel.birthDay.observeAsState("01/01/2000")
+
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        avatarUri = uri
+        if (uri != null) {
+            avatarUri = uri
+            // Lưu vào "database" (DataStore)
+            dataviewModel.updateAvatar(uri.toString())
+
+            // Nếu sau này bạn muốn lưu lên backend:
+            // authViewModel.updateAvatar(uri)
+        }
     }
 
     Box(
@@ -190,10 +216,10 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_xl)))
 
-            // Personal Information Section
+            // Tài khoản (username + email)
             ProfileSection(
-                title = "Thông tin cá nhân",
-                icon = Icons.Default.Edit,
+                title = "Tài khoản",
+                icon = Icons.Default.AccountCircle,
                 iconBackgroundGradient = listOf(
                     colorResource(id = R.color.english_red),
                     colorResource(id = R.color.english_coral)
@@ -208,6 +234,27 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_medium)))
 
+                ProfileEditableItem(
+                    icon = R.drawable.math,  // tạo icon email hoặc dùng 1 icon có sẵn
+                    title = "Email",
+                    value = email,
+                    onClick = {
+                        // tuỳ: cho chỉnh sửa email hay chỉ xem
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_xl)))
+
+            // Thông tin cá nhân
+            ProfileSection(
+                title = "Thông tin cá nhân",
+                icon = Icons.Default.Edit,
+                iconBackgroundGradient = listOf(
+                    colorResource(id = R.color.english_red),
+                    colorResource(id = R.color.english_coral)
+                )
+            ) {
                 ProfileEditableItem(
                     icon = R.drawable.name,
                     title = "Họ và tên",
@@ -226,52 +273,70 @@ fun ProfileScreen(
             }
 
             Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_xl)))
+
+            // Nút Đăng xuất
+            Button(
+                onClick = {
+                    authViewModel.logout()
+                    onLogout()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFDC2626),
+                    contentColor = Color.White
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Logout,
+                    contentDescription = "Đăng xuất",
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Đăng xuất", fontWeight = FontWeight.Bold)
+            }
         }
 
         // Username Edit Dialog
         if (showUsernameDialog) {
             EditTextDialog(
-                title = "Chỉnh sửa tên",
+                title = "Chỉnh sửa tên đăng nhập",
                 currentValue = username,
-                onValueChange = {  },
+                onValueChange = { },
                 onDismiss = { showUsernameDialog = false },
-                placeholder = "Nhập tên",
-                onSave = { dataviewModel.updatePlayerName(it) }
+                placeholder = "Nhập tên đăng nhập",
+                onSave = {
+                    // hiện tại mình lưu xuống DataStore
+                    dataviewModel.updatePlayerName(it)
+                    // nếu muốn sync lên backend: authViewModel.updateUsername(it)
+                }
             )
         }
 
         // Full Name Edit Dialog
         if (showFullNameDialog) {
             EditTextDialog(
-                title = "Chỉnh sửa môn học yêu thích",
+                title = "Chỉnh sửa họ và tên",
                 currentValue = fullName,
-                onValueChange = {  },
+                onValueChange = { },
                 onDismiss = { showFullNameDialog = false },
                 placeholder = "Nhập họ và tên",
-                onSave = { dataviewModel.updatePlayerHobbiesSubject(it) }
+                onSave = {
+                    // bạn đang dùng playerHobbiesSubject làm "môn yêu thích",
+                    // nếu muốn dùng đúng full name thì nên đổi tên field sau này
+                    dataviewModel.updatePlayerHobbiesSubject(it)
+                }
             )
         }
 
         // Date Picker Dialog
-//        if (showDatePicker) {
-//            DatePickerDialog(
-//                currentDate = birthDate,
-//                onDateSelected = { birthDate = it },
-//                onDismiss = { showDatePicker = false }
-//            )
-//        }
         if (showDatePicker) {
             DatePickerDialog(
                 currentDate = birthDate,
                 onDateSelected = {
-                //    birthDate = it
                     dataviewModel.editBirthday(it)
-
-/*                    val year = it.split("/").lastOrNull()?.toIntOrNull()
-                    if (year != null) {
-                        val age = Calendar.getInstance().get(Calendar.YEAR) - year
-                        dataviewModel.updatePlayerAge(age)
-                    }*/
                 },
                 onDismiss = { showDatePicker = false }
             )
@@ -297,7 +362,6 @@ private fun ProfileSection(
         Column(
             modifier = Modifier.padding(dimensionResource(id = R.dimen.spacing_xxl))
         ) {
-            // Section Header
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = dimensionResource(id = R.dimen.spacing_large))
@@ -380,45 +444,6 @@ private fun ProfileEditableItem(
             contentDescription = "Edit",
             tint = colorResource(id = R.color.english_red),
             modifier = Modifier.size(dimensionResource(id = R.dimen.icon_small))
-        )
-    }
-}
-
-@Composable
-private fun ProfileStatItem(
-    icon: Int,
-    title: String,
-    value: String
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = dimensionResource(id = R.dimen.spacing_small)),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Image(
-            painter = painterResource(id = icon),
-            contentDescription = title,
-            modifier = Modifier.size(dimensionResource(id = R.dimen.icon_medium))
-        )
-
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = dimensionResource(id = R.dimen.spacing_large))
-        ) {
-            Text(
-                text = title,
-                fontSize = dimensionResource(id = R.dimen.text_normal).value.sp,
-                color = colorResource(id = R.color.text_secondary_gray)
-            )
-        }
-
-        Text(
-            text = value,
-            fontSize = dimensionResource(id = R.dimen.text_normal).value.sp,
-            color = colorResource(id = R.color.text_primary_dark),
-            fontWeight = FontWeight.Bold
         )
     }
 }
@@ -537,10 +562,12 @@ private fun DatePickerDialog(
         )
     }
 }
+
 @Preview
 @Composable
-fun ProfileScreenPreview(){
+fun ProfileScreenPreview() {
     QuizAppTheme {
-        ProfileScreen()
+        // Preview không chạy được hiltViewModel, nhưng để cho có layout
+        ProfileScreen(onLogout = {})
     }
 }

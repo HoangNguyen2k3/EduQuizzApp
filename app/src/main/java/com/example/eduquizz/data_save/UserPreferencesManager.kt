@@ -57,6 +57,15 @@ class UserPreferencesManager(private val context: Context) {
 
     val lastSeenTsFlow: Flow<Long> = context.dataStore.data
         .map { it[UserPreferencesKeys.LAST_SEEN_TS] ?: 0L }
+    // 👉 THÊM: avatarUriFlow
+    val avatarUriFlow: Flow<String> = context.dataStore.data
+        .map { it[UserPreferencesKeys.AVATAR_URI] ?: "" }
+    // 👉 THÊM: lưu avatar
+    suspend fun saveAvatarUri(uri: String) {
+        context.dataStore.edit {
+            it[UserPreferencesKeys.AVATAR_URI] = uri
+        }
+    }
     // --- Lưu thông tin người chơi ---
     suspend fun firstTimeInPlayGame(){
         context.dataStore.edit {
