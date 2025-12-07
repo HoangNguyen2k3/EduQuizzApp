@@ -65,6 +65,8 @@ import com.example.eduquizz.features.soundgame.viewmodel.SoundGameViewModel
 import com.example.eduquizz.features.match.screen.MatchGameIntroScreen
 import com.example.eduquizz.features.match.screen.MatchLevelSelectionScreen
 import com.example.eduquizz.features.match.screen.MatchMainScreen
+// Import Daily Login
+import com.example.eduquizz.features.dailyLogin.screens.DailyLoginScreen
 
 object Routes {
     //Main
@@ -117,6 +119,9 @@ object Routes {
     const val ADMIN_QUESTION_EDITOR = "admin_question_editor/{gameType}/{levelId}?questionId={questionId}"
     const val ADMIN_CONTEST_MANAGEMENT = "admin_contest_management"
     const val ADMIN_CONTEST_EDITOR = "admin_contest_editor?contestId={contestId}"
+    
+    // Daily Login
+    const val DAILY_LOGIN = "daily_login"
 
     fun adminGameManagement(gameType: String) = "admin_game_management/$gameType"
     fun adminQuestionList(gameType: String, levelId: String) = "admin_question_list/$gameType/$levelId"
@@ -415,6 +420,12 @@ fun NavGraph(
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
+                },
+                onNavigateToDailyLogin = {  // NEW: Daily Login navigation
+                    navController.navigate(Routes.DAILY_LOGIN)
+                },
+                onNavigateToLogin = {
+                    navController.navigate(Routes.LOGIN)
                 },
                 userViewModel = userViewModel,
                 dataviewModel = dataViewModel,
@@ -771,6 +782,15 @@ fun NavGraph(
 
         composable(Routes.SETTINGS) {
             SettingScreen()
+        }
+
+        // Daily Login Screen
+        composable(Routes.DAILY_LOGIN) {
+            DailyLoginScreen(
+                onBackClick = {
+                    navController.navigateUp()
+                }
+            )
         }
     }
 }

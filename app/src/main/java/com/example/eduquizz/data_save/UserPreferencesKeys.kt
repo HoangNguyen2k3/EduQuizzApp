@@ -13,6 +13,8 @@ object UserPreferencesKeys {
     val GOLD = intPreferencesKey("gold")
     val CURRENT_LEVEL = intPreferencesKey("current_level")
     val FIRST_TIME = booleanPreferencesKey("firts_time")
+    // Avatar URI (local)
+    val AVATAR_URI = stringPreferencesKey("avatar_uri")   // 👈 THÊM DÒNG NÀY
     //Thống kê
     val NUM_TOTAL_QUESTION = intPreferencesKey("total_questionPlay")
     val NUM_CORRECT_ANS_QUESTION = intPreferencesKey("correct_ans_question")

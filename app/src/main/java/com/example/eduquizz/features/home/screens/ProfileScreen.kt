@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,45 +32,62 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.eduquizz.R
+import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.features.auth.viewmodel.AuthViewModel
+import com.example.quizapp.ui.theme.QuizAppTheme
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
 fun ProfileScreen(
-    authViewModel: AuthViewModel = hiltViewModel(),
-    onLogoutSuccess: () -> Unit = {}
+    onLogout: () -> Unit,
+    dataviewModel: DataViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
-    val uiState by authViewModel.uiState.collectAsState()
-    val currentUser = uiState.currentUser
+    // Lấy state từ Auth (user backend)
+    val authUiState by authViewModel.uiState.collectAsState()
+    val currentUser = authUiState.currentUser
 
-    var avatarUri by remember { mutableStateOf<Uri?>(null) }
+    // Lấy từ DataStore
+    val storedFullName by dataviewModel.playerHobbiesSubject.observeAsState("English")
+    val storedPlayerName by dataviewModel.playerName.observeAsState("User123")
+    val birthDate by dataviewModel.birthDay.observeAsState("01/01/2000")
+    val storedAvatarUri by dataviewModel.avatarUri.observeAsState("")
+
+    // Chọn giá trị để hiển thị ưu tiên: backend -> datastore
+    val username = currentUser?.username ?: storedPlayerName
+    val fullName = currentUser?.fullName ?: storedFullName
+    val email = currentUser?.email ?: "Chưa có email"
+
+    // State cho avatar (ưu tiên lấy từ DataStore)
+    var avatarUri by remember(storedAvatarUri) {
+        mutableStateOf(
+            storedAvatarUri.takeIf { it.isNotBlank() }?.let { Uri.parse(it) }
+        )
+    }
+
     var showUsernameDialog by remember { mutableStateOf(false) }
     var showFullNameDialog by remember { mutableStateOf(false) }
-    var showEmailDialog by remember { mutableStateOf(false) }
-    var showPhoneDialog by remember { mutableStateOf(false) }
-    var showLogoutDialog by remember { mutableStateOf(false) }
-
-    // Use user data from AuthViewModel
-    val username = currentUser?.username ?: "User123"
-    val fullName = currentUser?.fullName ?: "Full Name"
-    val email = currentUser?.email ?: "email@example.com"
-    val phoneNumber = currentUser?.phoneNumber ?: "Not set"
-    val profileImageUrl = currentUser?.profileImageUrl
-    val role = currentUser?.role ?: "USER"
-    val createdAt = currentUser?.createdAt ?: ""
+    var showDatePicker by remember { mutableStateOf(false) }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        avatarUri = uri
-        // TODO: Upload image to server and update profile
+        if (uri != null) {
+            avatarUri = uri
+            // Lưu vào "database" (DataStore)
+            dataviewModel.updateAvatar(uri.toString())
+
+            // Nếu sau này bạn muốn lưu lên backend:
+            // authViewModel.updateAvatar(uri)
+        }
     }
 
     Box(
@@ -150,18 +168,6 @@ fun ProfileScreen(
                                     .clip(CircleShape),
                                 contentScale = ContentScale.Crop
                             )
-                        } else if (!profileImageUrl.isNullOrEmpty()) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(profileImageUrl)
-                                    .crossfade(true)
-                                    .build(),
-                                contentDescription = "Profile Image",
-                                modifier = Modifier
-                                    .size(120.dp)
-                                    .clip(CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
                         } else {
                             Icon(
                                 imageVector = Icons.Default.Person,
@@ -210,10 +216,10 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_xl)))
 
-            // Personal Information Section
+            // Tài khoản (username + email)
             ProfileSection(
-                title = "Thông tin cá nhân",
-                icon = Icons.Default.Edit,
+                title = "Tài khoản",
+                icon = Icons.Default.AccountCircle,
                 iconBackgroundGradient = listOf(
                     colorResource(id = R.color.english_red),
                     colorResource(id = R.color.english_coral)
@@ -223,12 +229,32 @@ fun ProfileScreen(
                     icon = R.drawable.person,
                     title = "Tên đăng nhập",
                     value = username,
-                    onClick = { /* Username usually cannot be changed */ },
-                    isEditable = false
+                    onClick = { showUsernameDialog = true }
                 )
 
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_medium)))
 
+                ProfileEditableItem(
+                    icon = R.drawable.math,  // tạo icon email hoặc dùng 1 icon có sẵn
+                    title = "Email",
+                    value = email,
+                    onClick = {
+                        // tuỳ: cho chỉnh sửa email hay chỉ xem
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_xl)))
+
+            // Thông tin cá nhân
+            ProfileSection(
+                title = "Thông tin cá nhân",
+                icon = Icons.Default.Edit,
+                iconBackgroundGradient = listOf(
+                    colorResource(id = R.color.english_red),
+                    colorResource(id = R.color.english_coral)
+                )
+            ) {
                 ProfileEditableItem(
                     icon = R.drawable.name,
                     title = "Họ và tên",
@@ -240,144 +266,53 @@ fun ProfileScreen(
 
                 ProfileEditableItem(
                     icon = R.drawable.calendar,
-                    title = "Email",
-                    value = email,
-                    onClick = { /* Email usually cannot be changed */ },
-                    isEditable = false
+                    title = "Ngày sinh",
+                    value = birthDate,
+                    onClick = { showDatePicker = true }
                 )
-
-                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_medium)))
-
-                ProfileEditableItem(
-                    icon = R.drawable.calendar,
-                    title = "Số điện thoại",
-                    value = phoneNumber,
-                    onClick = { showPhoneDialog = true }
-                )
-
-                if (role == "ADMIN") {
-                    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_medium)))
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFFFF3E0)
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.AdminPanelSettings,
-                                contentDescription = null,
-                                tint = Color(0xFFFF6F00),
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = "Admin Account",
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFF6F00)
-                            )
-                        }
-                    }
-                }
             }
 
             Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_xl)))
 
-            // Account Info Section
-            if (createdAt.isNotEmpty()) {
-                ProfileSection(
-                    title = "Thông tin tài khoản",
-                    icon = Icons.Default.Info,
-                    iconBackgroundGradient = listOf(
-                        Color(0xFF4CAF50),
-                        Color(0xFF45A049)
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(
-                                text = "Ngày tạo",
-                                fontSize = 14.sp,
-                                color = colorResource(id = R.color.text_secondary_gray)
-                            )
-                            Text(
-                                text = formatDate(createdAt),
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = colorResource(id = R.color.text_primary_dark)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_xl)))
-            }
-
-            // Logout Section
-            ProfileSection(
-                title = "Tài khoản",
-                icon = Icons.Default.AccountCircle,
-                iconBackgroundGradient = listOf(
-                    Color(0xFFFF5252),
-                    Color(0xFFFF1744)
+            // Nút Đăng xuất
+            Button(
+                onClick = {
+                    authViewModel.logout()
+                    onLogout()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFDC2626),
+                    contentColor = Color.White
                 )
             ) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(dimensionResource(id = R.dimen.corner_medium)))
-                        .clickable { showLogoutDialog = true },
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFFFEBEE)
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(dimensionResource(id = R.dimen.spacing_large)),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ExitToApp,
-                                contentDescription = "Đăng xuất",
-                                modifier = Modifier.size(dimensionResource(id = R.dimen.icon_medium)),
-                                tint = Color(0xFFFF1744)
-                            )
-
-                            Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.spacing_large)))
-
-                            Text(
-                                text = "Đăng xuất",
-                                fontSize = dimensionResource(id = R.dimen.text_normal).value.sp,
-                                color = Color(0xFFFF1744),
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-
-                        Icon(
-                            imageVector = Icons.Default.ChevronRight,
-                            contentDescription = null,
-                            tint = Color(0xFFFF1744),
-                            modifier = Modifier.size(dimensionResource(id = R.dimen.icon_small))
-                        )
-                    }
-                }
+                Icon(
+                    imageVector = Icons.Default.Logout,
+                    contentDescription = "Đăng xuất",
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Đăng xuất", fontWeight = FontWeight.Bold)
             }
+        }
 
-            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_xl)))
+        // Username Edit Dialog
+        if (showUsernameDialog) {
+            EditTextDialog(
+                title = "Chỉnh sửa tên đăng nhập",
+                currentValue = username,
+                onValueChange = { },
+                onDismiss = { showUsernameDialog = false },
+                placeholder = "Nhập tên đăng nhập",
+                onSave = {
+                    // hiện tại mình lưu xuống DataStore
+                    dataviewModel.updatePlayerName(it)
+                    // nếu muốn sync lên backend: authViewModel.updateUsername(it)
+                }
+            )
         }
 
         // Full Name Edit Dialog
@@ -385,118 +320,25 @@ fun ProfileScreen(
             EditTextDialog(
                 title = "Chỉnh sửa họ và tên",
                 currentValue = fullName,
+                onValueChange = { },
                 onDismiss = { showFullNameDialog = false },
                 placeholder = "Nhập họ và tên",
-                onSave = { newValue ->
-                    authViewModel.updateFullName(newValue)
+                onSave = {
+                    // bạn đang dùng playerHobbiesSubject làm "môn yêu thích",
+                    // nếu muốn dùng đúng full name thì nên đổi tên field sau này
+                    dataviewModel.updatePlayerHobbiesSubject(it)
                 }
             )
         }
 
-        // Phone Edit Dialog
-        if (showPhoneDialog) {
-            EditTextDialog(
-                title = "Chỉnh sửa số điện thoại",
-                currentValue = if (phoneNumber == "Not set") "" else phoneNumber,
-                onDismiss = { showPhoneDialog = false },
-                placeholder = "Nhập số điện thoại",
-                keyboardType = KeyboardType.Phone,
-                onSave = { newValue ->
-                    authViewModel.updatePhoneNumber(newValue)
-                }
-            )
-        }
-
-        // Show success/error messages
-        if (uiState.successMessage != null) {
-            LaunchedEffect(uiState.successMessage) {
-                kotlinx.coroutines.delay(2000)
-                authViewModel.clearMessages()
-            }
-
-            Snackbar(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(16.dp),
-                containerColor = Color(0xFF4CAF50)
-            ) {
-                Text(uiState.successMessage ?: "")
-            }
-        }
-
-        if (uiState.errorMessage != null) {
-            LaunchedEffect(uiState.errorMessage) {
-                kotlinx.coroutines.delay(2000)
-                authViewModel.clearMessages()
-            }
-
-            Snackbar(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(16.dp),
-                containerColor = Color(0xFFFF5252)
-            ) {
-                Text(uiState.errorMessage ?: "")
-            }
-        }
-
-        // Logout Confirmation Dialog
-        if (showLogoutDialog) {
-            AlertDialog(
-                onDismissRequest = { showLogoutDialog = false },
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.ExitToApp,
-                        contentDescription = null,
-                        tint = Color(0xFFFF1744),
-                        modifier = Modifier.size(48.dp)
-                    )
+        // Date Picker Dialog
+        if (showDatePicker) {
+            DatePickerDialog(
+                currentDate = birthDate,
+                onDateSelected = {
+                    dataviewModel.editBirthday(it)
                 },
-                title = {
-                    Text(
-                        text = "Xác nhận đăng xuất",
-                        fontWeight = FontWeight.Bold,
-                        color = colorResource(id = R.color.text_primary_dark),
-                        textAlign = TextAlign.Center
-                    )
-                },
-                text = {
-                    Text(
-                        text = "Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?",
-                        textAlign = TextAlign.Center,
-                        color = colorResource(id = R.color.text_secondary_gray)
-                    )
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            showLogoutDialog = false
-                            authViewModel.signOut()
-                            onLogoutSuccess()
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFFF1744)
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(
-                            "Đăng xuất",
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = { showLogoutDialog = false },
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = colorResource(id = R.color.text_secondary_gray)
-                        )
-                    ) {
-                        Text("Hủy")
-                    }
-                },
-                containerColor = Color.White,
-                shape = RoundedCornerShape(dimensionResource(id = R.dimen.corner_large))
+                onDismiss = { showDatePicker = false }
             )
         }
     }
@@ -520,7 +362,6 @@ private fun ProfileSection(
         Column(
             modifier = Modifier.padding(dimensionResource(id = R.dimen.spacing_xxl))
         ) {
-            // Section Header
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = dimensionResource(id = R.dimen.spacing_large))
@@ -562,14 +403,13 @@ private fun ProfileEditableItem(
     icon: Int,
     title: String,
     value: String,
-    onClick: () -> Unit,
-    isEditable: Boolean = true
+    onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(dimensionResource(id = R.dimen.corner_medium)))
-            .clickable(enabled = isEditable, onClick = onClick)
+            .clickable(onClick = onClick)
             .padding(vertical = dimensionResource(id = R.dimen.spacing_medium)),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -599,14 +439,12 @@ private fun ProfileEditableItem(
             )
         }
 
-        if (isEditable) {
-            Icon(
-                imageVector = Icons.Default.Edit,
-                contentDescription = "Edit",
-                tint = colorResource(id = R.color.english_red),
-                modifier = Modifier.size(dimensionResource(id = R.dimen.icon_small))
-            )
-        }
+        Icon(
+            imageVector = Icons.Default.Edit,
+            contentDescription = "Edit",
+            tint = colorResource(id = R.color.english_red),
+            modifier = Modifier.size(dimensionResource(id = R.dimen.icon_small))
+        )
     }
 }
 
@@ -614,9 +452,9 @@ private fun ProfileEditableItem(
 private fun EditTextDialog(
     title: String,
     currentValue: String,
+    onValueChange: (String) -> Unit,
     onDismiss: () -> Unit,
     placeholder: String,
-    keyboardType: KeyboardType = KeyboardType.Text,
     onSave: (String) -> Unit
 ) {
     var textValue by remember { mutableStateOf(currentValue) }
@@ -637,7 +475,6 @@ private fun EditTextDialog(
                 placeholder = { Text(placeholder) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = colorResource(id = R.color.english_red),
                     focusedLabelColor = colorResource(id = R.color.english_red),
@@ -648,6 +485,7 @@ private fun EditTextDialog(
         confirmButton = {
             TextButton(
                 onClick = {
+                    onValueChange(textValue)
                     onSave(textValue)
                     onDismiss()
                 },
@@ -673,13 +511,63 @@ private fun EditTextDialog(
     )
 }
 
-private fun formatDate(dateString: String): String {
-    return try {
-        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-        val outputFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-        val date = inputFormat.parse(dateString)
-        date?.let { outputFormat.format(it) } ?: dateString
-    } catch (e: Exception) {
-        dateString
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DatePickerDialog(
+    currentDate: String,
+    onDateSelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val datePickerState = rememberDatePickerState()
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                        onDateSelected(formatter.format(Date(millis)))
+                    }
+                    onDismiss()
+                },
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = colorResource(id = R.color.english_red)
+                )
+            ) {
+                Text("Chọn")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = colorResource(id = R.color.text_secondary_gray)
+                )
+            ) {
+                Text("Hủy")
+            }
+        },
+        colors = DatePickerDefaults.colors(
+            containerColor = Color.White
+        )
+    ) {
+        DatePicker(
+            state = datePickerState,
+            colors = DatePickerDefaults.colors(
+                selectedDayContainerColor = colorResource(id = R.color.english_red),
+                todayDateBorderColor = colorResource(id = R.color.english_red),
+                todayContentColor = colorResource(id = R.color.english_red)
+            )
+        )
+    }
+}
+
+@Preview
+@Composable
+fun ProfileScreenPreview() {
+    QuizAppTheme {
+        // Preview không chạy được hiltViewModel, nhưng để cho có layout
+        ProfileScreen(onLogout = {})
     }
 }

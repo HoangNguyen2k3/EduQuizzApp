@@ -57,8 +57,12 @@ class AuthRepository @Inject constructor(
             putString(KEY_USER_DATA, gson.toJson(user))
             putString(KEY_USERNAME, user.username)
             putString(KEY_ROLE, user.role)
+            // Lưu thêm userId và email để dùng làm unique identifier
+            putLong("user_id_backend", user.id)
+            putString("email", user.email)
             apply()
         }
+        Log.d("AuthRepository", "✅ Saved user data: id=${user.id}, username=${user.username}, email=${user.email}")
     }
 
     // Get saved user data

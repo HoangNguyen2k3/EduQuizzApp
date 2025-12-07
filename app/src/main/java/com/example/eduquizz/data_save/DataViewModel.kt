@@ -29,6 +29,8 @@ val music = userPrefs.boolMusicFlow.asLiveData()
     val numCorrectAbove50Percent = userPrefs.numCorrectAbove50PercentFlow.asLiveData()
     val numCorrectBelow50Percent = userPrefs.numCorrectBelow50PercentFlow.asLiveData()
     val birthDay = userPrefs.playerBirthdayFlow.asLiveData()
+    // 👉 THÊM: avatarUri
+    val avatarUri = userPrefs.avatarUriFlow.asLiveData()
     // --- Cập nhật thông tin người chơi ---
     fun UpdateMusic(flag: Boolean){
         viewModelScope.launch {
@@ -93,7 +95,12 @@ val music = userPrefs.boolMusicFlow.asLiveData()
             userPrefs.saveFirstTime(flag)
         }
     }
-
+    // 👉 THÊM: updateAvatar
+    fun updateAvatar(uri: String) {
+        viewModelScope.launch {
+            userPrefs.saveAvatarUri(uri)
+        }
+    }
     // --- Cập nhật thống kê ---
     fun addTotalQuestions(amount: Int = 1) {
         viewModelScope.launch {

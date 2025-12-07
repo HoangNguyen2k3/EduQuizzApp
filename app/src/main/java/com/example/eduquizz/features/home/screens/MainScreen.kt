@@ -45,11 +45,12 @@ fun MainScreen(
     onNavigateToMapping: () -> Unit = {},
     onNavigateToContest: () -> Unit = {},
     onNavigateToLeaderBoard: () -> Unit = {},
-    onNavigateToAdmin: () -> Unit = {},
-    onLogout: () -> Unit = {}, // NEW
+    onNavigateToAdmin: () -> Unit = {}, // NEW: Admin navigation
+    onNavigateToDailyLogin: () -> Unit = {}, // NEW: Daily Login navigation
     dataviewModel: DataViewModel = hiltViewModel(),
     userViewModel: UserViewModel = hiltViewModel(),
-    authViewModel: AuthViewModel = hiltViewModel()
+    authViewModel: AuthViewModel = hiltViewModel(), // NEW: Auth viewmodel,
+    onNavigateToLogin: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
 
@@ -196,7 +197,8 @@ fun MainScreen(
                                         }
                                     }
                                 }
-                            }
+                            },
+                            onDailyLoginClick = onNavigateToDailyLogin
                         )
                     }
 
@@ -208,10 +210,7 @@ fun MainScreen(
                         SettingScreen()
                     }
                     3 -> {
-                        ProfileScreen(
-                            authViewModel = authViewModel,
-                            onLogoutSuccess = onLogout
-                        )
+                        ProfileScreen(onLogout = onNavigateToLogin)
                     }
                 }
             }
@@ -349,7 +348,7 @@ private fun HeaderSection(dataviewModel: DataViewModel, userViewModel: UserViewM
                         modifier = Modifier.size(30.dp)
                     )
                     Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.spacing_small)))
-                    dataviewModel.updateGold(1000)
+                    //dataviewModel.updateGold(1000)
                     val gold by dataviewModel.gold.observeAsState(initial = 0)
                     Text(
                         text = "$gold",

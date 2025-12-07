@@ -276,6 +276,10 @@ class AuthViewModel @Inject constructor(
         return _uiState.value.isAdmin
     }
 
+    // 👇 Thêm hàm này
+    fun logout() {
+        signOut()
+    }
     // NEW: Get current username (useful for admin API calls)
     fun getCurrentUsername(): String {
         return _uiState.value.currentUser?.username ?: ""
