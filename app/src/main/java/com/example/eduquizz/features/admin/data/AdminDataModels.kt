@@ -23,6 +23,13 @@ data class AdminResponse<T>(
     val data: T? = null
 )
 
+// Dashboard response with "stats" instead of "data"
+data class DashboardResponse(
+    val success: Boolean = false,
+    val message: String = "",
+    val stats: AdminDashboardStats? = null
+)
+
 // Game management data classes
 data class GameLevel(
     val id: String,

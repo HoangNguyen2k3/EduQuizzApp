@@ -11,7 +11,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -131,9 +134,14 @@ fun NavGraph(
     navController: NavHostController,
     modifier: Modifier = Modifier,
 ) {
-    val userViewModel: UserViewModel = hiltViewModel()
-    val dataViewModel: DataViewModel = hiltViewModel()
-    val authViewModel: AuthViewModel = hiltViewModel()
+    // Get activity-level ViewModelStoreOwner to ensure same ViewModel instance
+    val viewModelStoreOwner = checkNotNull(LocalViewModelStoreOwner.current) {
+        "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
+    }
+    
+    val userViewModel: UserViewModel = hiltViewModel(viewModelStoreOwner)
+    val dataViewModel: DataViewModel = hiltViewModel(viewModelStoreOwner)
+    val authViewModel: AuthViewModel = hiltViewModel(viewModelStoreOwner)
 
     val firstTime by dataViewModel.firstTime.observeAsState(0)
     val authUiState by authViewModel.uiState.collectAsState()
@@ -156,9 +164,10 @@ fun NavGraph(
                 onLoginSuccess = {
                     android.util.Log.d("NavGraph", "Login success callback, firstTime=$firstTime")
                     
-                    // Kiểm tra xem user có phải admin không
-                    val isAdmin = authUiState.isAdmin
-                    android.util.Log.d("NavGraph", "User isAdmin: $isAdmin")
+                    // Kiểm tra xem user có phải admin không - đọc trực tiếp từ currentUser
+                    val currentUser = authUiState.currentUser
+                    val isAdmin = currentUser?.role == "ADMIN"
+                    android.util.Log.d("NavGraph", "User: ${currentUser?.username}, Role: ${currentUser?.role}, isAdmin: $isAdmin")
                     
                     // Nếu là admin, chuyển thẳng đến Admin Dashboard
                     if (isAdmin) {
@@ -185,7 +194,10 @@ fun NavGraph(
                             popUpTo(Routes.LOGIN) { inclusive = true }
                         }
                     }
-                }
+                },
+                viewModel = authViewModel,  // Truyền authViewModel từ NavGraph
+                userViewModel = userViewModel,
+                dataViewModel = dataViewModel
             )
         }
 
@@ -202,7 +214,8 @@ fun NavGraph(
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(Routes.REGISTER) { inclusive = true }
                     }
-                }
+                },
+                viewModel = authViewModel  // Truyền authViewModel từ NavGraph
             )
         }
 

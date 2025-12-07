@@ -22,7 +22,7 @@ interface ApiService {
     @GET("api/admin/dashboard/{username}")
     suspend fun getAdminDashboard(
         @Path("username") username: String
-    ): Response<AdminResponse<AdminDashboardStats>>
+    ): Response<DashboardResponse>
 
     @GET("api/admin/wordsearch/{username}")
     suspend fun getWordSearchLevels(
@@ -54,78 +54,78 @@ interface ApiService {
         @Path("username") username: String
     ): Response<AdminResponse<List<GameLevel>>>
 
-    // // Question Management Endpoints
-    // @GET("api/admin/questions/{username}")
-    // suspend fun getQuestions(
-    //     @Path("username") username: String,
-    //     @Body filter: QuestionFilter
-    // ): Response<AdminResponse<List<QuestionItem>>>
+    // Question Management Endpoints
+    @POST("api/admin/questions/{username}/filter")
+    suspend fun getQuestions(
+        @Path("username") username: String,
+        @Body filter: QuestionFilter
+    ): Response<AdminResponse<List<QuestionItem>>>
 
-    // @GET("api/admin/questions/{username}/{questionId}")
-    // suspend fun getQuestionById(
-    //     @Path("username") username: String,
-    //     @Path("questionId") questionId: String
-    // ): Response<AdminResponse<QuestionItem>>
+    @GET("api/admin/questions/{username}/{questionId}")
+    suspend fun getQuestionById(
+        @Path("username") username: String,
+        @Path("questionId") questionId: String
+    ): Response<AdminResponse<QuestionItem>>
 
-    // @POST("api/admin/questions/{username}")
-    // suspend fun createQuestion(
-    //     @Path("username") username: String,
-    //     @Body request: QuestionCreateRequest
-    // ): Response<AdminResponse<QuestionItem>>
+    @POST("api/admin/questions/{username}")
+    suspend fun createQuestion(
+        @Path("username") username: String,
+        @Body request: QuestionCreateRequest
+    ): Response<AdminResponse<QuestionItem>>
 
-    // @PUT("api/admin/questions/{username}")
-    // suspend fun updateQuestion(
-    //     @Path("username") username: String,
-    //     @Body request: QuestionUpdateRequest
-    // ): Response<AdminResponse<QuestionItem>>
+    @PUT("api/admin/questions/{username}")
+    suspend fun updateQuestion(
+        @Path("username") username: String,
+        @Body request: QuestionUpdateRequest
+    ): Response<AdminResponse<QuestionItem>>
 
-    // @DELETE("api/admin/questions/{username}/{questionId}")
-    // suspend fun deleteQuestion(
-    //     @Path("username") username: String,
-    //     @Path("questionId") questionId: String
-    // ): Response<AdminResponse<Boolean>>
+    @DELETE("api/admin/questions/{username}/{questionId}")
+    suspend fun deleteQuestion(
+        @Path("username") username: String,
+        @Path("questionId") questionId: String
+    ): Response<AdminResponse<Boolean>>
 
-    // @POST("api/admin/questions/{username}/bulk")
-    // suspend fun bulkImportQuestions(
-    //     @Path("username") username: String,
-    //     @Body questions: List<QuestionCreateRequest>
-    // ): Response<AdminResponse<BulkImportResult>>
+    @POST("api/admin/questions/{username}/bulk")
+    suspend fun bulkImportQuestions(
+        @Path("username") username: String,
+        @Body questions: List<QuestionCreateRequest>
+    ): Response<AdminResponse<BulkImportResult>>
 
-    // // Contest Management Endpoints
-    // @GET("api/admin/contests/{username}")
-    // suspend fun getContests(
-    //     @Path("username") username: String
-    // ): Response<AdminResponse<List<Contest>>>
+    // Contest Management Endpoints
+    @GET("api/admin/contests/{username}")
+    suspend fun getContests(
+        @Path("username") username: String
+    ): Response<AdminResponse<List<Contest>>>
 
-    // @GET("api/admin/contests/{username}/{contestId}")
-    // suspend fun getContestById(
-    //     @Path("username") username: String,
-    //     @Path("contestId") contestId: String
-    // ): Response<AdminResponse<Contest>>
+    @GET("api/admin/contests/{username}/{contestId}")
+    suspend fun getContestById(
+        @Path("username") username: String,
+        @Path("contestId") contestId: String
+    ): Response<AdminResponse<Contest>>
 
-    // @POST("api/admin/contests/{username}")
-    // suspend fun createContest(
-    //     @Path("username") username: String,
-    //     @Body request: ContestCreateRequest
-    // ): Response<AdminResponse<Contest>>
+    @POST("api/admin/contests/{username}")
+    suspend fun createContest(
+        @Path("username") username: String,
+        @Body request: ContestCreateRequest
+    ): Response<AdminResponse<Contest>>
 
-    // @PUT("api/admin/contests/{username}")
-    // suspend fun updateContest(
-    //     @Path("username") username: String,
-    //     @Body request: ContestUpdateRequest
-    // ): Response<AdminResponse<Contest>>
+    @PUT("api/admin/contests/{username}")
+    suspend fun updateContest(
+        @Path("username") username: String,
+        @Body request: ContestUpdateRequest
+    ): Response<AdminResponse<Contest>>
 
-    // @DELETE("api/admin/contests/{username}/{contestId}")
-    // suspend fun deleteContest(
-    //     @Path("username") username: String,
-    //     @Path("contestId") contestId: String
-    // ): Response<AdminResponse<Boolean>>
+    @DELETE("api/admin/contests/{username}/{contestId}")
+    suspend fun deleteContest(
+        @Path("username") username: String,
+        @Path("contestId") contestId: String
+    ): Response<AdminResponse<Boolean>>
 
-    // @GET("api/admin/contests/{username}/{contestId}/stats")
-    // suspend fun getContestStats(
-    //     @Path("username") username: String,
-    //     @Path("contestId") contestId: String
-    // ): Response<AdminResponse<ContestStats>>
+    @GET("api/admin/contests/{username}/{contestId}/stats")
+    suspend fun getContestStats(
+        @Path("username") username: String,
+        @Path("contestId") contestId: String
+    ): Response<AdminResponse<ContestStats>>
 }
 
 // Existing data classes
