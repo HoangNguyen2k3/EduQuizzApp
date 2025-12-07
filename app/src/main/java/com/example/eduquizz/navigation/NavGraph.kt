@@ -256,27 +256,20 @@ fun NavGraph(
 
         composable(Routes.MAIN_DANH) {
             MainScreen(
-                onNavigateToEnglish = {
-                    navController.navigate(Routes.ENGLISH_GAMES_SCENE)
-                },
-                onNavigateToMath = {
-                    navController.navigate(Routes.MATH_GAMES_SCENE)
-                },
-                onNavigateToContest = {
-                    navController.navigate(Routes.CONTEST_GAMES_SCENE)
-                },
-                onNavigateToMapping = {
-                    navController.navigate(Routes.MAPPING_GAMES_SCENE)
-                },
-                onNavigateToLeaderBoard = {
-                    navController.navigate(Routes.LEADERBOARD_GAMES_SCENE)
-                },
-                onNavigateToAdmin = {  // NEW: Admin navigation
-                    navController.navigate(Routes.ADMIN_DASHBOARD)
+                onNavigateToEnglish = { navController.navigate(Routes.ENGLISH_GAMES_SCENE) },
+                onNavigateToMath = { navController.navigate(Routes.MATH_GAMES_SCENE) },
+                onNavigateToContest = { navController.navigate(Routes.CONTEST_GAMES_SCENE) },
+                onNavigateToMapping = { navController.navigate(Routes.MAPPING_GAMES_SCENE) },
+                onNavigateToLeaderBoard = { navController.navigate(Routes.LEADERBOARD_GAMES_SCENE) },
+                onNavigateToAdmin = { navController.navigate(Routes.ADMIN_DASHBOARD) },
+                onLogout = {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
                 },
                 userViewModel = userViewModel,
                 dataviewModel = dataViewModel,
-                authViewModel = authViewModel  // NEW: Pass authViewModel
+                authViewModel = authViewModel
             )
         }
 

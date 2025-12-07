@@ -45,10 +45,11 @@ fun MainScreen(
     onNavigateToMapping: () -> Unit = {},
     onNavigateToContest: () -> Unit = {},
     onNavigateToLeaderBoard: () -> Unit = {},
-    onNavigateToAdmin: () -> Unit = {}, // NEW: Admin navigation
+    onNavigateToAdmin: () -> Unit = {},
+    onLogout: () -> Unit = {}, // NEW
     dataviewModel: DataViewModel = hiltViewModel(),
     userViewModel: UserViewModel = hiltViewModel(),
-    authViewModel: AuthViewModel = hiltViewModel() // NEW: Auth viewmodel
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
 
@@ -207,7 +208,10 @@ fun MainScreen(
                         SettingScreen()
                     }
                     3 -> {
-                        ProfileScreen()
+                        ProfileScreen(
+                            authViewModel = authViewModel,
+                            onLogoutSuccess = onLogout
+                        )
                     }
                 }
             }

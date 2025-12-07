@@ -325,4 +325,37 @@ suspend fun register(
         // Also sign out from Firebase if needed
         firebaseAuth.signOut()
     }
+
+    suspend fun updateProfile(
+        username: String,
+        fullName: String? = null,
+        phoneNumber: String? = null,
+        profileImageUrl: String? = null
+    ): AuthResult<UserResponse> {
+        return try {
+            val request = UpdateProfileRequest(
+                fullName = fullName,
+                phoneNumber = phoneNumber,
+                profileImageUrl = profileImageUrl
+            )
+
+            val response = apiService.updateProfile(username, request)
+
+            if (response.isSuccessful) {
+                val updateResponse = response.body()
+                if (updateResponse?.success == true && updateResponse.user != null) {
+                    // Update saved user data
+                    saveUserData(updateResponse.user)
+                    AuthResult.Success(updateResponse.user)
+                } else {
+                    AuthResult.Error(updateResponse?.message ?: "Update failed")
+                }
+            } else {
+                AuthResult.Error("Update failed: ${response.message()}")
+            }
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Update profile exception: ${e.message}", e)
+            AuthResult.Error(e.message ?: "Network error")
+        }
+    }
 }

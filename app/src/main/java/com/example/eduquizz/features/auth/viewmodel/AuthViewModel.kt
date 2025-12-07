@@ -170,6 +170,93 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun updateFullName(newFullName: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+
+            val username = _uiState.value.currentUser?.username ?: return@launch
+
+            when (val result = repository.updateProfile(
+                username = username,
+                fullName = newFullName,
+                phoneNumber = null,
+                profileImageUrl = null
+            )) {
+                is AuthResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        currentUser = result.data,
+                        successMessage = "Cập nhật thành công!"
+                    )
+                }
+                is AuthResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun updatePhoneNumber(newPhoneNumber: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+
+            val username = _uiState.value.currentUser?.username ?: return@launch
+
+            when (val result = repository.updateProfile(
+                username = username,
+                fullName = null,
+                phoneNumber = newPhoneNumber,
+                profileImageUrl = null
+            )) {
+                is AuthResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        currentUser = result.data,
+                        successMessage = "Cập nhật thành công!"
+                    )
+                }
+                is AuthResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun updateProfileImage(imageUrl: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+
+            val username = _uiState.value.currentUser?.username ?: return@launch
+
+            when (val result = repository.updateProfile(
+                username = username,
+                fullName = null,
+                phoneNumber = null,
+                profileImageUrl = imageUrl
+            )) {
+                is AuthResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        currentUser = result.data,
+                        successMessage = "Cập nhật ảnh thành công!"
+                    )
+                }
+                is AuthResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.message
+                    )
+                }
+            }
+        }
+    }
+
     fun signOut() {
         repository.signOut()
         _uiState.value = AuthUiState()
