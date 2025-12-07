@@ -210,7 +210,13 @@ fun MainScreen(
                         SettingScreen()
                     }
                     3 -> {
-                        ProfileScreen(onLogout = onNavigateToLogin)
+                        ProfileScreen(
+                            onLogout = {
+                                onNavigateToLogin()
+                            },
+                            dataviewModel = dataviewModel,
+                            authViewModel = authViewModel
+                        )
                     }
                 }
             }

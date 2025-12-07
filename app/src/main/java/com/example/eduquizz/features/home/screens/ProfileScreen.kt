@@ -48,8 +48,8 @@ import java.util.*
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
-    dataviewModel: DataViewModel = hiltViewModel(),
-    authViewModel: AuthViewModel = hiltViewModel()
+    dataviewModel: DataViewModel,
+    authViewModel: AuthViewModel
 ) {
     // Lấy state từ Auth (user backend)
     val authUiState by authViewModel.uiState.collectAsState()
@@ -563,11 +563,11 @@ private fun DatePickerDialog(
     }
 }
 
-@Preview
+/*@Preview
 @Composable
 fun ProfileScreenPreview() {
     QuizAppTheme {
         // Preview không chạy được hiltViewModel, nhưng để cho có layout
         ProfileScreen(onLogout = {})
     }
-}
+}*/
