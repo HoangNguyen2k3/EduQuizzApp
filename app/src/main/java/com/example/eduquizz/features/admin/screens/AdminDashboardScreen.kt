@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,6 +30,7 @@ fun AdminDashboardScreen(
     onBackClick: () -> Unit,
     onGameManagementClick: (GameType) -> Unit,
     onContestManagementClick: () -> Unit = {},
+    onLogoutClick: () -> Unit = {},  // NEW: Logout callback
     viewModel: AdminViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -56,11 +56,6 @@ fun AdminDashboardScreen(
                             fontSize = 12.sp,
                             color = Color.White.copy(alpha = 0.7f)
                         )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -95,7 +90,8 @@ fun AdminDashboardScreen(
                     AdminDashboardContent(
                         stats = dashboardStats,
                         onGameManagementClick = onGameManagementClick,
-                        onContestManagementClick = onContestManagementClick
+                        onContestManagementClick = onContestManagementClick,
+                        onLogoutClick = onLogoutClick  // NEW: Pass logout callback
                     )
                 }
                 is AdminUiState.Error -> {
@@ -113,7 +109,8 @@ fun AdminDashboardScreen(
 private fun AdminDashboardContent(
     stats: com.example.eduquizz.features.admin.data.AdminDashboardStats,
     onGameManagementClick: (GameType) -> Unit,
-    onContestManagementClick: () -> Unit
+    onContestManagementClick: () -> Unit,
+    onLogoutClick: () -> Unit  // NEW: Logout callback
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -218,6 +215,40 @@ private fun AdminDashboardContent(
                 levelCount = count,
                 onClick = { onGameManagementClick(gameType) }
             )
+        }
+
+        // NEW: Logout Button at the bottom
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedButton(
+                onClick = onLogoutClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = Color(0xFFFF6B6B)
+                ),
+                border = androidx.compose.foundation.BorderStroke(
+                    2.dp,
+                    Color(0xFFFF6B6B)
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Logout,
+                    contentDescription = "Logout",
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Logout",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

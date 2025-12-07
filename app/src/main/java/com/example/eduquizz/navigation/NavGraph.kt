@@ -11,10 +11,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -60,7 +58,6 @@ import com.example.eduquizz.features.auth.screens.LoginScreen
 import com.example.eduquizz.features.auth.screens.RegisterScreen
 import com.example.eduquizz.features.auth.viewmodel.AuthViewModel
 import com.example.eduquizz.features.contest.screens.ContestScreen
-import com.example.eduquizz.features.mapping.model.Leaderboard
 import com.example.eduquizz.features.soundgame.screen.SoundGameScreen
 import com.example.eduquizz.features.soundgame.screen.SoundGameDescriptionScreen
 import com.example.eduquizz.features.soundgame.viewmodel.SoundGameViewModel
@@ -258,20 +255,27 @@ fun NavGraph(
             )
         }
 
-        // Admin Dashboard
         composable(Routes.ADMIN_DASHBOARD) {
             val username = authViewModel.getCurrentUsername()
 
             AdminDashboardScreen(
                 username = username,
                 onBackClick = {
-                    navController.navigate(Routes.LOGIN)
+
                 },
                 onGameManagementClick = { gameType ->
                     navController.navigate(Routes.adminGameManagement(gameType.name))
                 },
                 onContestManagementClick = {
                     navController.navigate(Routes.ADMIN_CONTEST_MANAGEMENT)
+                },
+                onLogoutClick = {
+                    // NEW: Logout logic
+                    android.util.Log.d("NavGraph", "Admin logout clicked")
+                    authViewModel.logout()
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             )
         }

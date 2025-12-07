@@ -50,7 +50,8 @@ fun MainScreen(
     dataviewModel: DataViewModel = hiltViewModel(),
     userViewModel: UserViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel(), // NEW: Auth viewmodel,
-    onNavigateToLogin: () -> Unit = {}
+    onNavigateToLogin: () -> Unit = {},
+    onLogout: () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
 
@@ -375,6 +376,6 @@ private fun HeaderSection(dataviewModel: DataViewModel, userViewModel: UserViewM
 @Composable
 fun MainScreenPreview() {
     QuizAppTheme {
-        MainScreen()
+//        MainScreen()
     }
 }

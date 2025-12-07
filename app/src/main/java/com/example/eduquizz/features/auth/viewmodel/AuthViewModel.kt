@@ -278,7 +278,32 @@ class AuthViewModel @Inject constructor(
 
     // 👇 Thêm hàm này
     fun logout() {
-        signOut()
+        viewModelScope.launch {
+            try {
+                Log.d("AuthViewModel", "=== Logout Started ===")
+
+                // Sign out from Google if logged in via Google
+                repository.getGoogleSignInClient().signOut().addOnCompleteListener {
+                    Log.d("AuthViewModel", "Google sign out complete")
+                }
+
+                // Sign out from repository (clears saved session)
+                repository.signOut()
+
+                // Clear user session state
+                _uiState.value = _uiState.value.copy(
+                    isLoggedIn = false,
+                    currentUser = null,
+                    isAdmin = false,
+                    errorMessage = null,
+                    successMessage = null
+                )
+
+                Log.d("AuthViewModel", "=== Logout Complete ===")
+            } catch (e: Exception) {
+                Log.e("AuthViewModel", "Logout error: ${e.message}", e)
+            }
+        }
     }
     // NEW: Get current username (useful for admin API calls)
     fun getCurrentUsername(): String {
