@@ -1,7 +1,7 @@
 package com.example.eduquizz.dI
 
 import com.example.eduquizz.features.auth.data.api.AuthApiService
-import com.example.eduquizz.features.auth.data.repository.AuthRepository
+import com.example.eduquizz.features.auth.data.repository.SecureAuthRepository
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -87,7 +87,7 @@ object AuthModule {
         firebaseAuth: FirebaseAuth,
         googleSignInClient: GoogleSignInClient,
         @ApplicationContext context: Context
-    ): AuthRepository {
-        return AuthRepository(apiService, firebaseAuth, googleSignInClient, context)
+    ): com.example.eduquizz.features.auth.data.repository.SecureAuthRepository {
+        return com.example.eduquizz.features.auth.data.repository.SecureAuthRepository(apiService, firebaseAuth, googleSignInClient, context)
     }
 }

@@ -29,6 +29,14 @@ interface AuthApiService {
     @GET("api/auth/check-email/{email}")
     suspend fun checkEmail(@Path("email") email: String): Response<Map<String, Boolean>>
 
+    @PUT("api/auth/profile/{userId}")
+    suspend fun updateUserProfile(
+        @Path("userId") userId: Long,
+        @Body request: UserProfileRequest
+    ): Response<UserProfileResponse>
+
+    @GET("api/auth/profile-status/{userId}")
+    suspend fun checkProfileCompletion(@Path("userId") userId: Long): Response<UserProfileResponse>
     // Security Features
     @POST("api/auth/forgot-password")
     suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<MessageResponse>
