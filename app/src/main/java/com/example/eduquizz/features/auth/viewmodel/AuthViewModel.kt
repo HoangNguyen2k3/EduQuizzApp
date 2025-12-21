@@ -20,7 +20,10 @@ data class AuthUiState(
     val currentUser: UserResponse? = null,
     val errorMessage: String? = null,
     val successMessage: String? = null,
-    val isAdmin: Boolean = false  // NEW: Track admin status
+    val isAdmin: Boolean = false,  // NEW: Track admin status
+    // Brute-force protection
+    val remainingAttempts: Int? = null,
+    val requiresCaptcha: Boolean = false
 )
 
 @HiltViewModel
@@ -57,11 +60,11 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun login(usernameOrEmail: String, password: String) {
+    fun login(usernameOrEmail: String, password: String, captchaToken: String? = null) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
 
-            when (val result = repository.login(usernameOrEmail, password)) {
+            when (val result = repository.login(usernameOrEmail, password, captchaToken)) {
                 is AuthResult.Success -> {
                     val user = result.data
                     val isAdmin = user.role == "ADMIN"  // NEW: Check admin status
@@ -73,13 +76,21 @@ class AuthViewModel @Inject constructor(
                         isLoggedIn = true,
                         currentUser = user,
                         isAdmin = isAdmin,  // NEW: Set admin flag
-                        successMessage = "Login successful!"
+                        successMessage = "Login successful!",
+                        remainingAttempts = null,
+                        requiresCaptcha = false
                     )
                 }
                 is AuthResult.Error -> {
+                    Log.e("AuthViewModel", "Login failed: ${result.message}")
+                    Log.d("AuthViewModel", "Remaining attempts: ${result.remainingAttempts}")
+                    Log.d("AuthViewModel", "Requires captcha: ${result.requiresCaptcha}")
+                    
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = result.message
+                        errorMessage = result.message,
+                        remainingAttempts = result.remainingAttempts,
+                        requiresCaptcha = result.requiresCaptcha
                     )
                 }
                 else -> {}
@@ -276,7 +287,11 @@ class AuthViewModel @Inject constructor(
         return _uiState.value.isAdmin
     }
 
-    // 👇 Thêm hàm này
+    // NEW: Get current username (useful for admin API calls)
+    fun getCurrentUsername(): String {
+        return _uiState.value.currentUser?.username ?: ""
+    }
+
     fun logout() {
         viewModelScope.launch {
             try {
@@ -305,8 +320,59 @@ class AuthViewModel @Inject constructor(
             }
         }
     }
-    // NEW: Get current username (useful for admin API calls)
-    fun getCurrentUsername(): String {
-        return _uiState.value.currentUser?.username ?: ""
+
+    // Security Features - Password Reset
+    fun forgotPassword(email: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                errorMessage = null,
+                successMessage = null
+            )
+
+            when (val result = repository.forgotPassword(email)) {
+                is AuthResult.Success -> {
+                    Log.d("AuthViewModel", "Forgot password success: ${result.data}")
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        successMessage = result.data
+                    )
+                }
+                is AuthResult.Error -> {
+                    Log.e("AuthViewModel", "Forgot password error: ${result.message}")
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun verifyPinAndResetPassword(email: String, pin: String, newPassword: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                errorMessage = null,
+                successMessage = null
+            )
+
+            when (val result = repository.verifyPinAndResetPassword(email, pin, newPassword)) {
+                is AuthResult.Success -> {
+                    Log.d("AuthViewModel", "Password reset success: ${result.data}")
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        successMessage = result.data
+                    )
+                }
+                is AuthResult.Error -> {
+                    Log.e("AuthViewModel", "Password reset error: ${result.message}")
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.message
+                    )
+                }
+            }
+        }
     }
 }

@@ -25,7 +25,11 @@ import javax.inject.Singleton
 
 sealed class AuthResult<out T> {
     data class Success<T>(val data: T) : AuthResult<T>()
-    data class Error(val message: String) : AuthResult<Nothing>()
+    data class Error(
+        val message: String,
+        val remainingAttempts: Int? = null,
+        val requiresCaptcha: Boolean = false
+    ) : AuthResult<Nothing>()
 }
 
 @Singleton
@@ -204,10 +208,10 @@ suspend fun register(
 //    }
 
     // Login function (updated to save user data)
-    suspend fun login(usernameOrEmail: String, password: String): AuthResult<UserResponse> {
+    suspend fun login(usernameOrEmail: String, password: String, captchaToken: String? = null): AuthResult<UserResponse> {
         return try {
             val response = apiService.login(
-                LoginRequest(usernameOrEmail, password)
+                LoginRequest(usernameOrEmail, password, captchaToken)
             )
 
             if (response.isSuccessful) {
@@ -217,13 +221,93 @@ suspend fun register(
                     saveUserData(loginResponse.user)
                     AuthResult.Success(loginResponse.user)
                 } else {
-                    AuthResult.Error(loginResponse?.message ?: "Login failed")
+                    // Login failed - parse brute-force info
+                    AuthResult.Error(
+                        message = loginResponse?.message ?: "Login failed",
+                        remainingAttempts = loginResponse?.remainingAttempts,
+                        requiresCaptcha = loginResponse?.requiresCaptcha ?: false
+                    )
                 }
             } else {
-                AuthResult.Error("Login failed: ${response.message()}")
+                // HTTP error - try to parse error body
+                val errorBody = try {
+                    response.errorBody()?.string()
+                } catch (e: Exception) {
+                    null
+                }
+                
+                Log.e("AuthRepository", "Login failed: ${response.code()} - ${response.message()}")
+                Log.e("AuthRepository", "Error body: $errorBody")
+                
+                // Try to parse remainingAttempts from error body
+                var remainingAttempts: Int? = null
+                var requiresCaptcha = false
+                var errorMessage = ""
+                
+                if (errorBody != null) {
+                    try {
+                        Log.d("AuthRepository", "════════════════════════════")
+                        Log.d("AuthRepository", "RAW ERROR BODY: $errorBody")
+                        Log.d("AuthRepository", "════════════════════════════")
+                        
+                        val errorJson = com.google.gson.JsonParser.parseString(errorBody).asJsonObject
+                        remainingAttempts = if (errorJson.has("remainingAttempts")) {
+                            errorJson.get("remainingAttempts").asInt
+                        } else null
+                        
+                        requiresCaptcha = if (errorJson.has("requiresCaptcha")) {
+                            errorJson.get("requiresCaptcha").asBoolean
+                        } else false
+                        
+                        errorMessage = if (errorJson.has("message")) {
+                            errorJson.get("message").asString
+                        } else ""
+                        
+                        Log.d("AuthRepository", "════════════════════════════")
+                        Log.d("AuthRepository", "PARSED VALUES:")
+                        Log.d("AuthRepository", "  remainingAttempts: $remainingAttempts")
+                        Log.d("AuthRepository", "  requiresCaptcha: $requiresCaptcha")
+                        Log.d("AuthRepository", "  errorMessage: $errorMessage")
+                        Log.d("AuthRepository", "════════════════════════════")
+                    } catch (e: Exception) {
+                        Log.e("AuthRepository", "Failed to parse error body: ${e.message}")
+                    }
+                }
+                
+                // Set remainingAttempts to 0 if status is 429 (blocked)
+                if (response.code() == 429) {
+                    Log.d("AuthRepository", "⚠️ HTTP 429 detected - BEFORE: remainingAttempts = $remainingAttempts")
+                    remainingAttempts = 0
+                    requiresCaptcha = true
+                    Log.d("AuthRepository", "⚠️ HTTP 429 detected - AFTER: remainingAttempts = $remainingAttempts")
+                }
+                
+                Log.d("AuthRepository", "════════════════════════════")
+                Log.d("AuthRepository", "FINAL RESULT TO RETURN:")
+                Log.d("AuthRepository", "  HTTP Code: ${response.code()}")
+                Log.d("AuthRepository", "  remainingAttempts: $remainingAttempts")
+                Log.d("AuthRepository", "  requiresCaptcha: $requiresCaptcha")
+                Log.d("AuthRepository", "════════════════════════════")
+                
+                AuthResult.Error(
+                    message = errorMessage.ifEmpty {
+                        when (response.code()) {
+                            401 -> "Incorrect username or password"
+                            429 -> "Too many failed attempts. Please try again later."
+                            else -> "Login failed: ${response.message()}"
+                        }
+                    },
+                    remainingAttempts = remainingAttempts,
+                    requiresCaptcha = requiresCaptcha
+                )
             }
         } catch (e: Exception) {
-            AuthResult.Error(e.message ?: "Unknown error occurred")
+            Log.e("AuthRepository", "Login exception: ${e.message}", e)
+            AuthResult.Error(
+                message = e.message ?: "Network error. Please check your connection.",
+                remainingAttempts = null,
+                requiresCaptcha = false
+            )
         }
     }
 
@@ -360,6 +444,83 @@ suspend fun register(
         } catch (e: Exception) {
             Log.e("AuthRepository", "Update profile exception: ${e.message}", e)
             AuthResult.Error(e.message ?: "Network error")
+        }
+    }
+
+    // Security Features - Password Reset
+    suspend fun forgotPassword(email: String): AuthResult<String> {
+        return try {
+            Log.d("AuthRepository", "Sending forgot password request for: $email")
+            val response = apiService.forgotPassword(ForgotPasswordRequest(email))
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body?.success == true) {
+                    Log.d("AuthRepository", "Forgot password success: ${body.message}")
+                    AuthResult.Success(body.message)
+                } else {
+                    val errorMsg = body?.message ?: "Failed to send reset PIN"
+                    Log.e("AuthRepository", "Forgot password failed: $errorMsg")
+                    AuthResult.Error(errorMsg)
+                }
+            } else {
+                // Parse error message from backend response body
+                val errorBody = try {
+                    response.errorBody()?.string()
+                } catch (e: Exception) {
+                    null
+                }
+                
+                val errorMsg = when (response.code()) {
+                    404 -> "Email không tồn tại trong hệ thống"
+                    400 -> "Yêu cầu không hợp lệ"
+                    500 -> "Lỗi server. Vui lòng thử lại sau"
+                    else -> "Không thể gửi mã PIN (${response.code()})"
+                }
+                
+                Log.e("AuthRepository", "API error: ${response.code()} - ${response.message()}")
+                Log.e("AuthRepository", "Error body: $errorBody")
+                AuthResult.Error(errorMsg)
+            }
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Forgot password exception: ${e.message}", e)
+            AuthResult.Error("Lỗi kết nối. Vui lòng kiểm tra internet.")
+        }
+    }
+
+    suspend fun verifyPinAndResetPassword(
+        email: String,
+        pin: String,
+        newPassword: String
+    ): AuthResult<String> {
+        return try {
+            Log.d("AuthRepository", "Verifying PIN for: $email")
+            val response = apiService.verifyPinAndResetPassword(
+                VerifyPinRequest(email, pin, newPassword)
+            )
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body?.success == true) {
+                    Log.d("AuthRepository", "PIN verified and password reset: ${body.message}")
+                    AuthResult.Success(body.message)
+                } else {
+                    val errorMsg = body?.message ?: "Failed to reset password"
+                    Log.e("AuthRepository", "Verify PIN failed: $errorMsg")
+                    AuthResult.Error(errorMsg)
+                }
+            } else {
+                val errorMsg = when (response.code()) {
+                    400 -> "Mã PIN không đúng hoặc đã hết hạn"
+                    404 -> "Email không tồn tại"
+                    else -> "Đặt lại mật khẩu thất bại"
+                }
+                Log.e("AuthRepository", "API error: ${response.code()} - ${response.message()}")
+                AuthResult.Error(errorMsg)
+            }
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Verify PIN exception: ${e.message}", e)
+            AuthResult.Error("Lỗi kết nối. Vui lòng kiểm tra internet.")
         }
     }
 }

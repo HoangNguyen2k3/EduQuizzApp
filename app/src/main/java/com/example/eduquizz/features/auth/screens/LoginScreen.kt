@@ -32,6 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.eduquizz.R
 import com.example.eduquizz.data.local.UserViewModel
 import com.example.eduquizz.data_save.DataViewModel
+import com.example.eduquizz.features.auth.components.RecaptchaDialog
 import com.example.eduquizz.features.auth.viewmodel.AuthViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
@@ -41,6 +42,7 @@ import com.google.android.gms.common.api.ApiException
 fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     onLoginSuccess: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit = {},
     viewModel: AuthViewModel = hiltViewModel(),
     userViewModel: UserViewModel = hiltViewModel(),
     dataViewModel: DataViewModel = hiltViewModel()
@@ -51,6 +53,26 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var rememberMe by remember { mutableStateOf(false) }
+    var showCaptchaDialog by remember { mutableStateOf(false) }
+
+    // Debug: Track state changes
+    LaunchedEffect(uiState.remainingAttempts, uiState.requiresCaptcha, uiState.isLoading) {
+        android.util.Log.d("LoginScreen", "═══ STATE CHANGED ═══")
+        android.util.Log.d("LoginScreen", "remainingAttempts: ${uiState.remainingAttempts}")
+        android.util.Log.d("LoginScreen", "requiresCaptcha: ${uiState.requiresCaptcha}")
+        android.util.Log.d("LoginScreen", "isLoading: ${uiState.isLoading}")
+        android.util.Log.d("LoginScreen", "errorMessage: ${uiState.errorMessage}")
+        
+        // Calculate button enable state
+        val shouldEnable = !uiState.isLoading &&
+                          usernameOrEmail.isNotBlank() &&
+                          password.isNotBlank() &&
+                          (uiState.remainingAttempts == null || uiState.remainingAttempts!! > 0) &&
+                          !uiState.requiresCaptcha
+        
+        android.util.Log.d("LoginScreen", "Button SHOULD be enabled: $shouldEnable")
+        android.util.Log.d("LoginScreen", "═══════════════════════")
+    }
 
     // Google Sign-In Launcher
     val googleSignInLauncher = rememberLauncherForActivityResult(
@@ -102,6 +124,23 @@ fun LoginScreen(
             Log.d("LoginScreen", "Calling onLoginSuccess")
             onLoginSuccess()
         }
+    }
+
+    // Show Captcha Dialog when required
+    if (showCaptchaDialog) {
+        Log.d("LoginScreen", "🔐 Showing reCAPTCHA dialog...")
+        RecaptchaDialog(
+            onDismiss = { 
+                Log.d("LoginScreen", "❌ reCAPTCHA dialog dismissed by user")
+                showCaptchaDialog = false 
+            },
+            onTokenReceived = { token ->
+                Log.d("LoginScreen", "✅ reCAPTCHA token received: ${token.take(30)}...")
+                Log.d("LoginScreen", "🔄 Attempting login with captcha token...")
+                showCaptchaDialog = false
+                viewModel.login(usernameOrEmail, password, token)
+            }
+        )
     }
 
     Box(
@@ -212,8 +251,21 @@ fun LoginScreen(
                         ),
                         keyboardActions = KeyboardActions(
                             onDone = {
-                                if (usernameOrEmail.isNotBlank() && password.isNotBlank()) {
+                                // Check brute-force protection before allowing login
+                                val canLogin = usernameOrEmail.isNotBlank() && 
+                                              password.isNotBlank() &&
+                                              (uiState.remainingAttempts == null || uiState.remainingAttempts!! > 0) &&
+                                              !uiState.requiresCaptcha &&
+                                              !uiState.isLoading
+                                
+                                if (canLogin) {
+                                    android.util.Log.d("LoginScreen", "Keyboard Done - Login triggered")
                                     viewModel.login(usernameOrEmail, password)
+                                } else if (uiState.requiresCaptcha && uiState.remainingAttempts != 0) {
+                                    android.util.Log.d("LoginScreen", "Keyboard Done - Opening reCAPTCHA dialog...")
+                                    showCaptchaDialog = true
+                                } else {
+                                    android.util.Log.w("LoginScreen", "Keyboard Done - Login blocked! remainingAttempts: ${uiState.remainingAttempts}, requiresCaptcha: ${uiState.requiresCaptcha}")
                                 }
                             }
                         ),
@@ -243,13 +295,13 @@ fun LoginScreen(
                             text = "Forgot Password?",
                             fontSize = 14.sp,
                             color = Color(0xFF6366F1),
-                            modifier = Modifier.clickable { /* TODO */ }
+                            modifier = Modifier.clickable { onNavigateToForgotPassword() }
                         )
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Error Message
+                    // Error Message with Remaining Attempts
                     if (uiState.errorMessage != null) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -257,22 +309,54 @@ fun LoginScreen(
                                 containerColor = Color(0xFFFEE2E2)
                             )
                         ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Column(
+                                modifier = Modifier.padding(12.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Error,
-                                    contentDescription = null,
-                                    tint = Color(0xFFDC2626),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = uiState.errorMessage ?: "",
-                                    color = Color(0xFFDC2626),
-                                    fontSize = 14.sp
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Error,
+                                        contentDescription = null,
+                                        tint = Color(0xFFDC2626),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = uiState.errorMessage ?: "",
+                                        color = Color(0xFFDC2626),
+                                        fontSize = 14.sp
+                                    )
+                                }
+                                
+                                // Show remaining attempts if available
+                                if (uiState.remainingAttempts != null && uiState.remainingAttempts!! > 0) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "⚠️ Còn lại ${uiState.remainingAttempts} lần thử",
+                                        color = if (uiState.remainingAttempts!! <= 2) Color(0xFFDC2626) else Color(0xFFF59E0B),
+                                        fontSize = 12.sp,
+                                        fontWeight = if (uiState.remainingAttempts!! <= 2) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                    // Show captcha warning if required
+                                    if (uiState.requiresCaptcha) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "🔐 Bạn cần xác thực reCAPTCHA để tiếp tục",
+                                            color = Color(0xFFDC2626),
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                } else if (uiState.remainingAttempts == 0) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "🔒 Tài khoản bị khóa. Vui lòng thử lại sau 30 phút.",
+                                        color = Color(0xFFDC2626),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
                         }
                         Spacer(modifier = Modifier.height(16.dp))
@@ -281,8 +365,19 @@ fun LoginScreen(
                     // Login Button
                     Button(
                         onClick = {
+                            android.util.Log.d("LoginScreen", "▶ Button CLICKED")
+                            android.util.Log.d("LoginScreen", "  - remainingAttempts: ${uiState.remainingAttempts}")
+                            android.util.Log.d("LoginScreen", "  - requiresCaptcha: ${uiState.requiresCaptcha}")
+                            
                             if (usernameOrEmail.isNotBlank() && password.isNotBlank()) {
-                                viewModel.login(usernameOrEmail, password)
+                                // Nếu cần captcha, hiển thị dialog
+                                if (uiState.requiresCaptcha && uiState.remainingAttempts != 0) {
+                                    android.util.Log.d("LoginScreen", "Opening reCAPTCHA dialog...")
+                                    showCaptchaDialog = true
+                                } else {
+                                    // Login thông thường
+                                    viewModel.login(usernameOrEmail, password)
+                                }
                             }
                         },
                         modifier = Modifier
@@ -294,7 +389,9 @@ fun LoginScreen(
                         ),
                         enabled = !uiState.isLoading &&
                                 usernameOrEmail.isNotBlank() &&
-                                password.isNotBlank()
+                                password.isNotBlank() &&
+                                (uiState.remainingAttempts == null || uiState.remainingAttempts!! > 0) &&  // Enable if null or > 0
+                                !uiState.requiresCaptcha  // Disable if captcha required
                     ) {
                         if (uiState.isLoading) {
                             CircularProgressIndicator(

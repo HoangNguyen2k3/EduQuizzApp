@@ -28,6 +28,13 @@ interface AuthApiService {
 
     @GET("api/auth/check-email/{email}")
     suspend fun checkEmail(@Path("email") email: String): Response<Map<String, Boolean>>
+
+    // Security Features
+    @POST("api/auth/forgot-password")
+    suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<MessageResponse>
+
+    @POST("api/auth/verify-pin")
+    suspend fun verifyPinAndResetPassword(@Body request: VerifyPinRequest): Response<MessageResponse>
 }
 
 // Request Models
@@ -40,7 +47,8 @@ data class RegisterRequest(
 
 data class LoginRequest(
     val usernameOrEmail: String,
-    val password: String
+    val password: String,
+    val captchaToken: String? = null  // Optional reCAPTCHA token
 )
 
 data class UpdateProfileRequest(
@@ -55,11 +63,25 @@ data class ChangePasswordRequest(
     val newPassword: String
 )
 
+// Security Request Models
+data class ForgotPasswordRequest(
+    val email: String
+)
+
+data class VerifyPinRequest(
+    val email: String,
+    val pin: String,
+    val newPassword: String
+)
+
 // Response Models
 data class AuthResponse(
     val success: Boolean,
     val message: String,
-    val user: UserResponse?
+    val user: UserResponse?,
+    // Brute-force protection fields
+    val remainingAttempts: Int? = null,
+    val requiresCaptcha: Boolean = false
 )
 
 data class UserResponse(
