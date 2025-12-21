@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.eduquizz.features.auth.data.api.UserResponse
-import com.example.eduquizz.features.auth.data.repository.AuthRepository
+import com.example.eduquizz.features.auth.data.repository.SecureAuthRepository
 import com.example.eduquizz.features.auth.data.repository.AuthResult
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,7 +25,7 @@ data class AuthUiState(
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val repository: AuthRepository
+    private val repository: com.example.eduquizz.features.auth.data.repository.SecureAuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -308,5 +308,15 @@ class AuthViewModel @Inject constructor(
     // NEW: Get current username (useful for admin API calls)
     fun getCurrentUsername(): String {
         return _uiState.value.currentUser?.username ?: ""
+    }
+
+    // NEW: Check if user profile is completed
+    fun isProfileCompleted(): Boolean {
+        return repository.isProfileCompleted()
+    }
+
+    // NEW: Expose repository for accessing profile data
+    fun getRepository(): SecureAuthRepository {
+        return repository
     }
 }

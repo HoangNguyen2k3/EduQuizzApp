@@ -98,7 +98,6 @@ class MainActivity : ComponentActivity() {
             controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
 
-        // Android 13+ cáº§n xin quyá»n thÃ´ng bÃ¡o
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestNotifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }

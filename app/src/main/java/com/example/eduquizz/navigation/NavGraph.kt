@@ -1,5 +1,6 @@
 package com.example.eduquizz.navigation
 
+import android.util.Log
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -111,6 +112,7 @@ object Routes {
     // Auth
     const val LOGIN = "login"
     const val REGISTER = "register"
+    const val USER_PROFILE = "user_profile/{userId}"
 
     // Admin
     const val ADMIN_DASHBOARD = "admin_dashboard"
@@ -129,6 +131,8 @@ object Routes {
         "admin_question_editor/$gameType/$levelId" + if (questionId != null) "?questionId=$questionId" else ""
     fun adminContestEditor(contestId: String? = null) = 
         "admin_contest_editor" + if (contestId != null) "?contestId=$contestId" else ""
+    
+    fun userProfile(userId: Long) = "user_profile/$userId"
 }
 
 @Composable
@@ -180,7 +184,20 @@ fun NavGraph(
                         return@LoginScreen
                     }
 
-                    // Re-check firstTime after login (cho user thường)
+                    // Kiểm tra xem user đã hoàn thành profile chưa
+                    val isProfileCompleted = authViewModel.isProfileCompleted()
+                    android.util.Log.d("NavGraph", "Profile completed: $isProfileCompleted")
+
+                    if (!isProfileCompleted && currentUser != null) {
+                        // Lần đầu đăng nhập - chuyển đến màn hình nhập thông tin
+                        android.util.Log.d("NavGraph", "First time login, navigating to USER_PROFILE")
+                        navController.navigate(Routes.userProfile(currentUser.id)) {
+                            popUpTo(Routes.LOGIN) { inclusive = true }
+                        }
+                        return@LoginScreen
+                    }
+
+                    // Re-check firstTime after login (cho user thường đã hoàn thành profile)
                     val shouldGoToReady = firstTime == false
 
                     android.util.Log.d("NavGraph", "shouldGoToReady=$shouldGoToReady")
@@ -221,11 +238,40 @@ fun NavGraph(
             )
         }
 
+        composable(
+            route = Routes.USER_PROFILE,
+            arguments = listOf(navArgument("userId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getLong("userId") ?: 0L
+            
+            com.example.eduquizz.features.auth.screens.UserProfileScreen(
+                userId = userId,
+                onProfileComplete = {
+                    android.util.Log.d("NavGraph", "Profile completed, navigating to main screen")
+                    
+                    // Sau khi hoàn thành profile, kiểm tra firstTime để navigate
+                    if (firstTime == false) {
+                        navController.navigate(Routes.READY) {
+                            popUpTo(Routes.USER_PROFILE) { inclusive = true }
+                        }
+                    } else {
+                        navController.navigate(Routes.MAIN_DANH) {
+                            popUpTo(Routes.USER_PROFILE) { inclusive = true }
+                        }
+                    }
+                }
+            )
+        }
+
         composable(Routes.SPLASH) {
             SplashScreen(
                 onNavigateToMain = {
+                    Log.d("NavGraph", "=== SPLASH Navigation ===")
+                    Log.d("NavGraph", "isLoggedIn: ${authUiState.isLoggedIn}")
+                    
                     // Check if user is logged in
                     if (authUiState.isLoggedIn) {
+                        // Đã login - chuyển đến màn hình chính
                         if (firstTime == false) {
                             navController.navigate(Routes.READY) {
                                 popUpTo(Routes.SPLASH) { inclusive = true }
@@ -236,6 +282,8 @@ fun NavGraph(
                             }
                         }
                     } else {
+                        // Chưa login - chuyển đến màn hình đăng nhập
+                        Log.d("NavGraph", "Not logged in, navigating to Login")
                         navController.navigate(Routes.LOGIN) {
                             popUpTo(Routes.SPLASH) { inclusive = true }
                         }

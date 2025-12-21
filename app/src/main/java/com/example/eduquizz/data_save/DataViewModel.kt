@@ -1,23 +1,32 @@
 package com.example.eduquizz.data_save
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class DataViewModel @Inject constructor(
-    private val userPrefs: UserPreferencesManager
+    private val userPrefs: UserPreferencesManager,
+    private val secureDataStore: SecureDataStoreManager,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    // --- Thông tin người chơi ---
-    val playerName = userPrefs.playerNameFlow.asLiveData()
-    val playerAge = userPrefs.playerAgeFlow.asLiveData()
+    // Sử dụng encrypted DataStore
+    val playerName = secureDataStore.playerNameFlow.asLiveData()
+    val playerAge = secureDataStore.playerAgeFlow.asLiveData()
+    val avatarUri = secureDataStore.avatarUriFlow.asLiveData()
+    val birthDay = secureDataStore.birthdayFlow.asLiveData()
+
+    // Non-encrypted data
+    val gold = secureDataStore.goldFlow.asLiveData()
+    val currentLevel = secureDataStore.currentLevelFlow.asLiveData()
+
     val playerHobbiesSubject = userPrefs.playerHobbiesSubjectFlow.asLiveData()
-    val gold = userPrefs.goldFlow.asLiveData()
-    val currentLevel = userPrefs.currentLevelFlow.asLiveData()
     val firstTime = userPrefs.firstTimeInGame.asLiveData()
 val music = userPrefs.boolMusicFlow.asLiveData()
     val sfx = userPrefs.boolSfxFlow.asLiveData()
@@ -28,10 +37,7 @@ val music = userPrefs.boolMusicFlow.asLiveData()
     val numCorrectAllQuestions = userPrefs.numCorrectAllQuestionsFlow.asLiveData()
     val numCorrectAbove50Percent = userPrefs.numCorrectAbove50PercentFlow.asLiveData()
     val numCorrectBelow50Percent = userPrefs.numCorrectBelow50PercentFlow.asLiveData()
-    val birthDay = userPrefs.playerBirthdayFlow.asLiveData()
-    // 👉 THÊM: avatarUri
-    val avatarUri = userPrefs.avatarUriFlow.asLiveData()
-    // --- Cập nhật thông tin người chơi ---
+
     fun UpdateMusic(flag: Boolean){
         viewModelScope.launch {
             userPrefs.editmusic(flag)
@@ -56,7 +62,7 @@ val music = userPrefs.boolMusicFlow.asLiveData()
 
     fun updatePlayerName(name: String) {
         viewModelScope.launch {
-            userPrefs.savePlayerName(name)
+            secureDataStore.savePlayerName(name)
         }
     }
 
@@ -95,12 +101,13 @@ val music = userPrefs.boolMusicFlow.asLiveData()
             userPrefs.saveFirstTime(flag)
         }
     }
-    // 👉 THÊM: updateAvatar
+
     fun updateAvatar(uri: String) {
         viewModelScope.launch {
-            userPrefs.saveAvatarUri(uri)
+            secureDataStore.saveAvatarUri(uri)
         }
     }
+
     // --- Cập nhật thống kê ---
     fun addTotalQuestions(amount: Int = 1) {
         viewModelScope.launch {

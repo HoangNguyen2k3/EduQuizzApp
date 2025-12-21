@@ -42,6 +42,7 @@ import com.example.eduquizz.R
 import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.features.auth.viewmodel.AuthViewModel
 import com.example.quizapp.ui.theme.QuizAppTheme
+import com.example.eduquizz.features.auth.model.maskSensitiveData
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -55,16 +56,27 @@ fun ProfileScreen(
     val authUiState by authViewModel.uiState.collectAsState()
     val currentUser = authUiState.currentUser
 
+    // Lấy profile data từ AuthViewModel's repository
+    val context = LocalContext.current
+    val profileData = remember(context) { 
+        authViewModel.getRepository().getSavedProfileData()
+    }
+
     // Lấy từ DataStore
     val storedFullName by dataviewModel.playerHobbiesSubject.observeAsState("English")
     val storedPlayerName by dataviewModel.playerName.observeAsState("User123")
     val birthDate by dataviewModel.birthDay.observeAsState("01/01/2000")
     val storedAvatarUri by dataviewModel.avatarUri.observeAsState("")
 
-    // Chọn giá trị để hiển thị ưu tiên: backend -> datastore
+    // Chọn giá trị để hiển thị ưu tiên: profile data -> backend -> datastore
     val username = currentUser?.username ?: storedPlayerName
-    val fullName = currentUser?.fullName ?: storedFullName
+    val fullName = if (profileData.fullName.isNotBlank()) profileData.fullName else (currentUser?.fullName ?: storedFullName)
     val email = currentUser?.email ?: "Chưa có email"
+    val dateOfBirth = if (profileData.dateOfBirth.isNotBlank()) profileData.dateOfBirth else birthDate
+    val gender = profileData.gender
+    val hometown = profileData.hometown
+    val phoneNumber = profileData.phoneNumber
+    val cccd = profileData.cccd
 
     // State cho avatar (ưu tiên lấy từ DataStore)
     var avatarUri by remember(storedAvatarUri) {
@@ -267,9 +279,58 @@ fun ProfileScreen(
                 ProfileEditableItem(
                     icon = R.drawable.calendar,
                     title = "Ngày sinh",
-                    value = birthDate,
+                    value = dateOfBirth,
                     onClick = { showDatePicker = true }
                 )
+
+                if (gender.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_medium)))
+
+                    ProfileEditableItem(
+                        icon = R.drawable.person,
+                        title = "Giới tính",
+                        value = when (gender) {
+                            "MALE" -> "Nam"
+                            "FEMALE" -> "Nữ"
+                            "OTHER" -> "Khác"
+                            else -> gender
+                        },
+                        onClick = { }
+                    )
+                }
+
+                if (hometown.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_medium)))
+
+                    ProfileEditableItem(
+                        icon = R.drawable.math, // Use appropriate icon
+                        title = "Quê quán",
+                        value = hometown,
+                        onClick = { }
+                    )
+                }
+
+                if (phoneNumber.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_medium)))
+
+                    ProfileEditableItem(
+                        icon = R.drawable.person,
+                        title = "Số điện thoại",
+                        value = phoneNumber.maskSensitiveData(),
+                        onClick = { }
+                    )
+                }
+
+                if (cccd.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_medium)))
+
+                    ProfileEditableItem(
+                        icon = R.drawable.person,
+                        title = "Số CCCD",
+                        value = cccd.maskSensitiveData(),
+                        onClick = { }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_xl)))
