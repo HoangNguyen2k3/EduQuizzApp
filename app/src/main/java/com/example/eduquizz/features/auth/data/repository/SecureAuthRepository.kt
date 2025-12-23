@@ -384,6 +384,28 @@ class SecureAuthRepository @Inject constructor(
     }
 
     /**
+     * Xóa tất cả dữ liệu profile đã lưu
+     * Được gọi khi người dùng đăng ký tài khoản mới để đảm bảo các trường nhập liệu trống
+     */
+    fun clearSavedProfileData() {
+        SecurePreferencesManager.apply {
+            // Xóa thông tin không nhạy cảm
+            saveString(context, "profile_full_name", "")
+            saveString(context, "profile_dob", "")
+            saveString(context, "profile_gender", "")
+            saveString(context, "profile_hometown", "")
+            
+            // Xóa thông tin nhạy cảm
+            saveString(context, "profile_phone", "")
+            saveString(context, "profile_cccd", "")
+            saveString(context, "profile_cccd_issue_date", "")
+            saveString(context, "profile_cccd_issue_place", "")
+        }
+        
+        Log.d("SecureAuthRepository", "✅ Cleared all saved profile data")
+    }
+
+    /**
      * Kiểm tra profile completion status từ server
      */
     suspend fun checkProfileCompletionFromServer(userId: Long): AuthResult<UserProfileResponse> {

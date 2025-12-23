@@ -28,12 +28,13 @@ class UserProfileViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(UserProfileUiState())
     val uiState: StateFlow<UserProfileUiState> = _uiState.asStateFlow()
 
-    init {
-        // Load saved profile data if exists
-        loadSavedProfile()
-    }
+    // Không tự động load saved profile data trong init để tránh hiển thị dữ liệu cũ
+    // khi người dùng đăng ký tài khoản mới
 
-    private fun loadSavedProfile() {
+    /**
+     * Load saved profile data manually when needed (e.g., for editing existing profile)
+     */
+    fun loadSavedProfile() {
         val savedProfile = repository.getSavedProfileData()
         _uiState.value = _uiState.value.copy(profileData = savedProfile)
     }
@@ -198,6 +199,17 @@ class UserProfileViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             errorMessage = null,
             successMessage = null
+        )
+    }
+
+    /**
+     * Xóa tất cả dữ liệu profile
+     * Được gọi khi người dùng đăng ký tài khoản mới
+     */
+    fun clearProfileData() {
+        repository.clearSavedProfileData()
+        _uiState.value = _uiState.value.copy(
+            profileData = UserProfileData()
         )
     }
 }
