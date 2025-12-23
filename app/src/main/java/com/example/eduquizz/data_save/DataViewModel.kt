@@ -80,13 +80,13 @@ val music = userPrefs.boolMusicFlow.asLiveData()
 
     fun updateGold(amount: Int) {
         viewModelScope.launch {
-            userPrefs.saveGold(amount)
+            secureDataStore.saveGold(amount)
         }
     }
 
     fun addGold(amount: Int) {
         viewModelScope.launch {
-            userPrefs.addGold(amount)
+            secureDataStore.addGold(amount)
         }
     }
 

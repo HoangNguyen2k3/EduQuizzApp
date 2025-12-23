@@ -3,6 +3,7 @@ package com.example.eduquizz.features.auth.data.repository
 import android.content.Context
 import android.util.Log
 import com.example.eduquizz.security.SecurePreferencesManager
+import com.example.eduquizz.security.TokenManager
 import com.example.eduquizz.features.auth.data.AuthPreferencesManager
 import com.example.eduquizz.features.auth.data.api.*
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -30,6 +31,7 @@ class SecureAuthRepository @Inject constructor(
     private val apiService: AuthApiService,
     private val firebaseAuth: FirebaseAuth,
     private val googleSignInClient: GoogleSignInClient,
+    private val tokenManager: TokenManager,
     @ApplicationContext private val context: Context
 ) {
     private val authPrefs = AuthPreferencesManager(context)
@@ -172,6 +174,20 @@ class SecureAuthRepository @Inject constructor(
                 val loginResponse = response.body()
                 if (loginResponse?.success == true && loginResponse.user != null) {
                     saveUserData(loginResponse.user)
+                    
+                    // Save JWT tokens
+                    val accessToken = loginResponse.accessToken
+                    val refreshToken = loginResponse.refreshToken
+                    if (accessToken != null && refreshToken != null) {
+                        tokenManager.saveTokens(
+                            accessToken = accessToken,
+                            refreshToken = refreshToken,
+                            accessExpiresInSeconds = loginResponse.accessTokenExpiresIn ?: 900,
+                            refreshExpiresInSeconds = loginResponse.refreshTokenExpiresIn ?: 604800
+                        )
+                        Log.d("SecureAuthRepository", "✅ JWT tokens saved successfully")
+                    }
+                    
                     AuthResult.Success(loginResponse.user)
                 } else {
                     AuthResult.Error(
