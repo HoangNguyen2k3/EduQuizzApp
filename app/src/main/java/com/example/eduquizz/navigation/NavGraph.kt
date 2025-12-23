@@ -68,6 +68,7 @@ import com.example.eduquizz.features.match.screen.MatchLevelSelectionScreen
 import com.example.eduquizz.features.match.screen.MatchMainScreen
 // Import Daily Login
 import com.example.eduquizz.features.dailyLogin.screens.DailyLoginScreen
+import com.example.eduquizz.features.home.screens.EditProfileScreen
 
 object Routes {
     //Main
@@ -124,6 +125,9 @@ object Routes {
     
     // Daily Login
     const val DAILY_LOGIN = "daily_login"
+    
+    // Profile
+    const val EDIT_PROFILE = "edit_profile"
 
     fun adminGameManagement(gameType: String) = "admin_game_management/$gameType"
     fun adminQuestionList(gameType: String, levelId: String) = "admin_question_list/$gameType/$levelId"
@@ -300,6 +304,17 @@ fun NavGraph(
                     }
                 },
                 userViewModel = userViewModel
+            )
+        }
+
+        composable(Routes.EDIT_PROFILE) {
+            EditProfileScreen(
+                onBackClick = {
+                    navController.navigateUp()
+                },
+                onSaveSuccess = {
+                    navController.navigateUp()
+                }
             )
         }
 
@@ -484,8 +499,11 @@ fun NavGraph(
                         popUpTo(0) { inclusive = true }
                     }
                 },
-                onNavigateToDailyLogin = {  // NEW: Daily Login navigation
+                onNavigateToDailyLogin = {
                     navController.navigate(Routes.DAILY_LOGIN)
+                },
+                onEditProfile = {
+                    navController.navigate(Routes.EDIT_PROFILE)
                 },
                 onNavigateToLogin = {
                     navController.navigate(Routes.LOGIN)

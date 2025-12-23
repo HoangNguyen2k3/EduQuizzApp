@@ -47,6 +47,7 @@ fun MainScreen(
     onNavigateToLeaderBoard: () -> Unit = {},
     onNavigateToAdmin: () -> Unit = {}, // NEW: Admin navigation
     onNavigateToDailyLogin: () -> Unit = {}, // NEW: Daily Login navigation
+    onEditProfile: () -> Unit = {}, // NEW: Edit profile navigation
     dataviewModel: DataViewModel = hiltViewModel(),
     userViewModel: UserViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel(), // NEW: Auth viewmodel,
@@ -215,6 +216,7 @@ fun MainScreen(
                             onLogout = {
                                 onNavigateToLogin()
                             },
+                            onEditProfile = onEditProfile,
                             dataviewModel = dataviewModel,
                             authViewModel = authViewModel
                         )

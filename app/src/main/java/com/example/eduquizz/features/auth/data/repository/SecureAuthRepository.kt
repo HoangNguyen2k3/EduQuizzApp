@@ -286,7 +286,7 @@ class SecureAuthRepository @Inject constructor(
     /**
      * Cập nhật thông tin profile của user
      * - Lưu TẤT CẢ thông tin (cả nhạy cảm và không nhạy cảm) vào EncryptedSharedPreferences
-     * - Chỉ gửi thông tin KHÔNG nhạy cảm lên server
+     * - Gửi TẤT CẢ thông tin lên server qua HTTPS (server sẽ mã hóa dữ liệu nhạy cảm)
      */
     suspend fun updateUserProfile(
         userId: Long,
@@ -321,12 +321,17 @@ class SecureAuthRepository @Inject constructor(
             
             Log.d("SecureAuthRepository", "✅ Saved all profile data to encrypted storage")
             
-            // 2. Gửi CHỈ thông tin không nhạy cảm lên server qua HTTPS
+            // 2. Gửi TẤT CẢ thông tin (bao gồm cả nhạy cảm) lên server qua HTTPS
+            // Server sẽ mã hóa dữ liệu nhạy cảm trước khi lưu vào database
             val request = UserProfileRequest(
                 fullName = fullName,
                 dateOfBirth = dateOfBirth,
                 gender = gender,
-                hometown = hometown
+                hometown = hometown,
+                phoneNumber = phoneNumber.takeIf { it.isNotBlank() },
+                cccd = cccd.takeIf { it.isNotBlank() },
+                cccdIssueDate = cccdIssueDate.takeIf { it.isNotBlank() },
+                cccdIssuePlace = cccdIssuePlace.takeIf { it.isNotBlank() }
             )
             
             val response = apiService.updateUserProfile(userId, request)

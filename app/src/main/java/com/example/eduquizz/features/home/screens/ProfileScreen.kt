@@ -49,6 +49,7 @@ import java.util.*
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
+    onEditProfile: () -> Unit,
     dataviewModel: DataViewModel,
     authViewModel: AuthViewModel
 ) {
@@ -85,9 +86,7 @@ fun ProfileScreen(
         )
     }
 
-    var showUsernameDialog by remember { mutableStateOf(false) }
-    var showFullNameDialog by remember { mutableStateOf(false) }
-    var showDatePicker by remember { mutableStateOf(false) }
+    // Edit dialogs removed - using dedicated EditProfileScreen instead
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -237,22 +236,18 @@ fun ProfileScreen(
                     colorResource(id = R.color.english_coral)
                 )
             ) {
-                ProfileEditableItem(
+                ProfileDisplayItem(
                     icon = R.drawable.person,
                     title = "Tên đăng nhập",
-                    value = username,
-                    onClick = { showUsernameDialog = true }
+                    value = username
                 )
 
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_medium)))
 
-                ProfileEditableItem(
-                    icon = R.drawable.math,  // tạo icon email hoặc dùng 1 icon có sẵn
+                ProfileDisplayItem(
+                    icon = R.drawable.math,
                     title = "Email",
-                    value = email,
-                    onClick = {
-                        // tuỳ: cho chỉnh sửa email hay chỉ xem
-                    }
+                    value = email
                 )
             }
 
@@ -267,26 +262,24 @@ fun ProfileScreen(
                     colorResource(id = R.color.english_coral)
                 )
             ) {
-                ProfileEditableItem(
+                ProfileDisplayItem(
                     icon = R.drawable.name,
                     title = "Họ và tên",
-                    value = fullName,
-                    onClick = { showFullNameDialog = true }
+                    value = fullName
                 )
 
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_medium)))
 
-                ProfileEditableItem(
+                ProfileDisplayItem(
                     icon = R.drawable.calendar,
                     title = "Ngày sinh",
-                    value = dateOfBirth,
-                    onClick = { showDatePicker = true }
+                    value = dateOfBirth
                 )
 
                 if (gender.isNotBlank()) {
                     Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_medium)))
 
-                    ProfileEditableItem(
+                    ProfileDisplayItem(
                         icon = R.drawable.person,
                         title = "Giới tính",
                         value = when (gender) {
@@ -294,42 +287,61 @@ fun ProfileScreen(
                             "FEMALE" -> "Nữ"
                             "OTHER" -> "Khác"
                             else -> gender
-                        },
-                        onClick = { }
+                        }
                     )
                 }
 
                 if (hometown.isNotBlank()) {
                     Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_medium)))
 
-                    ProfileEditableItem(
-                        icon = R.drawable.math, // Use appropriate icon
+                    ProfileDisplayItem(
+                        icon = R.drawable.math,
                         title = "Quê quán",
-                        value = hometown,
-                        onClick = { }
+                        value = hometown
                     )
                 }
 
                 if (phoneNumber.isNotBlank()) {
                     Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_medium)))
 
-                    ProfileEditableItem(
+                    ProfileDisplayItem(
                         icon = R.drawable.person,
                         title = "Số điện thoại",
-                        value = phoneNumber.maskSensitiveData(),
-                        onClick = { }
+                        value = phoneNumber.maskSensitiveData()
                     )
                 }
 
                 if (cccd.isNotBlank()) {
                     Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_medium)))
 
-                    ProfileEditableItem(
+                    ProfileDisplayItem(
                         icon = R.drawable.person,
                         title = "Số CCCD",
-                        value = cccd.maskSensitiveData(),
-                        onClick = { }
+                        value = cccd.maskSensitiveData()
                     )
+                }
+
+                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.spacing_large)))
+
+                // Edit Profile Button
+                Button(
+                    onClick = onEditProfile,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF6366F1),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Sửa thông tin",
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Sửa thông tin", fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -360,48 +372,7 @@ fun ProfileScreen(
             }
         }
 
-        // Username Edit Dialog
-        if (showUsernameDialog) {
-            EditTextDialog(
-                title = "Chỉnh sửa tên đăng nhập",
-                currentValue = username,
-                onValueChange = { },
-                onDismiss = { showUsernameDialog = false },
-                placeholder = "Nhập tên đăng nhập",
-                onSave = {
-                    // hiện tại mình lưu xuống DataStore
-                    dataviewModel.updatePlayerName(it)
-                    // nếu muốn sync lên backend: authViewModel.updateUsername(it)
-                }
-            )
-        }
-
-        // Full Name Edit Dialog
-        if (showFullNameDialog) {
-            EditTextDialog(
-                title = "Chỉnh sửa họ và tên",
-                currentValue = fullName,
-                onValueChange = { },
-                onDismiss = { showFullNameDialog = false },
-                placeholder = "Nhập họ và tên",
-                onSave = {
-                    // bạn đang dùng playerHobbiesSubject làm "môn yêu thích",
-                    // nếu muốn dùng đúng full name thì nên đổi tên field sau này
-                    dataviewModel.updatePlayerHobbiesSubject(it)
-                }
-            )
-        }
-
-        // Date Picker Dialog
-        if (showDatePicker) {
-            DatePickerDialog(
-                currentDate = birthDate,
-                onDateSelected = {
-                    dataviewModel.editBirthday(it)
-                },
-                onDismiss = { showDatePicker = false }
-            )
-        }
+        // Edit dialogs removed - using dedicated EditProfileScreen
     }
 }
 
@@ -460,17 +431,14 @@ private fun ProfileSection(
 }
 
 @Composable
-private fun ProfileEditableItem(
+private fun ProfileDisplayItem(
     icon: Int,
     title: String,
-    value: String,
-    onClick: () -> Unit
+    value: String
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(dimensionResource(id = R.dimen.corner_medium)))
-            .clickable(onClick = onClick)
             .padding(vertical = dimensionResource(id = R.dimen.spacing_medium)),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -499,13 +467,6 @@ private fun ProfileEditableItem(
                 modifier = Modifier.padding(top = 2.dp)
             )
         }
-
-        Icon(
-            imageVector = Icons.Default.Edit,
-            contentDescription = "Edit",
-            tint = colorResource(id = R.color.english_red),
-            modifier = Modifier.size(dimensionResource(id = R.dimen.icon_small))
-        )
     }
 }
 
