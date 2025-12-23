@@ -142,8 +142,8 @@ fun UserProfileScreen(
                     OutlinedTextField(
                         value = uiState.profileData.dateOfBirth,
                         onValueChange = { newValue ->
-                            // Chỉ cho phép nhập số và dấu /
-                            if (newValue.all { it.isDigit() || it == '/' } && newValue.length <= 10) {
+                            // Cho phép nhập tự do, giới hạn độ dài để tránh spam
+                            if (newValue.length <= 10) {
                                 viewModel.updateDateOfBirth(newValue)
                             }
                         },
@@ -181,7 +181,7 @@ fun UserProfileScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
+                            keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Next
                         ),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -335,8 +335,8 @@ fun UserProfileScreen(
                     OutlinedTextField(
                         value = uiState.profileData.cccdIssueDate,
                         onValueChange = { newValue ->
-                            // Chỉ cho phép nhập số và dấu /
-                            if (newValue.all { it.isDigit() || it == '/' } && newValue.length <= 10) {
+                            // Cho phép nhập tự do, giới hạn độ dài để tránh spam
+                            if (newValue.length <= 10) {
                                 viewModel.updateCccdIssueDate(newValue)
                             }
                         },
@@ -374,7 +374,7 @@ fun UserProfileScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
+                            keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Next
                         ),
                         colors = OutlinedTextFieldDefaults.colors(
