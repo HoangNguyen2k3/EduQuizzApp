@@ -34,7 +34,7 @@ class SecureDataStoreManager(private val context: Context) {
         const val TAG_LENGTH = 128
     }
 
-    // Keys cho các field nhạy cảm
+    // Keys cho các field nhạy cảm - TẤT CẢ đều được mã hóa
     object SecureKeys {
         val PLAYER_NAME = stringPreferencesKey("enc_player_name")
         val PLAYER_AGE = stringPreferencesKey("enc_player_age")
@@ -42,13 +42,19 @@ class SecureDataStoreManager(private val context: Context) {
         val BIRTHDAY = stringPreferencesKey("enc_birthday")
         val EMAIL = stringPreferencesKey("enc_email")
 
-        // Keys không nhạy cảm - không cần mã hóa
-        val GOLD = intPreferencesKey("gold")
+        // GOLD - MÃ HÓA + CHECKSUM để chống hack
+        val GOLD = stringPreferencesKey("enc_gold")
+        val GOLD_CHECKSUM = stringPreferencesKey("gold_checksum")
+        
+        // Keys không nhạy cảm
         val CURRENT_LEVEL = intPreferencesKey("current_level")
         val FIRST_TIME = booleanPreferencesKey("first_time")
         val MUSIC = booleanPreferencesKey("music")
         val SFX = booleanPreferencesKey("sfx")
     }
+    
+    // Secret key cho HMAC checksum (trong production nên lưu ở server hoặc Keystore)
+    private val checksumSecret = "EduQuizz_Gold_Secret_2024"
 
     /**
      * Mã hóa string
@@ -168,16 +174,96 @@ class SecureDataStoreManager(private val context: Context) {
         prefs[SecureKeys.BIRTHDAY]?.let { decrypt(it) } ?: "01/01/2000"
     }
 
-    // === Non-encrypted Fields (ví dụ cho gold, level, etc.) ===
-
-    suspend fun saveGold(gold: Int) {
-        context.dataStore.edit { prefs ->
-            prefs[SecureKeys.GOLD] = gold
+    // === GOLD - Encrypted + Checksum để chống hack ===
+    
+    /**
+     * Tạo HMAC checksum cho gold value
+     */
+    private fun createGoldChecksum(gold: Int): String {
+        try {
+            val mac = javax.crypto.Mac.getInstance("HmacSHA256")
+            val secretKeySpec = javax.crypto.spec.SecretKeySpec(
+                checksumSecret.toByteArray(Charsets.UTF_8), 
+                "HmacSHA256"
+            )
+            mac.init(secretKeySpec)
+            val data = "$gold:EduQuizz:${context.packageName}".toByteArray(Charsets.UTF_8)
+            val hash = mac.doFinal(data)
+            return Base64.encodeToString(hash, Base64.NO_WRAP)
+        } catch (e: Exception) {
+            return ""
         }
     }
-
+    
+    /**
+     * Verify HMAC checksum cho gold
+     */
+    private fun verifyGoldChecksum(gold: Int, checksum: String): Boolean {
+        if (checksum.isEmpty()) return false
+        val expectedChecksum = createGoldChecksum(gold)
+        return checksum == expectedChecksum
+    }
+    
+    /**
+     * Lưu gold (encrypted + checksum)
+     * @param gold Số gold phải >= 0
+     * @return true nếu lưu thành công
+     */
+    suspend fun saveGold(gold: Int): Boolean {
+        // Validation: Gold không được âm
+        if (gold < 0) {
+            android.util.Log.w("SecureDataStore", "⚠️ Attempted to save negative gold: $gold")
+            return false
+        }
+        
+        // Validation: Gold không được quá lớn (chống overflow attack)
+        if (gold > 999_999_999) {
+            android.util.Log.w("SecureDataStore", "⚠️ Attempted to save excessive gold: $gold")
+            return false
+        }
+        
+        context.dataStore.edit { prefs ->
+            prefs[SecureKeys.GOLD] = encrypt(gold.toString())
+            prefs[SecureKeys.GOLD_CHECKSUM] = createGoldChecksum(gold)
+        }
+        return true
+    }
+    
+    /**
+     * Lấy gold (decrypted + verified)
+     * Nếu checksum không hợp lệ → trả về 0 (reset gold)
+     */
     val goldFlow: Flow<Int> = context.dataStore.data.map { prefs ->
-        prefs[SecureKeys.GOLD] ?: 0
+        val encryptedGold = prefs[SecureKeys.GOLD] ?: return@map 0
+        val checksum = prefs[SecureKeys.GOLD_CHECKSUM] ?: return@map 0
+        
+        val decryptedGold = decrypt(encryptedGold).toIntOrNull() ?: 0
+        
+        // Verify checksum - nếu bị hack sẽ fail
+        if (!verifyGoldChecksum(decryptedGold, checksum)) {
+            android.util.Log.e("SecureDataStore", "🚨 GOLD TAMPERING DETECTED! Resetting to 0")
+            return@map 0
+        }
+        
+        decryptedGold
+    }
+    
+    /**
+     * Thêm gold an toàn
+     * @param amount Số gold cần thêm (có thể âm để trừ)
+     * @return Số gold mới sau khi thêm, hoặc -1 nếu thất bại
+     */
+    suspend fun addGold(amount: Int): Int {
+        val currentGold = goldFlow.first()
+        val newGold = currentGold + amount
+        
+        // Không cho phép gold âm
+        if (newGold < 0) {
+            android.util.Log.w("SecureDataStore", "⚠️ Insufficient gold: $currentGold + $amount = $newGold")
+            return -1
+        }
+        
+        return if (saveGold(newGold)) newGold else -1
     }
 
     suspend fun saveCurrentLevel(level: Int) {

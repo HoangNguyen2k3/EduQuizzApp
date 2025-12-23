@@ -3,6 +3,7 @@ package com.example.eduquizz.features.auth.data.repository
 import android.content.Context
 import android.util.Log
 import com.example.eduquizz.security.SecurePreferencesManager
+import com.example.eduquizz.security.TokenManager
 import com.example.eduquizz.features.auth.data.AuthPreferencesManager
 import com.example.eduquizz.features.auth.data.api.*
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -18,7 +19,11 @@ import javax.inject.Singleton
 
 sealed class AuthResult<out T> {
     data class Success<T>(val data: T) : AuthResult<T>()
-    data class Error(val message: String) : AuthResult<Nothing>()
+    data class Error(
+        val message: String,
+        val remainingAttempts: Int? = null,
+        val requiresCaptcha: Boolean = false
+    ) : AuthResult<Nothing>()
 }
 
 @Singleton
@@ -26,6 +31,7 @@ class SecureAuthRepository @Inject constructor(
     private val apiService: AuthApiService,
     private val firebaseAuth: FirebaseAuth,
     private val googleSignInClient: GoogleSignInClient,
+    private val tokenManager: TokenManager,
     @ApplicationContext private val context: Context
 ) {
     private val authPrefs = AuthPreferencesManager(context)
@@ -152,21 +158,43 @@ class SecureAuthRepository @Inject constructor(
     }
 
     /**
-     * Login với backend
+     * Login với backend - Hỗ trợ captcha và brute-force protection
      */
-    suspend fun login(usernameOrEmail: String, password: String): AuthResult<UserResponse> {
+    suspend fun login(
+        usernameOrEmail: String, 
+        password: String, 
+        captchaToken: String? = null
+    ): AuthResult<UserResponse> {
         return try {
             val response = apiService.login(
-                LoginRequest(usernameOrEmail, password)
+                LoginRequest(usernameOrEmail, password, captchaToken)
             )
 
             if (response.isSuccessful) {
                 val loginResponse = response.body()
                 if (loginResponse?.success == true && loginResponse.user != null) {
                     saveUserData(loginResponse.user)
+                    
+                    // Save JWT tokens
+                    val accessToken = loginResponse.accessToken
+                    val refreshToken = loginResponse.refreshToken
+                    if (accessToken != null && refreshToken != null) {
+                        tokenManager.saveTokens(
+                            accessToken = accessToken,
+                            refreshToken = refreshToken,
+                            accessExpiresInSeconds = loginResponse.accessTokenExpiresIn ?: 900,
+                            refreshExpiresInSeconds = loginResponse.refreshTokenExpiresIn ?: 604800
+                        )
+                        Log.d("SecureAuthRepository", "✅ JWT tokens saved successfully")
+                    }
+                    
                     AuthResult.Success(loginResponse.user)
                 } else {
-                    AuthResult.Error(loginResponse?.message ?: "Login failed")
+                    AuthResult.Error(
+                        message = loginResponse?.message ?: "Login failed",
+                        remainingAttempts = loginResponse?.remainingAttempts,
+                        requiresCaptcha = loginResponse?.requiresCaptcha ?: false
+                    )
                 }
             } else {
                 AuthResult.Error("Login failed: ${response.message()}")
@@ -421,6 +449,79 @@ class SecureAuthRepository @Inject constructor(
         } catch (e: Exception) {
             Log.e("SecureAuthRepository", "Check profile exception: ${e.message}")
             AuthResult.Error(e.message ?: "Network error")
+        }
+    }
+
+    /**
+     * Password Reset - Forgot Password
+     */
+    suspend fun forgotPassword(email: String): AuthResult<String> {
+        return try {
+            Log.d("SecureAuthRepository", "Sending forgot password request for: $email")
+            val response = apiService.forgotPassword(ForgotPasswordRequest(email))
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body?.success == true) {
+                    Log.d("SecureAuthRepository", "Forgot password success: ${body.message}")
+                    AuthResult.Success(body.message)
+                } else {
+                    val errorMsg = body?.message ?: "Failed to send reset PIN"
+                    Log.e("SecureAuthRepository", "Forgot password failed: $errorMsg")
+                    AuthResult.Error(errorMsg)
+                }
+            } else {
+                val errorMsg = when (response.code()) {
+                    404 -> "Email không tồn tại trong hệ thống"
+                    400 -> "Yêu cầu không hợp lệ"
+                    500 -> "Lỗi server. Vui lòng thử lại sau"
+                    else -> "Không thể gửi mã PIN (${response.code()})"
+                }
+                Log.e("SecureAuthRepository", "API error: ${response.code()} - ${response.message()}")
+                AuthResult.Error(errorMsg)
+            }
+        } catch (e: Exception) {
+            Log.e("SecureAuthRepository", "Forgot password exception: ${e.message}", e)
+            AuthResult.Error("Lỗi kết nối. Vui lòng kiểm tra internet.")
+        }
+    }
+
+    /**
+     * Verify PIN and Reset Password
+     */
+    suspend fun verifyPinAndResetPassword(
+        email: String,
+        pin: String,
+        newPassword: String
+    ): AuthResult<String> {
+        return try {
+            Log.d("SecureAuthRepository", "Verifying PIN for: $email")
+            val response = apiService.verifyPinAndResetPassword(
+                VerifyPinRequest(email, pin, newPassword)
+            )
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body?.success == true) {
+                    Log.d("SecureAuthRepository", "PIN verified and password reset: ${body.message}")
+                    AuthResult.Success(body.message)
+                } else {
+                    val errorMsg = body?.message ?: "Failed to reset password"
+                    Log.e("SecureAuthRepository", "Verify PIN failed: $errorMsg")
+                    AuthResult.Error(errorMsg)
+                }
+            } else {
+                val errorMsg = when (response.code()) {
+                    400 -> "Mã PIN không đúng hoặc đã hết hạn"
+                    404 -> "Email không tồn tại"
+                    else -> "Đặt lại mật khẩu thất bại"
+                }
+                Log.e("SecureAuthRepository", "API error: ${response.code()} - ${response.message()}")
+                AuthResult.Error(errorMsg)
+            }
+        } catch (e: Exception) {
+            Log.e("SecureAuthRepository", "Verify PIN exception: ${e.message}", e)
+            AuthResult.Error("Lỗi kết nối. Vui lòng kiểm tra internet.")
         }
     }
 }

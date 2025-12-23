@@ -22,21 +22,35 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+        buildTypes {
+            release {
+                // ✅ BẬT minify để obfuscate code
+                isMinifyEnabled = true
+
+                // ✅ BẬT shrink resources
+                isShrinkResources = true
+
+                // ✅ ProGuard files
+                proguardFiles(
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro"
+                )
+
+                // ✅ Tắt debug cho release
+                isDebuggable = false
+            }
+
+            debug {
+                isMinifyEnabled = false
+                isDebuggable = true
+            }
         }
-    }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -64,8 +78,6 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-auth-ktx")
 
-    // Google Sign-In
-    implementation("com.google.android.gms:play-services-auth:20.7.0")
 
 
 
@@ -97,8 +109,6 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation("androidx.compose.material:material-icons-extended")
 
-    // System UI controller for Compose
-    implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
 
     // Testing
     testImplementation(libs.junit)
@@ -114,8 +124,9 @@ dependencies {
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
     implementation("io.coil-kt:coil-gif:2.4.0")
 
-    // WorkManager 
+    // WorkManager
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("com.google.android.gms:play-services-auth:21.0.0")
 
     // Glance (tạo widget)
     implementation ("androidx.glance:glance-appwidget:1.1.0") // hoặc phiên bản mới hơn

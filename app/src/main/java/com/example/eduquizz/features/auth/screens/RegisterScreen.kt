@@ -32,6 +32,27 @@ import com.example.eduquizz.features.auth.viewmodel.AuthViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 
+@Composable
+private fun PasswordRequirement(text: String, isMet: Boolean) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(vertical = 2.dp)
+    ) {
+        Icon(
+            imageVector = if (isMet) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+            contentDescription = null,
+            tint = if (isMet) Color(0xFF16A34A) else Color(0xFF9CA3AF),
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = text,
+            fontSize = 12.sp,
+            color = if (isMet) Color(0xFF16A34A) else Color(0xFF6B7280)
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
@@ -54,6 +75,26 @@ fun RegisterScreen(
     var emailFormatError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
     var confirmPasswordError by remember { mutableStateOf<String?>(null) }
+    var usernameError by remember { mutableStateOf<String?>(null) }
+    var fullNameError by remember { mutableStateOf<String?>(null) }
+    
+    // Parse backend error để hiển thị đúng field
+    LaunchedEffect(uiState.errorMessage) {
+        if (uiState.errorMessage != null) {
+            val error = uiState.errorMessage!!.lowercase()
+            when {
+                error.contains("username") && error.contains("exist") -> {
+                    usernameError = "Username đã tồn tại"
+                }
+                error.contains("email") && error.contains("exist") -> {
+                    emailFormatError = "Email đã được sử dụng"
+                }
+                error.contains("password") -> {
+                    passwordError = uiState.errorMessage
+                }
+            }
+        }
+    }
 
     // Google Sign-In Launcher
     val googleSignInLauncher = rememberLauncherForActivityResult(
@@ -140,20 +181,52 @@ fun RegisterScreen(
                     // Full Name Field
                     OutlinedTextField(
                         value = fullName,
-                        onValueChange = { fullName = it },
-                        label = { Text("Full Name") },
+                        onValueChange = { 
+                            fullName = it
+                            // Validate full name
+                            fullNameError = when {
+                                it.isBlank() -> "Họ tên không được để trống"
+                                it.length < 2 -> "Họ tên phải có ít nhất 2 ký tự"
+                                else -> null
+                            }
+                        },
+                        label = { Text("Họ và tên") },
                         leadingIcon = {
-                            Icon(Icons.Default.Badge, contentDescription = null)
+                            Icon(
+                                Icons.Default.Badge, 
+                                contentDescription = null,
+                                tint = if (fullNameError != null) Color(0xFFDC2626) else Color.Gray
+                            )
+                        },
+                        trailingIcon = {
+                            if (fullNameError != null) {
+                                Icon(
+                                    Icons.Default.Error,
+                                    contentDescription = "Error",
+                                    tint = Color(0xFFDC2626)
+                                )
+                            }
                         },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
+                        isError = fullNameError != null,
+                        supportingText = {
+                            if (fullNameError != null) {
+                                Text(
+                                    text = fullNameError ?: "",
+                                    color = Color(0xFFDC2626),
+                                    fontSize = 12.sp
+                                )
+                            }
+                        },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Next
                         ),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF6366F1),
-                            focusedLabelColor = Color(0xFF6366F1)
+                            focusedBorderColor = if (fullNameError != null) Color(0xFFDC2626) else Color(0xFF6366F1),
+                            unfocusedBorderColor = if (fullNameError != null) Color(0xFFDC2626) else Color.Gray,
+                            focusedLabelColor = if (fullNameError != null) Color(0xFFDC2626) else Color(0xFF6366F1)
                         )
                     )
 
@@ -162,20 +235,53 @@ fun RegisterScreen(
                     // Username Field - không validate availability
                     OutlinedTextField(
                         value = username,
-                        onValueChange = { username = it },
+                        onValueChange = { 
+                            username = it
+                            // Clear backend error khi user sửa
+                            usernameError = when {
+                                it.isBlank() -> "Username không được để trống"
+                                it.length < 3 -> "Username phải có ít nhất 3 ký tự"
+                                !it.matches(Regex("^[a-zA-Z0-9_]+$")) -> "Username chỉ chứa chữ, số và dấu gạch dưới"
+                                else -> null
+                            }
+                        },
                         label = { Text("Username") },
                         leadingIcon = {
-                            Icon(Icons.Default.Person, contentDescription = null)
+                            Icon(
+                                Icons.Default.Person, 
+                                contentDescription = null,
+                                tint = if (usernameError != null) Color(0xFFDC2626) else Color.Gray
+                            )
+                        },
+                        trailingIcon = {
+                            if (usernameError != null) {
+                                Icon(
+                                    Icons.Default.Error,
+                                    contentDescription = "Error",
+                                    tint = Color(0xFFDC2626)
+                                )
+                            }
                         },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
+                        isError = usernameError != null,
+                        supportingText = {
+                            if (usernameError != null) {
+                                Text(
+                                    text = usernameError ?: "",
+                                    color = Color(0xFFDC2626),
+                                    fontSize = 12.sp
+                                )
+                            }
+                        },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Next
                         ),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF6366F1),
-                            focusedLabelColor = Color(0xFF6366F1)
+                            focusedBorderColor = if (usernameError != null) Color(0xFFDC2626) else Color(0xFF6366F1),
+                            unfocusedBorderColor = if (usernameError != null) Color(0xFFDC2626) else Color.Gray,
+                            focusedLabelColor = if (usernameError != null) Color(0xFFDC2626) else Color(0xFF6366F1)
                         )
                     )
 
@@ -187,22 +293,39 @@ fun RegisterScreen(
                         onValueChange = {
                             email = it
                             // Chỉ kiểm tra format email
-                            if (it.isNotEmpty() && !android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches()) {
-                                emailFormatError = "Invalid email format"
-                            } else {
-                                emailFormatError = null
+                            emailFormatError = when {
+                                it.isBlank() -> "Email không được để trống"
+                                !android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches() -> "Email không hợp lệ"
+                                else -> null
                             }
                         },
                         label = { Text("Email") },
                         leadingIcon = {
-                            Icon(Icons.Default.Email, contentDescription = null)
+                            Icon(
+                                Icons.Default.Email, 
+                                contentDescription = null,
+                                tint = if (emailFormatError != null) Color(0xFFDC2626) else Color.Gray
+                            )
+                        },
+                        trailingIcon = {
+                            if (emailFormatError != null) {
+                                Icon(
+                                    Icons.Default.Error,
+                                    contentDescription = "Error",
+                                    tint = Color(0xFFDC2626)
+                                )
+                            }
                         },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         isError = emailFormatError != null,
                         supportingText = {
                             if (emailFormatError != null) {
-                                Text(emailFormatError ?: "", color = Color.Red, fontSize = 12.sp)
+                                Text(
+                                    text = emailFormatError ?: "", 
+                                    color = Color(0xFFDC2626), 
+                                    fontSize = 12.sp
+                                )
                             }
                         },
                         keyboardOptions = KeyboardOptions(
@@ -210,8 +333,9 @@ fun RegisterScreen(
                             imeAction = ImeAction.Next
                         ),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF6366F1),
-                            focusedLabelColor = Color(0xFF6366F1)
+                            focusedBorderColor = if (emailFormatError != null) Color(0xFFDC2626) else Color(0xFF6366F1),
+                            unfocusedBorderColor = if (emailFormatError != null) Color(0xFFDC2626) else Color.Gray,
+                            focusedLabelColor = if (emailFormatError != null) Color(0xFFDC2626) else Color(0xFF6366F1)
                         )
                     )
 
@@ -222,20 +346,15 @@ fun RegisterScreen(
                         value = password,
                         onValueChange = {
                             password = it
-                            // Kiểm tra độ dài password
-                            if (it.isNotEmpty() && it.length < 6) {
-                                passwordError = "Password must be at least 6 characters"
-                            } else {
-                                passwordError = null
-                            }
+                            // Không set error ở đây, để hiển thị checklist
                             // Kiểm tra khớp với confirm password
                             if (confirmPassword.isNotEmpty() && it != confirmPassword) {
-                                confirmPasswordError = "Passwords do not match"
+                                confirmPasswordError = "Mật khẩu không khớp"
                             } else if (confirmPassword.isNotEmpty()) {
                                 confirmPasswordError = null
                             }
                         },
-                        label = { Text("Password") },
+                        label = { Text("Mật khẩu") },
                         leadingIcon = {
                             Icon(Icons.Default.Lock, contentDescription = null)
                         },
@@ -244,8 +363,8 @@ fun RegisterScreen(
                                 Icon(
                                     imageVector = if (passwordVisible) Icons.Default.Visibility
                                     else Icons.Default.VisibilityOff,
-                                    contentDescription = if (passwordVisible) "Hide password"
-                                    else "Show password"
+                                    contentDescription = if (passwordVisible) "Ẩn mật khẩu"
+                                    else "Hiện mật khẩu"
                                 )
                             }
                         },
@@ -253,12 +372,6 @@ fun RegisterScreen(
                         else PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        isError = passwordError != null,
-                        supportingText = {
-                            if (passwordError != null) {
-                                Text(passwordError ?: "", color = Color.Red, fontSize = 12.sp)
-                            }
-                        },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Password,
                             imeAction = ImeAction.Next
@@ -268,6 +381,32 @@ fun RegisterScreen(
                             focusedLabelColor = Color(0xFF6366F1)
                         )
                     )
+                    
+                    // Password requirements checklist
+                    if (password.isNotEmpty()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, top = 8.dp)
+                        ) {
+                            PasswordRequirement(
+                                text = "Ít nhất 8 ký tự",
+                                isMet = password.length >= 8
+                            )
+                            PasswordRequirement(
+                                text = "Có ít nhất 1 chữ hoa",
+                                isMet = password.any { it.isUpperCase() }
+                            )
+                            PasswordRequirement(
+                                text = "Có ít nhất 1 chữ số",
+                                isMet = password.any { it.isDigit() }
+                            )
+                            PasswordRequirement(
+                                text = "Có ít nhất 1 ký tự đặc biệt (!@#\$%^&*...)",
+                                isMet = password.any { "!@#\$%^&*()_+-=[]{}|;:,.<>?".contains(it) }
+                            )
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -277,24 +416,45 @@ fun RegisterScreen(
                         onValueChange = {
                             confirmPassword = it
                             // Kiểm tra khớp với password
-                            if (it.isNotEmpty() && it != password) {
-                                confirmPasswordError = "Passwords do not match"
-                            } else {
-                                confirmPasswordError = null
+                            confirmPasswordError = when {
+                                it.isBlank() -> "Vui lòng xác nhận mật khẩu"
+                                it != password -> "Mật khẩu không khớp"
+                                else -> null
                             }
                         },
-                        label = { Text("Confirm Password") },
+                        label = { Text("Xác nhận mật khẩu") },
                         leadingIcon = {
-                            Icon(Icons.Default.Lock, contentDescription = null)
+                            Icon(
+                                Icons.Default.Lock, 
+                                contentDescription = null,
+                                tint = if (confirmPasswordError != null) Color(0xFFDC2626) else Color.Gray
+                            )
                         },
                         trailingIcon = {
-                            IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                                Icon(
-                                    imageVector = if (confirmPasswordVisible) Icons.Default.Visibility
-                                    else Icons.Default.VisibilityOff,
-                                    contentDescription = if (confirmPasswordVisible) "Hide password"
-                                    else "Show password"
-                                )
+                            Row {
+                                if (confirmPasswordError != null) {
+                                    Icon(
+                                        Icons.Default.Error,
+                                        contentDescription = "Error",
+                                        tint = Color(0xFFDC2626),
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    )
+                                } else if (confirmPassword.isNotEmpty() && confirmPassword == password) {
+                                    Icon(
+                                        Icons.Default.CheckCircle,
+                                        contentDescription = "Match",
+                                        tint = Color(0xFF16A34A),
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    )
+                                }
+                                IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                                    Icon(
+                                        imageVector = if (confirmPasswordVisible) Icons.Default.Visibility
+                                        else Icons.Default.VisibilityOff,
+                                        contentDescription = if (confirmPasswordVisible) "Ẩn mật khẩu"
+                                        else "Hiện mật khẩu"
+                                    )
+                                }
                             }
                         },
                         visualTransformation = if (confirmPasswordVisible) VisualTransformation.None
@@ -304,7 +464,17 @@ fun RegisterScreen(
                         isError = confirmPasswordError != null,
                         supportingText = {
                             if (confirmPasswordError != null) {
-                                Text(confirmPasswordError ?: "", color = Color.Red, fontSize = 12.sp)
+                                Text(
+                                    text = confirmPasswordError ?: "", 
+                                    color = Color(0xFFDC2626), 
+                                    fontSize = 12.sp
+                                )
+                            } else if (confirmPassword.isNotEmpty() && confirmPassword == password) {
+                                Text(
+                                    text = "✓ Mật khẩu khớp", 
+                                    color = Color(0xFF16A34A), 
+                                    fontSize = 12.sp
+                                )
                             }
                         },
                         keyboardOptions = KeyboardOptions(
@@ -312,8 +482,15 @@ fun RegisterScreen(
                             imeAction = ImeAction.Done
                         ),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF6366F1),
-                            focusedLabelColor = Color(0xFF6366F1)
+                            focusedBorderColor = if (confirmPasswordError != null) Color(0xFFDC2626) 
+                                                 else if (confirmPassword.isNotEmpty() && confirmPassword == password) Color(0xFF16A34A)
+                                                 else Color(0xFF6366F1),
+                            unfocusedBorderColor = if (confirmPasswordError != null) Color(0xFFDC2626) 
+                                                   else if (confirmPassword.isNotEmpty() && confirmPassword == password) Color(0xFF16A34A)
+                                                   else Color.Gray,
+                            focusedLabelColor = if (confirmPasswordError != null) Color(0xFFDC2626) 
+                                                else if (confirmPassword.isNotEmpty() && confirmPassword == password) Color(0xFF16A34A)
+                                                else Color(0xFF6366F1)
                         )
                     )
 
@@ -329,42 +506,13 @@ fun RegisterScreen(
                             onCheckedChange = { agreedToTerms = it }
                         )
                         Text(
-                            text = "I agree to Terms & Conditions",
+                            text = "Tôi đồng ý với Điều khoản & Điều kiện",
                             fontSize = 14.sp,
                             modifier = Modifier.clickable { agreedToTerms = !agreedToTerms }
                         )
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
-
-                    // Error Message từ backend (username/email đã tồn tại)
-                    if (uiState.errorMessage != null) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFFFEE2E2)
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Error,
-                                    contentDescription = null,
-                                    tint = Color(0xFFDC2626),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = uiState.errorMessage ?: "",
-                                    color = Color(0xFFDC2626),
-                                    fontSize = 14.sp
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
 
                     // Success Message
                     if (uiState.successMessage != null) {
@@ -394,22 +542,135 @@ fun RegisterScreen(
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                     }
+                    
+                    // Tổng hợp tất cả lỗi validation - MOVED HERE (phía dưới form)
+                    val allErrors = mutableListOf<String>()
+                    if (fullNameError != null) allErrors.add(fullNameError!!)
+                    if (usernameError != null) allErrors.add(usernameError!!)
+                    if (emailFormatError != null) allErrors.add(emailFormatError!!)
+                    
+                    // Password validation errors
+                    if (password.isNotEmpty()) {
+                        if (password.length < 8) allErrors.add("Mật khẩu phải có ít nhất 8 ký tự")
+                        if (!password.any { it.isUpperCase() }) allErrors.add("Mật khẩu phải có ít nhất 1 chữ hoa")
+                        if (!password.any { it.isDigit() }) allErrors.add("Mật khẩu phải có ít nhất 1 chữ số")
+                        if (!password.any { "!@#\$%^&*()_+-=[]{}|;:,.<>?".contains(it) }) {
+                            allErrors.add("Mật khẩu phải có ít nhất 1 ký tự đặc biệt")
+                        }
+                    }
+                    
+                    if (confirmPasswordError != null) allErrors.add(confirmPasswordError!!)
+                    if (!agreedToTerms && (fullName.isNotEmpty() || username.isNotEmpty())) {
+                        allErrors.add("Vui lòng đồng ý với Điều khoản & Điều kiện")
+                    }
+                    
+                    // Hiển thị tất cả lỗi validation
+                    if (allErrors.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFFEF2F2)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Error,
+                                        contentDescription = null,
+                                        tint = Color(0xFFDC2626),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Vui lòng sửa các lỗi sau:",
+                                        color = Color(0xFFDC2626),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                allErrors.forEach { error ->
+                                    Row(
+                                        modifier = Modifier.padding(vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = "•",
+                                            color = Color(0xFFDC2626),
+                                            modifier = Modifier.padding(end = 8.dp)
+                                        )
+                                        Text(
+                                            text = error,
+                                            color = Color(0xFF991B1B),
+                                            fontSize = 13.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                    
+                    // Backend error (không parse được)
+                    if (uiState.errorMessage != null && allErrors.isEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFFEE2E2)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Error,
+                                    contentDescription = null,
+                                    tint = Color(0xFFDC2626),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = uiState.errorMessage ?: "",
+                                    color = Color(0xFFDC2626),
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
 
                     // Register Button
-                    // Chỉ kiểm tra validation cơ bản (format, length, match)
-                    val isFormValid = username.length >= 3 &&
+                    // Validation đầy đủ - yêu cầu 8 ký tự
+                    val isPasswordValid = password.length >= 8 &&
+                            password.any { it.isUpperCase() } &&
+                            password.any { it.isDigit() } &&
+                            password.any { "!@#\$%^&*()_+-=[]{}|;:,.<>?".contains(it) }
+                    
+                    val isFormValid = fullName.isNotBlank() &&
+                            fullNameError == null &&
+                            username.length >= 3 &&
+                            usernameError == null &&
                             email.contains("@") &&
-                            password.length >= 6 &&
-                            password == confirmPassword &&
-                            fullName.isNotBlank() &&
-                            agreedToTerms &&
                             emailFormatError == null &&
-                            passwordError == null &&
-                            confirmPasswordError == null
+                            isPasswordValid &&
+                            password == confirmPassword &&
+                            confirmPasswordError == null &&
+                            agreedToTerms
 
                     Button(
                         onClick = {
                             if (isFormValid) {
+                                // Clear errors trước khi submit
+                                fullNameError = null
+                                usernameError = null
+                                emailFormatError = null
+                                confirmPasswordError = null
+                                
                                 // Gọi register - backend sẽ kiểm tra username/email đã tồn tại
                                 viewModel.register(username, email, password, fullName)
                             }

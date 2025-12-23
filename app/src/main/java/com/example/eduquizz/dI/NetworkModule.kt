@@ -4,6 +4,7 @@ import com.example.eduquizz.features.auth.data.ApiService
 import com.example.eduquizz.features.mapping.repositories.SceneApiService
 import com.example.eduquizz.features.mapping.repositories.SceneRepository
 import com.example.eduquizz.features.quizzGame.network.QuizGameApi
+import com.example.eduquizz.security.JwtAuthInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,21 +22,6 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:8080/.") // Thay đổi thành URL backend của bạn
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
-
-    @Provides
-    @Singleton
-    fun provideQuizGameApi(retrofit: Retrofit): QuizGameApi {
-        return retrofit.create(QuizGameApi::class.java)
-    }
-
-    @Provides
-    @Singleton
     fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor {
         return HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
@@ -45,14 +31,32 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideOkHttpClient(
-        loggingInterceptor: HttpLoggingInterceptor
+        loggingInterceptor: HttpLoggingInterceptor,
+        jwtAuthInterceptor: JwtAuthInterceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor)
+            .addInterceptor(jwtAuthInterceptor)  // JWT first (adds auth header)
+            .addInterceptor(loggingInterceptor)   // Logging second (logs full request)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("http://192.168.1.16:8080/")
+            .client(okHttpClient)  // Use OkHttpClient with interceptors
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideQuizGameApi(retrofit: Retrofit): QuizGameApi {
+        return retrofit.create(QuizGameApi::class.java)
     }
 
     @Provides
