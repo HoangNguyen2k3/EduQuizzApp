@@ -26,6 +26,10 @@ import javax.inject.Singleton
 @Retention(AnnotationRetention.BINARY)
 annotation class AuthRetrofit
 
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class RefreshTokenClient
+
 @Module
 @InstallIn(SingletonComponent::class)
 object AuthModule {
@@ -39,10 +43,25 @@ object AuthModule {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
+        
+        // Certificate Pinning cho ngrok - chống MITM attack
+        val certificatePinner = okhttp3.CertificatePinner.Builder()
+            .add("*.ngrok-free.dev", "sha256/I2i3UibJLgMPr8JYgCTQqaXNpz6rPhDS794lc8Y+QtA=")
+            .build()
+        
+        // Interceptor cho ngrok header
+        val ngrokInterceptor = okhttp3.Interceptor { chain ->
+            val request = chain.request().newBuilder()
+                .addHeader("ngrok-skip-browser-warning", "true")
+                .build()
+            chain.proceed(request)
+        }
 
         return OkHttpClient.Builder()
-            .addInterceptor(jwtAuthInterceptor)  // JWT first - adds Authorization header
-            .addInterceptor(loggingInterceptor)   // Logging second - logs full request
+            .certificatePinner(certificatePinner)  // Certificate Pinning enabled
+            .addInterceptor(ngrokInterceptor)      // Bypass ngrok warning
+            .addInterceptor(jwtAuthInterceptor)    // JWT auth
+            .addInterceptor(loggingInterceptor)    // Logging
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
@@ -54,7 +73,7 @@ object AuthModule {
     @AuthRetrofit
     fun provideAuthRetrofit(@AuthRetrofit okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("http://192.168.1.16:8080/")
+            .baseUrl(com.example.eduquizz.config.ApiConfig.BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -63,6 +82,62 @@ object AuthModule {
     @Provides
     @Singleton
     fun provideAuthApiService(@AuthRetrofit retrofit: Retrofit): AuthApiService {
+        return retrofit.create(AuthApiService::class.java)
+    }
+    
+    /**
+     * OkHttpClient RIÊNG cho refresh token - KHÔNG có JwtAuthInterceptor
+     * để tránh circular dependency
+     */
+    @Provides
+    @Singleton
+    @RefreshTokenClient
+    fun provideRefreshOkHttpClient(): OkHttpClient {
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+        
+        // Certificate Pinning cho ngrok - chống MITM attack
+        val certificatePinner = okhttp3.CertificatePinner.Builder()
+            .add("*.ngrok-free.dev", "sha256/I2i3UibJLgMPr8JYgCTQqaXNpz6rPhDS794lc8Y+QtA=")
+            .build()
+        
+        // Interceptor cho ngrok header
+        val ngrokInterceptor = okhttp3.Interceptor { chain ->
+            val request = chain.request().newBuilder()
+                .addHeader("ngrok-skip-browser-warning", "true")
+                .build()
+            chain.proceed(request)
+        }
+        
+        return OkHttpClient.Builder()
+            .certificatePinner(certificatePinner)  // Certificate Pinning enabled
+            .addInterceptor(ngrokInterceptor)      // Bypass ngrok warning
+            .addInterceptor(loggingInterceptor)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .build()
+    }
+    
+    @Provides
+    @Singleton
+    @RefreshTokenClient
+    fun provideRefreshRetrofit(@RefreshTokenClient okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(com.example.eduquizz.config.ApiConfig.BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+    
+    /**
+     * AuthApiService dùng cho refresh token - KHÔNG đi qua JWT interceptor
+     */
+    @Provides
+    @Singleton
+    @RefreshTokenClient
+    fun provideRefreshAuthApiService(@RefreshTokenClient retrofit: Retrofit): AuthApiService {
         return retrofit.create(AuthApiService::class.java)
     }
 

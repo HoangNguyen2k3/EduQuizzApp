@@ -78,19 +78,9 @@ interface BatChuApiService {
 
 @Singleton
 class BatChuRepository @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val apiService: BatChuApiService  // Inject from NetworkModule (has JWT)
 ) {
-    companion object {
-        private const val BASE_URL = "http://10.0.2.2:8080/api/batchu/"
-    }
-
-    private val apiService: BatChuApiService by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(BatChuApiService::class.java)
-    }
 
     private val sharedPreferences by lazy {
         context.getSharedPreferences("batchu_prefs", Context.MODE_PRIVATE)

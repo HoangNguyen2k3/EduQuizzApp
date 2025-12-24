@@ -43,10 +43,28 @@ import androidx.activity.viewModels
 import com.example.eduquizz.data_save.DataViewModel
 import com.example.eduquizz.security.PlayIntegrityHelper
 import com.example.eduquizz.security.SignatureUtils
+import com.example.eduquizz.security.AuthEventManager
+import com.example.eduquizz.security.TokenManager
+import com.example.eduquizz.features.auth.data.repository.SecureAuthRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+import com.example.eduquizz.features.auth.viewmodel.AuthViewModel
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val dataViewModel: DataViewModel by viewModels()
+    private val authViewModel: AuthViewModel by viewModels()
+    
+    @Inject
+    lateinit var authEventManager: AuthEventManager
+    
+    @Inject
+    lateinit var tokenManager: TokenManager
+    
+    @Inject
+    lateinit var secureAuthRepository: SecureAuthRepository
 
     private val requestNotifPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> }
@@ -105,6 +123,36 @@ class MainActivity : ComponentActivity() {
         setContent {
 
             val navController = rememberNavController()
+            
+            // Session expired dialog state
+            var showSessionExpiredDialog by remember { mutableStateOf(false) }
+            var sessionExpiredMessage by remember { mutableStateOf("") }
+            
+            // Observe auth events
+            LaunchedEffect(Unit) {
+                authEventManager.authEvents.collect { event ->
+                    when (event) {
+                        is com.example.eduquizz.security.AuthEvent.SessionExpired -> {
+                            sessionExpiredMessage = event.message
+                            showSessionExpiredDialog = true
+                            Log.d("MainActivity", "🔒 Session expired: ${event.message}")
+                        }
+                        is com.example.eduquizz.security.AuthEvent.ForceLogout -> {
+                            sessionExpiredMessage = event.reason
+                            showSessionExpiredDialog = true
+                        }
+                        is com.example.eduquizz.security.AuthEvent.TokenRefreshFailed -> {
+                            sessionExpiredMessage = "Phiên đăng nhập đã hết hạn"
+                            showSessionExpiredDialog = true
+                        }
+                        is com.example.eduquizz.security.AuthEvent.Unauthorized -> {
+                            sessionExpiredMessage = "Bạn không có quyền truy cập"
+                            showSessionExpiredDialog = true
+                        }
+                    }
+                }
+            }
+            
             NavGraph(navController = navController)
 
             LaunchedEffect(Unit) {
@@ -120,6 +168,27 @@ class MainActivity : ComponentActivity() {
                     NavGraph(
                         navController = navController,
                         modifier = Modifier.padding(innerPadding)
+                    )
+                }
+                
+                // Session Expired Dialog
+                if (showSessionExpiredDialog) {
+                    com.example.eduquizz.ui.components.SessionExpiredDialog(
+                        message = sessionExpiredMessage,
+                        onLoginClick = {
+                            showSessionExpiredDialog = false
+                            // Reset debounce để lần sau dialog vẫn hiện
+                            authEventManager.resetDebounce()
+                            
+                            // Đăng xuất hoàn toàn - reset cả repository, tokens VÀ uiState
+                            authViewModel.logout()  // Gọi logout() để reset uiState.isLoggedIn = false
+                            tokenManager.clearTokens()
+                            
+                            // Navigate to login và clear back stack
+                            navController.navigate(com.example.eduquizz.navigation.Routes.LOGIN) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
                     )
                 }
             }
