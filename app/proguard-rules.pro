@@ -1,21 +1,28 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# 1. Cấu hình làm mờ mạnh
+-repackageclasses 'o'
+-allowaccessmodification
+-overloadaggressively
+-renamesourcefileattribute SourceFile
+-keepattributes SourceFile,LineNumberTable,Signature,Exceptions
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# 2. Xóa Log
+-assumenosideeffects class android.util.Log {
+    public static *** v(...);
+    public static *** d(...);
+    public static *** i(...);
+    public static *** w(...);
+    public static *** e(...);
+}
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# 3. KHÔNG giữ lại toàn bộ package security, chỉ giữ lại những gì hệ thống gọi qua Reflection
+# (Nếu bạn dùng Hilt, Hilt đã tự có rule nên bạn không cần keep quá nhiều)
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# 4. Chỉ giữ lại tên các Data Class để GSON/Retrofit không bị lỗi
+# Thay vì giữ toàn bộ package, hãy dùng @Keep annotation trong code Kotlin
+# hoặc chỉ keep các class model:
+-keepclassmembers class com.example.eduquizz.**.model.** {
+    <fields>;
+}
+
+# 5. Xóa bỏ các dòng keep Kotlin/Firebase thừa thãi
+# (Vì R8 đã tự hiểu các thư viện này rồi)

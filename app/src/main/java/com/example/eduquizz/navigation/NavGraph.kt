@@ -57,6 +57,7 @@ import com.example.eduquizz.features.admin.screens.ContestEditorScreen
 import com.example.eduquizz.features.admin.viewmodel.GameType
 import com.example.eduquizz.features.auth.screens.LoginScreen
 import com.example.eduquizz.features.auth.screens.RegisterScreen
+import com.example.eduquizz.features.auth.screens.ForgotPasswordScreen
 import com.example.eduquizz.features.auth.viewmodel.AuthViewModel
 import com.example.eduquizz.features.contest.screens.ContestScreen
 import com.example.eduquizz.features.soundgame.screen.SoundGameScreen
@@ -114,6 +115,7 @@ object Routes {
     const val LOGIN = "login"
     const val REGISTER = "register"
     const val USER_PROFILE = "user_profile/{userId}"
+    const val FORGOT_PASSWORD = "forgot_password"
 
     // Admin
     const val ADMIN_DASHBOARD = "admin_dashboard"
@@ -170,6 +172,9 @@ fun NavGraph(
             LoginScreen(
                 onNavigateToRegister = {
                     navController.navigate(Routes.REGISTER)
+                },
+                onNavigateToForgotPassword = {
+                    navController.navigate(Routes.FORGOT_PASSWORD)
                 },
                 onLoginSuccess = {
                     android.util.Log.d("NavGraph", "Login success callback, firstTime=$firstTime")
@@ -239,6 +244,21 @@ fun NavGraph(
                     }
                 },
                 viewModel = authViewModel  // Truyền authViewModel từ NavGraph
+            )
+        }
+
+        composable(Routes.FORGOT_PASSWORD) {
+            ForgotPasswordScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onResetSuccess = {
+                    android.util.Log.d("NavGraph", "Password reset success - navigating to LOGIN")
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.FORGOT_PASSWORD) { inclusive = true }
+                    }
+                },
+                viewModel = authViewModel
             )
         }
 

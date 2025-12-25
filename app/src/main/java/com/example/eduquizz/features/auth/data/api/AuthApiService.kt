@@ -37,6 +37,17 @@ interface AuthApiService {
 
     @GET("api/auth/profile-status/{userId}")
     suspend fun checkProfileCompletion(@Path("userId") userId: Long): Response<UserProfileResponse>
+    
+    // Security Features
+    @POST("api/auth/forgot-password")
+    suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<MessageResponse>
+
+    @POST("api/auth/verify-pin")
+    suspend fun verifyPinAndResetPassword(@Body request: VerifyPinRequest): Response<MessageResponse>
+    
+    // JWT Token refresh
+    @POST("api/auth/refresh-token")
+    suspend fun refreshToken(@Body request: RefreshTokenRequest): Response<RefreshTokenResponse>
 }
 
 // Request Models
@@ -49,7 +60,8 @@ data class RegisterRequest(
 
 data class LoginRequest(
     val usernameOrEmail: String,
-    val password: String
+    val password: String,
+    val captchaToken: String? = null  // Optional reCAPTCHA token
 )
 
 data class UpdateProfileRequest(
@@ -64,11 +76,43 @@ data class ChangePasswordRequest(
     val newPassword: String
 )
 
+// Security Request Models
+data class ForgotPasswordRequest(
+    val email: String
+)
+
+data class VerifyPinRequest(
+    val email: String,
+    val pin: String,
+    val newPassword: String
+)
+
+// JWT Token Request
+data class RefreshTokenRequest(
+    val refreshToken: String
+)
+
 // Response Models
 data class AuthResponse(
     val success: Boolean,
     val message: String,
-    val user: UserResponse?
+    val user: UserResponse?,
+    // JWT Tokens
+    val accessToken: String? = null,
+    val refreshToken: String? = null,
+    val accessTokenExpiresIn: Long? = null,  // seconds
+    val refreshTokenExpiresIn: Long? = null, // seconds
+    // Brute-force protection fields
+    val remainingAttempts: Int? = null,
+    val requiresCaptcha: Boolean = false
+)
+
+// JWT Refresh Token Response
+data class RefreshTokenResponse(
+    val success: Boolean,
+    val message: String? = null,
+    val accessToken: String? = null,
+    val accessTokenExpiresIn: Long? = null  // seconds
 )
 
 data class UserResponse(
@@ -76,7 +120,7 @@ data class UserResponse(
     val username: String,
     val email: String,
     val fullName: String?,
-    val role: String = "USER",  // NEW: Added role field with default value
+    val role: String = "USER",
     val phoneNumber: String?,
     val profileImageUrl: String?,
     val createdAt: String?,
