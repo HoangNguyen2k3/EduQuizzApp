@@ -46,8 +46,8 @@ class TokenManager @Inject constructor(
     fun saveTokens(
         accessToken: String,
         refreshToken: String,
-        accessExpiresInSeconds: Long = 15 * 60,      // 15 phút
-        refreshExpiresInSeconds: Long = 7 * 24 * 60 * 60 // 7 ngày
+        accessExpiresInSeconds: Long = 60,      // 1 phút (testing)
+        refreshExpiresInSeconds: Long = 120     // 2 phút (testing)
     ) {
         val now = System.currentTimeMillis()
         securePrefs.edit()

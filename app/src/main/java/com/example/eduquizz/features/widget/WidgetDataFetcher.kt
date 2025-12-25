@@ -18,7 +18,7 @@ object WidgetDataFetcher {
      */
     suspend fun fetchRandomMappingLocation(context: Context): MappingLocationWidget? = withContext(Dispatchers.IO) {
         try {
-            val url = URL("http://10.0.2.2:8080/api/scene/levels")
+            val url = URL(com.example.eduquizz.config.ApiConfig.BASE_URL + "api/scene/levels")
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = 5000
@@ -58,7 +58,7 @@ object WidgetDataFetcher {
      */
     suspend fun fetchRandomBatChuQuestion(context: Context): BatChuQuestionWidget? = withContext(Dispatchers.IO) {
         try {
-            val url = URL("http://10.0.2.2:8080/api/batchu/levels")
+            val url = URL(com.example.eduquizz.config.ApiConfig.BASE_URL + "api/batchu/levels")
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = 5000
@@ -97,7 +97,7 @@ object WidgetDataFetcher {
      */
     suspend fun fetchRandomWord(context: Context): WordWidget? = withContext(Dispatchers.IO) {
         try {
-            val url = URL("http://10.0.2.2:8080/api/wordsearch/topics")
+            val url = URL(com.example.eduquizz.config.ApiConfig.BASE_URL + "api/wordsearch/topics")
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = 5000

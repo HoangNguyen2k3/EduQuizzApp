@@ -1,6 +1,7 @@
 package com.example.eduquizz.security
 
 import android.util.Log
+import com.example.eduquizz.dI.RefreshTokenClient
 import com.example.eduquizz.features.auth.data.api.AuthApiService
 import com.example.eduquizz.features.auth.data.api.RefreshTokenRequest
 import kotlinx.coroutines.runBlocking
@@ -17,7 +18,9 @@ import javax.inject.Singleton
  */
 @Singleton
 class JwtAuthInterceptor @Inject constructor(
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val authEventManager: AuthEventManager,
+    @RefreshTokenClient private val refreshAuthApiService: AuthApiService  // Dùng client riêng cho refresh
 ) : Interceptor {
     
     companion object {
@@ -33,16 +36,19 @@ class JwtAuthInterceptor @Inject constructor(
         )
     }
     
-    // AuthApiService sẽ được set sau để tránh circular dependency
-    private var authApiService: AuthApiService? = null
-    
-    fun setAuthApiService(apiService: AuthApiService) {
-        this.authApiService = apiService
+    init {
+        Log.d(TAG, "🚀🚀🚀 JwtAuthInterceptor CREATED! 🚀🚀🚀")
     }
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
         val requestPath = originalRequest.url.encodedPath
+        val fullUrl = originalRequest.url.toString()
+        
+        Log.d(TAG, "═══════════════════════════════════════")
+        Log.d(TAG, "🌐 INTERCEPTOR CALLED: $requestPath")
+        Log.d(TAG, "🌐 Full URL: $fullUrl")
+        Log.d(TAG, "═══════════════════════════════════════")
         
         // Bỏ qua các public endpoints
         if (publicEndpoints.any { requestPath.contains(it) }) {
@@ -53,17 +59,27 @@ class JwtAuthInterceptor @Inject constructor(
         // Lấy access token
         var accessToken = tokenManager.getAccessToken()
         
+        // Debug: Log token expiry info
+        Log.d(TAG, "🔍 Token check - hasToken: ${accessToken != null}, isExpired: ${tokenManager.isAccessTokenExpired()}")
+        
         // Kiểm tra token có hết hạn không
         if (accessToken != null && tokenManager.isAccessTokenExpired()) {
             Log.d(TAG, "⏰ Access token expired, attempting refresh...")
             
             // Thử refresh token
             accessToken = refreshToken()
+            
+            // Nếu refresh thất bại, emit event
+            if (accessToken == null) {
+                emitSessionExpiredEvent()
+            }
         }
         
-        // Nếu không có token, tiếp tục request (sẽ bị 401 từ server)
+        // Nếu không có token cho protected endpoint, emit event và request sẽ fail
         if (accessToken.isNullOrBlank()) {
-            Log.w(TAG, "⚠️ No access token available")
+            Log.w(TAG, "⚠️ No access token available for protected endpoint: $requestPath")
+            // Emit event để UI hiển thị dialog đăng nhập lại
+            emitSessionExpiredEvent()
             return chain.proceed(originalRequest)
         }
         
@@ -77,9 +93,9 @@ class JwtAuthInterceptor @Inject constructor(
         // Thực hiện request
         val response = chain.proceed(authenticatedRequest)
         
-        // Nếu bị 401, thử refresh token và retry
-        if (response.code == 401 && !tokenManager.isRefreshTokenExpired()) {
-            Log.d(TAG, "🔄 Got 401, attempting token refresh...")
+        // Nếu bị 401 hoặc 403, thử refresh token và retry
+        if ((response.code == 401 || response.code == 403) && !tokenManager.isRefreshTokenExpired()) {
+            Log.d(TAG, "🔄 Got ${response.code}, attempting token refresh...")
             response.close()
             
             val newAccessToken = refreshToken()
@@ -88,11 +104,31 @@ class JwtAuthInterceptor @Inject constructor(
                 val retryRequest = originalRequest.newBuilder()
                     .header("Authorization", "Bearer $newAccessToken")
                     .build()
+                Log.d(TAG, "🔄 Retrying with new token...")
                 return chain.proceed(retryRequest)
+            } else {
+                // Refresh thất bại, emit event để thông báo user
+                Log.e(TAG, "❌ Token refresh failed, session expired")
+                emitSessionExpiredEvent()
             }
         }
         
+        // Nếu vẫn bị 401/403 sau khi retry (không có refresh token hoặc refresh failed)
+        if (response.code == 401 || response.code == 403) {
+            Log.w(TAG, "🚫 Unauthorized/Forbidden - no valid refresh token")
+            emitSessionExpiredEvent()
+        }
+        
         return response
+    }
+    
+    /**
+     * Emit session expired event để UI hiển thị dialog
+     */
+    private fun emitSessionExpiredEvent() {
+        runBlocking {
+            authEventManager.emitSessionExpired("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.")
+        }
     }
     
     /**
@@ -101,8 +137,17 @@ class JwtAuthInterceptor @Inject constructor(
     private fun refreshToken(): String? {
         val refreshToken = tokenManager.getRefreshToken()
         
-        if (refreshToken.isNullOrBlank() || tokenManager.isRefreshTokenExpired()) {
-            Log.w(TAG, "❌ No valid refresh token - user needs to login")
+        Log.d(TAG, "🔄 === REFRESH TOKEN START ===")
+        Log.d(TAG, "🔄 Refresh token available: ${!refreshToken.isNullOrBlank()}")
+        Log.d(TAG, "🔄 Refresh token expired: ${tokenManager.isRefreshTokenExpired()}")
+        
+        if (refreshToken.isNullOrBlank()) {
+            Log.w(TAG, "❌ No refresh token - user needs to login")
+            return null
+        }
+        
+        if (tokenManager.isRefreshTokenExpired()) {
+            Log.w(TAG, "❌ Refresh token expired - user needs to login")
             tokenManager.clearTokens()
             return null
         }
@@ -110,35 +155,41 @@ class JwtAuthInterceptor @Inject constructor(
         return try {
             // Gọi API refresh token đồng bộ (trong interceptor)
             runBlocking {
-                val apiService = authApiService
-                if (apiService == null) {
-                    Log.e(TAG, "❌ AuthApiService not available for refresh")
-                    return@runBlocking null
-                }
+                Log.d(TAG, "🔄 Using RefreshTokenClient (no JWT interceptor)...")
                 
-                val response = apiService.refreshToken(RefreshTokenRequest(refreshToken))
+                Log.d(TAG, "🔄 Calling refresh token API...")
+                val response = refreshAuthApiService.refreshToken(RefreshTokenRequest(refreshToken))
+                
+                Log.d(TAG, "🔄 Response code: ${response.code()}")
+                Log.d(TAG, "🔄 Response success: ${response.isSuccessful}")
                 
                 if (response.isSuccessful && response.body()?.success == true) {
                     val newAccessToken = response.body()?.accessToken
                     val expiresIn = response.body()?.accessTokenExpiresIn ?: 900
                     
+                    Log.d(TAG, "🔄 New access token received: ${!newAccessToken.isNullOrBlank()}")
+                    Log.d(TAG, "🔄 Expires in: ${expiresIn}s")
+                    
                     if (newAccessToken != null) {
                         tokenManager.updateAccessToken(newAccessToken, expiresIn)
-                        Log.d(TAG, "✅ Token refreshed successfully")
+                        Log.d(TAG, "✅ Token refreshed successfully!")
                         newAccessToken
                     } else {
+                        Log.e(TAG, "❌ New access token is null in response")
                         null
                     }
                 } else {
-                    Log.e(TAG, "❌ Token refresh failed: ${response.message()}")
+                    Log.e(TAG, "❌ Token refresh failed: ${response.code()} - ${response.message()}")
+                    Log.e(TAG, "❌ Response body: ${response.body()}")
                     tokenManager.clearTokens()
                     null
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Token refresh error: ${e.message}")
+            Log.e(TAG, "❌ Token refresh error: ${e.message}", e)
             tokenManager.clearTokens()
             null
         }
     }
 }
+

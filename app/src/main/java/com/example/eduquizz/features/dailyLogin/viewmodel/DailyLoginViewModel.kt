@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.eduquizz.data_save.UserPreferencesManager
+import com.example.eduquizz.data_save.SecureDataStoreManager
 import com.example.eduquizz.features.dailyLogin.model.DailyLoginReward
 import com.example.eduquizz.features.dailyLogin.model.DailyLoginUiState
 import com.example.eduquizz.features.dailyLogin.model.UserDailyLoginData
@@ -28,6 +29,7 @@ class DailyLoginViewModel @Inject constructor(
 ) : ViewModel() {
     
     private val userPreferencesManager = UserPreferencesManager(context)
+    private val secureDataStore = SecureDataStoreManager(context)
     
     private val _uiState = MutableStateFlow(DailyLoginUiState())
     val uiState: StateFlow<DailyLoginUiState> = _uiState.asStateFlow()
@@ -203,17 +205,14 @@ class DailyLoginViewModel @Inject constructor(
                     onSuccess = { (day, goldReward) ->
                         Log.d(TAG, "✅ [CLAIM] Repository returned success: day=$day, gold=$goldReward")
                         
-                        // Cộng gold vào tài khoản
+                        // Cộng gold vào tài khoản (sử dụng SecureDataStore để sync với home)
                         try {
                             Log.d(TAG, "💰 [CLAIM] Adding gold to account: $goldReward")
-                            val currentGold = userPreferencesManager.goldFlow.first()
+                            val currentGold = secureDataStore.goldFlow.first()
                             Log.d(TAG, "💰 [CLAIM] Current gold before: $currentGold")
                             
-                            userPreferencesManager.addGold(goldReward)
+                            val newGold = secureDataStore.addGold(goldReward)
                             
-                            // Đợi một chút để DataStore cập nhật
-                            kotlinx.coroutines.delay(100)
-                            val newGold = userPreferencesManager.goldFlow.first()
                             Log.d(TAG, "💰 [CLAIM] Gold after adding: $newGold (added $goldReward)")
                             Log.d(TAG, "✅ [CLAIM] Gold added successfully! Total: $newGold")
                         } catch (e: Exception) {

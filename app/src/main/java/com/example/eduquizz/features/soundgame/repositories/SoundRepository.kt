@@ -2,6 +2,7 @@ package com.example.eduquizz.features.soundgame.repositories
 
 import android.content.Context
 import android.util.Log
+import com.example.eduquizz.config.ApiConfig.BASE_URL
 import com.example.eduquizz.features.soundgame.model.SoundClip
 import com.example.eduquizz.features.soundgame.model.SoundLevel
 import com.example.eduquizz.features.soundgame.model.SoundLevelData
@@ -79,34 +80,11 @@ interface SoundGameApiService {
 
 @Singleton
 class SoundRepository @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val apiService: SoundGameApiService  // Inject from NetworkModule (has JWT)
 ) {
     companion object {
         private const val TAG = "SoundRepository"
-    }
-
-    // CHANGE THIS to your computer's IP address when testing on physical device
-    // Use "http://10.0.2.2:8080/" for emulator
-    private val BASE_URL = "http://10.0.2.2:8080/"
-
-    private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
-    }
-
-    private val okHttpClient = OkHttpClient.Builder()
-        .addInterceptor(loggingInterceptor)
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
-        .build()
-
-    private val apiService: SoundGameApiService by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(SoundGameApiService::class.java)
     }
 
     suspend fun getAllLevels(): Result<List<SoundLevel>> {

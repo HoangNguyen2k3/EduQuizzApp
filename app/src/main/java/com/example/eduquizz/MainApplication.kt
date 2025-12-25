@@ -13,18 +13,18 @@ class MainApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
-        StrictMode.setThreadPolicy(
-            StrictMode.ThreadPolicy.Builder()
-                .detectAll()
-                .penaltyLog()
-                .build()
-        )
-        StrictMode.setVmPolicy(
-            StrictMode.VmPolicy.Builder()
-                .detectAll()
-                .penaltyLog()
-                .build()
-        )
+//        StrictMode.setThreadPolicy(
+//            StrictMode.ThreadPolicy.Builder()
+//                .detectAll()
+//                .penaltyLog()
+//                .build()
+//        )
+//        StrictMode.setVmPolicy(
+//            StrictMode.VmPolicy.Builder()
+//                .detectAll()
+//                .penaltyLog()
+//                .build()
+//        )
         FirebaseDatabase.getInstance().setPersistenceEnabled(false)
 
 

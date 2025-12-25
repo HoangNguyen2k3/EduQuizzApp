@@ -165,7 +165,7 @@ class EduQuizzWidgetProvider : AppWidgetProvider() {
     ) {
         val repo = SceneRepository(
             retrofit2.Retrofit.Builder()
-                .baseUrl("http://10.0.2.2:8080/") // chỉnh baseUrl cho mapping API
+                .baseUrl(com.example.eduquizz.config.ApiConfig.BASE_URL) // Sử dụng ApiConfig.BASE_URL
                 .addConverterFactory(retrofit2.converter.gson.GsonConverterFactory.create())
                 .build()
                 .create(SceneApiService::class.java)
