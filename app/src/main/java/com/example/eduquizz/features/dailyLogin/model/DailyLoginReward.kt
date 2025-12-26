@@ -1,17 +1,31 @@
 package com.example.eduquizz.features.dailyLogin.model
 
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.PropertyName
 import com.google.firebase.firestore.ServerTimestamp
 
 /**
  * Model cho phần thưởng đăng nhập hàng ngày
+ * 
+ * LƯU Ý: @PropertyName cần thiết vì Firestore Java SDK chuyển đổi
+ * boolean property "isClaimed" thành "claimed" theo Java Bean convention.
+ * Không có annotation này, data sẽ bị mất khi deserialize.
  */
 data class DailyLoginReward(
     val day: Int = 0,
     val goldReward: Int = 0,
-    val isClaimed: Boolean = false,
+    
+    // QUAN TRỌNG: Phải dùng @get:PropertyName và @set:PropertyName 
+    // để Firestore serialize/deserialize đúng field name
+    @get:PropertyName("isClaimed") 
+    @set:PropertyName("isClaimed")
+    var isClaimed: Boolean = false,
+    
     val claimedAt: Timestamp? = null
 ) {
+    // Constructor không tham số cần thiết cho Firestore deserialization
+    constructor() : this(0, 0, false, null)
+    
     companion object {
         /**
          * Tạo danh sách 7 ngày với phần thưởng tăng dần

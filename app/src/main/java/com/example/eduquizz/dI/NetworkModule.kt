@@ -9,6 +9,7 @@ import com.example.eduquizz.features.soundgame.repositories.SoundGameApiService
 import com.example.eduquizz.features.wordsearch.repository.WordSearchApiService
 import com.example.eduquizz.features.BatChu.repository.BatChuApiService
 import com.example.eduquizz.security.JwtAuthInterceptor
+import com.example.eduquizz.data.api.GameSessionApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -123,5 +124,11 @@ object NetworkModule {
     @Singleton
     fun provideBatChuApiService(retrofit: Retrofit): BatChuApiService {
         return retrofit.create(BatChuApiService::class.java)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideGameSessionApiService(retrofit: Retrofit): GameSessionApiService {
+        return retrofit.create(GameSessionApiService::class.java)
     }
 }

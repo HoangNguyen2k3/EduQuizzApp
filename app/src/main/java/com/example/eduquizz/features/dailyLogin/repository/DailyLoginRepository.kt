@@ -271,11 +271,22 @@ class DailyLoginRepository @Inject constructor(
         val updatedRewards = newRewards.mapIndexed { index, reward ->
             if (index == newDay - 1) {
                 Log.d(TAG, "✅ [UPDATE] Marking day ${newDay} as claimed")
-                reward.copy(isClaimed = true, claimedAt = serverTS)
+                // Tạo reward mới với isClaimed = true
+                DailyLoginReward(
+                    day = reward.day,
+                    goldReward = reward.goldReward,
+                    isClaimed = true,
+                    claimedAt = serverTS
+                )
             } else {
                 if (reset && index != newDay - 1) {
                     // Reset các ngày khác về unclaimed khi reset cycle
-                    reward.copy(isClaimed = false, claimedAt = null)
+                    DailyLoginReward(
+                        day = reward.day,
+                        goldReward = reward.goldReward,
+                        isClaimed = false,
+                        claimedAt = null
+                    )
                 } else {
                     reward
                 }
@@ -291,6 +302,12 @@ class DailyLoginRepository @Inject constructor(
             rewards = updatedRewards,
             updatedAt = serverTS
         )
+        
+        // Log chi tiết rewards sau khi update
+        Log.d(TAG, "✅ [UPDATE] Rewards after update:")
+        updatedRewards.forEachIndexed { index, r ->
+            Log.d(TAG, "     Day ${index + 1}: isClaimed=${r.isClaimed}, claimedAt=${r.claimedAt}")
+        }
         
         Log.d(TAG, "✅ [UPDATE] Reward updated: currentDay=${updatedData.currentDay}, lastClaimedDay=${updatedData.lastClaimedDay}")
         return updatedData
