@@ -3,6 +3,7 @@ package com.example.eduquizz.features.quizzGame.model
 import com.google.gson.annotations.SerializedName
 
 data class QuestionItem(
+    val id: Int = 0,  // Unique ID for server-side validation
     @SerializedName("question")
     val questionText: String = "",
     val answer: String = "",
@@ -12,6 +13,7 @@ data class QuestionItem(
 ) {
     // Constructor để convert từ backend response
     constructor(backendQuestion: BackendQuizQuestion) : this(
+        id = backendQuestion.id?.toInt() ?: 0,
         questionText = backendQuestion.question,
         answer = backendQuestion.answer,
         category = backendQuestion.category,

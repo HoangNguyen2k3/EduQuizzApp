@@ -51,6 +51,7 @@ fun ResultsScreen(
         Color(0xFFE3F2FD)
     ),
     dataviewModel: DataViewModel = hiltViewModel(),
+    questionViewModel: com.example.eduquizz.features.quizzGame.viewmodel.QuestionViewModel? = null,
     back_route:String = "",
     play_agian_route:String = "",
 ) {
@@ -59,6 +60,9 @@ fun ResultsScreen(
     val activity = context as? Activity
 
     var backPressedOnce by remember { mutableStateOf(false) }
+    var goldAdded by remember { mutableStateOf(false) }
+    var verifiedCoins by remember { mutableStateOf(correctAnswers * 10) }
+    var validationMessage by remember { mutableStateOf<String?>(null) }
 
     BackHandler {
         if (backPressedOnce) {
@@ -83,22 +87,61 @@ fun ResultsScreen(
         iterations = LottieConstants.IterateForever
     )
 
-    val coinsEarned = correctAnswers * 10
+    // NOTE: correctAnswers param from URL is actually the SCORE (e.g., 50), not the count (e.g., 5)
+    // So we need to calculate the actual correct count for display
+    val actualCorrectCount = correctAnswers / 10  // Convert score to count
+    val coinsEarned = correctAnswers  // Already the score, don't multiply by 10
+    
     val encouragementText = when {
-        correctAnswers == totalQuestions -> "🎉 Xuất sắc! Bạn đã trả lời đúng tất cả!"
-        correctAnswers > totalQuestions / 2 -> "👍 Tốt lắm! Hãy cố gắng thêm nữa nhé!"
+        actualCorrectCount == totalQuestions -> "🎉 Xuất sắc! Bạn đã trả lời đúng tất cả!"
+        actualCorrectCount > totalQuestions / 2 -> "👍 Tốt lắm! Hãy cố gắng thêm nữa nhé!"
         else -> "💪 Đừng nản lòng! Lần sau sẽ tốt hơn!"
     }
+    
+    // Server-side score validation
     LaunchedEffect(Unit) {
-        dataviewModel.addGold(coinsEarned)
-        dataviewModel.addTotalQuestions(totalQuestions)
-        dataviewModel.addCorrectAnsweredQuestions(correctAnswers)
-        if(correctAnswers==totalQuestions){
-            dataviewModel.addCorrectAllQuestions(1)
-        }else if(correctAnswers>totalQuestions/2){
-            dataviewModel.addCorrectAbove50Percent(1)
-        }else{
-            dataviewModel.addCorrectBelow50Percent(1)
+        if (!goldAdded) {
+            if (questionViewModel != null && questionViewModel.useServerValidation.value) {
+                // Use server-side validation
+                // NOTE: correctAnswers param is actually the SCORE (from URL), not the count!
+                val scoreFromParams = correctAnswers  // Already the score, don't multiply by 10
+                android.util.Log.d("ResultsScreen", "🔄 Submitting score to server for validation... (scoreFromParams=$scoreFromParams)")
+                questionViewModel.submitScoreToServer(clientScoreOverride = scoreFromParams) { result ->
+                    if (result.success) {
+                        verifiedCoins = result.verifiedScore
+                        dataviewModel.addGold(result.verifiedScore)
+                        android.util.Log.d("ResultsScreen", "✅ Server verified score: ${result.verifiedScore}")
+                        
+                        if (result.flaggedSuspicious) {
+                            validationMessage = "⚠️ ${result.message}"
+                        }
+                    } else {
+                        // Validation failed - FALLBACK to client score for now
+                        // (while we debug server-side issues)
+                        android.util.Log.e("ResultsScreen", "❌ Server rejected score: ${result.errorCode}, falling back to client score")
+                        verifiedCoins = scoreFromParams
+                        dataviewModel.addGold(scoreFromParams)  // Use client score as fallback
+                        validationMessage = "⚠️ Server validation failed, using client score"
+                    }
+                    goldAdded = true
+                }
+            } else {
+                // Fallback: client-side (old behavior)
+                android.util.Log.d("ResultsScreen", "⚠️ Using client-side scoring (no server validation)")
+                dataviewModel.addGold(coinsEarned)
+                goldAdded = true
+            }
+            
+            // Update statistics (use actualCorrectCount, not correctAnswers which is the score)
+            dataviewModel.addTotalQuestions(totalQuestions)
+            dataviewModel.addCorrectAnsweredQuestions(actualCorrectCount)
+            if(actualCorrectCount == totalQuestions){
+                dataviewModel.addCorrectAllQuestions(1)
+            }else if(actualCorrectCount > totalQuestions/2){
+                dataviewModel.addCorrectAbove50Percent(1)
+            }else{
+                dataviewModel.addCorrectBelow50Percent(1)
+            }
         }
     }
     Surface(
@@ -155,7 +198,7 @@ fun ResultsScreen(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Text(
-                            text = "✅ Trả lời đúng: $correctAnswers / $totalQuestions",
+                            text = "✅ Trả lời đúng: $actualCorrectCount / $totalQuestions",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.SemiBold
                         )

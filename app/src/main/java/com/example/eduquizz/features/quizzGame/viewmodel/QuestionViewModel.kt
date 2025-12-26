@@ -1,5 +1,6 @@
 package com.example.eduquizz.features.quizzGame.viewmodel
 
+import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -10,6 +11,12 @@ import com.example.eduquizz.R
 import com.example.eduquizz.data.repository.QuestionRepository
 import com.example.eduquizz.data.models.DataOrException
 import com.example.eduquizz.features.quizzGame.model.QuestionItem
+import com.example.eduquizz.security.GameSessionManager
+import com.example.eduquizz.data.api.GameSessionApiService
+import com.example.eduquizz.data.api.StartSessionRequest
+import com.example.eduquizz.data.api.QuestionData
+import com.example.eduquizz.data.api.SubmitScoreRequest
+import com.example.eduquizz.data.api.AnswerData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -17,8 +24,19 @@ import kotlin.random.Random
 
 @HiltViewModel
 class QuestionViewModel @Inject constructor(
-    private val repository: QuestionRepository
+    private val repository: QuestionRepository,
+    private val gameSessionManager: GameSessionManager,
+    private val gameSessionApiService: GameSessionApiService
 ) : ViewModel() {
+    
+    companion object {
+        private const val TAG = "QuestionViewModel"
+    }
+    
+    // Server-side validation states
+    val isSubmittingScore = mutableStateOf(false)
+    val serverValidationResult = mutableStateOf<ServerValidationResult?>(null)
+    val useServerValidation = mutableStateOf(true) // Toggle for server validation
     val count = mutableStateOf(0)
     val score = mutableStateOf(0)
     val choiceSelected = mutableStateOf("")
@@ -49,7 +67,7 @@ class QuestionViewModel @Inject constructor(
 
     private lateinit var dataViewModel: DataViewModel
 
-    fun getAllQuestions(path: String) {
+    fun getAllQuestions(path: String, levelId: String = "LevelEasy") {
         viewModelScope.launch {
             data.value = DataOrException(null, true, null)
             try {
@@ -60,16 +78,27 @@ class QuestionViewModel @Inject constructor(
                 result.data?.let { questions ->
                     if (questions.isNotEmpty()) {
                         setupQuestions(questions)
+                        
+                        // Bắt đầu server session SAU KHI questions đã được setup
+                        if (useServerValidation.value && usedQuestions.isNotEmpty()) {
+                            Log.d(TAG, "🚀 Auto-starting game session after questions loaded")
+                            startGameSessionInternal(levelId)
+                        }
                     }
                 }
             } catch (e: Exception) {
+                Log.e(TAG, "Failed to load questions: ${e.message}")
                 data.value = DataOrException(null, false, e)
             }
         }
     }
 
     private fun setupQuestions(questions: ArrayList<QuestionItem>) {
-        val shuffled = questions.shuffled()
+        // Assign unique IDs to each question for server-side validation
+        val questionsWithIds = questions.mapIndexed { index, question ->
+            question.copy(id = index + 1)
+        }
+        val shuffled = questionsWithIds.shuffled()
         usedQuestions.clear()
         reserveQuestions.clear()
 
@@ -82,9 +111,12 @@ class QuestionViewModel @Inject constructor(
         return data.value.data?.size ?: 0
     }
 
+    private var currentLevelId: String = "LevelEasy"
+    
     fun Init(dataVM: DataViewModel, currentLevel: String) {
         this.dataViewModel = dataVM
-        getAllQuestions("English/QuizGame/$currentLevel")
+        this.currentLevelId = currentLevel
+        getAllQuestions("English/QuizGame/$currentLevel", currentLevel)
         coins.value = dataVM.gold.value ?: 0
     }
 
@@ -168,6 +200,9 @@ class QuestionViewModel @Inject constructor(
 
         choiceSelected.value = choice
         val currentQuestion = usedQuestions[count.value]
+        
+        // Record answer for server-side validation
+        recordAnswerForValidation(currentQuestion.id.toString(), choice)
 
         if (choice == currentQuestion.answer) {
             score.value += 10
@@ -195,5 +230,185 @@ class QuestionViewModel @Inject constructor(
         usedQuestions.clear()
         reserveQuestions.clear()
         resetTimeTrigger.value++
+        
+        // Reset server validation
+        gameSessionManager.endSession()
+        serverValidationResult.value = null
+    }
+    
+    // ============ SERVER-SIDE VALIDATION METHODS ============
+    
+    /**
+     * Bắt đầu game session với server (internal - được gọi tự động)
+     */
+    private fun startGameSessionInternal(levelId: String) {
+        if (!useServerValidation.value) {
+            Log.d(TAG, "⏭️ Server validation disabled, skipping session start")
+            return
+        }
+        
+        // End any existing session first
+        if (gameSessionManager.hasActiveSession()) {
+            Log.d(TAG, "⚠️ Ending existing session before starting new one")
+            gameSessionManager.endSession()
+        }
+        
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "🎮 Starting game session for level: $levelId")
+                
+                // Build questions data for server
+                val questionsData = usedQuestions.map { q ->
+                    QuestionData(
+                        questionId = q.id.toString(),
+                        question = q.questionText,
+                        correctAnswer = q.answer,
+                        choices = q.choices
+                    )
+                }
+                
+                val request = StartSessionRequest(
+                    gameType = "quizgame",
+                    levelId = levelId,
+                    questions = questionsData
+                )
+                
+                val response = gameSessionApiService.startSession(request)
+                
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val sessionId = response.body()?.sessionId ?: return@launch
+                    gameSessionManager.startSession(sessionId, "quizgame", levelId)
+                    Log.d(TAG, "✅ Session started: $sessionId")
+                } else {
+                    Log.e(TAG, "❌ Failed to start session: ${response.message()}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Exception starting session: ${e.message}", e)
+            }
+        }
+    }
+    
+    /**
+     * Ghi nhận câu trả lời để gửi lên server
+     * Gọi khi user chọn đáp án
+     */
+    fun recordAnswerForValidation(questionId: String, answer: String) {
+        if (!useServerValidation.value || !gameSessionManager.hasActiveSession()) {
+            return
+        }
+        gameSessionManager.recordAnswer(questionId, answer)
+    }
+    
+    /**
+     * Submit điểm lên server để xác thực
+     * Gọi khi game kết thúc, trước khi cộng vàng
+     * 
+     * @param clientScoreOverride Optional score to use instead of score.value (for cases where ViewModel state resets)
+     * @param onResult Callback với kết quả validation
+     */
+    fun submitScoreToServer(clientScoreOverride: Int? = null, onResult: (ServerValidationResult) -> Unit) {
+        // Use override if provided, otherwise use score.value
+        val clientScoreToUse = clientScoreOverride ?: score.value
+        
+        if (!useServerValidation.value || !gameSessionManager.hasActiveSession()) {
+            Log.d(TAG, "⏭️ No active session, using client score: $clientScoreToUse")
+            onResult(ServerValidationResult(
+                success = true,
+                verifiedScore = clientScoreToUse,
+                useClientScore = true,
+                message = "Client-side scoring (no server validation)"
+            ))
+            return
+        }
+        
+        isSubmittingScore.value = true
+        
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "📤 Submitting score to server...")
+                Log.d(TAG, "📊 Client score (override=$clientScoreOverride, score.value=${score.value}): $clientScoreToUse")
+                Log.d(TAG, "📊 Answers recorded: ${gameSessionManager.getAnswers().size}")
+                
+                // Build submission with the correct score
+                val submission = gameSessionManager.buildSubmission(clientScoreToUse)
+                
+                val request = SubmitScoreRequest(
+                    sessionId = submission.sessionId,
+                    answers = submission.answers.map { 
+                        AnswerData(it.questionId, it.answer, it.timeToAnswer) 
+                    },
+                    clientScore = submission.clientScore,
+                    signature = submission.signature
+                )
+                
+                val response = gameSessionApiService.submitScore(request)
+                
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body?.success == true) {
+                        Log.d(TAG, "✅ Server verified: score=${body.verifiedScore}, suspicious=${body.flaggedSuspicious}")
+                        
+                        val result = ServerValidationResult(
+                            success = true,
+                            verifiedScore = body.verifiedScore ?: clientScoreToUse,
+                            flaggedSuspicious = body.flaggedSuspicious ?: false,
+                            message = if (body.flaggedSuspicious == true) body.warning else "Score verified"
+                        )
+                        serverValidationResult.value = result
+                        onResult(result)
+                    } else {
+                        Log.e(TAG, "❌ Server rejected: ${body?.errorCode} - ${body?.errorMessage}")
+                        
+                        val result = ServerValidationResult(
+                            success = false,
+                            verifiedScore = 0,
+                            errorCode = body?.errorCode,
+                            message = body?.errorMessage ?: "Validation failed"
+                        )
+                        serverValidationResult.value = result
+                        onResult(result)
+                    }
+                } else {
+                    Log.e(TAG, "❌ API error: ${response.code()} - ${response.message()}")
+                    
+                    // Fallback to client score on network error
+                    val result = ServerValidationResult(
+                        success = true,
+                        verifiedScore = score.value,
+                        useClientScore = true,
+                        message = "Network error, using client score"
+                    )
+                    serverValidationResult.value = result
+                    onResult(result)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Exception: ${e.message}", e)
+                
+                // Fallback to client score on exception
+                val result = ServerValidationResult(
+                    success = true,
+                    verifiedScore = score.value,
+                    useClientScore = true,
+                    message = "Error: ${e.message}, using client score"
+                )
+                serverValidationResult.value = result
+                onResult(result)
+            } finally {
+                isSubmittingScore.value = false
+                gameSessionManager.endSession()
+            }
+        }
     }
 }
+
+/**
+ * Kết quả xác thực từ server
+ */
+data class ServerValidationResult(
+    val success: Boolean,
+    val verifiedScore: Int,
+    val flaggedSuspicious: Boolean = false,
+    val errorCode: String? = null,
+    val message: String? = null,
+    val useClientScore: Boolean = false
+)

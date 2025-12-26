@@ -542,7 +542,18 @@ fun NavGraph(
             val total = backStackEntry.arguments?.getInt("total") ?: 0
             val route_back = backStackEntry.arguments?.getString("route_back")?:""
             val route_again = backStackEntry.arguments?.getString("route_again")?:""
-            ResultsScreen(navController, correctAnswers = correct, totalQuestions = total, back_route = route_back, play_agian_route = route_again)
+            
+            // Get shared QuestionViewModel for server-side validation
+            val questionViewModel: QuestionViewModel = hiltViewModel()
+            
+            ResultsScreen(
+                navController, 
+                correctAnswers = correct, 
+                totalQuestions = total, 
+                back_route = route_back, 
+                play_agian_route = route_again,
+                questionViewModel = questionViewModel
+            )
         }
         composable(Routes.CONTEST_GAMES_SCENE) {
             ContestScreen(

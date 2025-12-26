@@ -1,7 +1,5 @@
 package com.example.eduquizz.data.api
 
-import com.example.eduquizz.security.GameSessionManager.AnswerData
-import com.example.eduquizz.security.GameSessionManager.QuestionData
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -28,35 +26,48 @@ interface GameSessionApiService {
     suspend fun submitScore(
         @Body request: SubmitScoreRequest
     ): Response<SubmitScoreResponse>
-
-    // ============ Request/Response DTOs ============
-
-    data class StartSessionRequest(
-        val gameType: String,
-        val levelId: String? = null,
-        val questions: List<QuestionData>
-    )
-
-    data class StartSessionResponse(
-        val success: Boolean,
-        val sessionId: String?,
-        val startTime: String?,
-        val error: String? = null
-    )
-
-    data class SubmitScoreRequest(
-        val sessionId: String,
-        val answers: List<AnswerData>,
-        val clientScore: Int,
-        val signature: String
-    )
-
-    data class SubmitScoreResponse(
-        val success: Boolean,
-        val verifiedScore: Int? = null,
-        val flaggedSuspicious: Boolean = false,
-        val warning: String? = null,
-        val errorCode: String? = null,
-        val errorMessage: String? = null
-    )
 }
+
+// ============ Request/Response DTOs ============
+
+data class QuestionData(
+    val questionId: String,
+    val question: String,
+    val correctAnswer: String,
+    val choices: List<String>
+)
+
+data class AnswerData(
+    val questionId: String,
+    val answer: String,
+    val timeToAnswer: Long
+)
+
+data class StartSessionRequest(
+    val gameType: String,
+    val levelId: String? = null,
+    val questions: List<QuestionData>
+)
+
+data class StartSessionResponse(
+    val success: Boolean,
+    val sessionId: String?,
+    val startTime: String?,
+    val error: String? = null
+)
+
+data class SubmitScoreRequest(
+    val sessionId: String,
+    val answers: List<AnswerData>,
+    val clientScore: Int,
+    val signature: String
+)
+
+data class SubmitScoreResponse(
+    val success: Boolean,
+    val verifiedScore: Int? = null,
+    val flaggedSuspicious: Boolean? = false,
+    val warning: String? = null,
+    val errorCode: String? = null,
+    val errorMessage: String? = null
+)

@@ -75,6 +75,9 @@ fun MainView(
         loadingViewModel.hideLoading()
         isDataLoaded = true
         isVisible = true
+        
+        // Server session is now started automatically after questions load
+        // in QuestionViewModel.getAllQuestions()
     }
 
     // Quan sát trạng thái dữ liệu từ ViewModel
@@ -197,6 +200,10 @@ fun MainView(
                     choiceAttempts = choiceAttempts,
                     hiddenChoice = hiddenChoices,
                     totalQuestion = usedQuestions.size,
+                    onAnswerSelected = { choice ->
+                        // Record answer for server-side validation
+                        questionViewModel.selectAnswer(choice)
+                    },
                     onNext = {
                         if (count.value >= usedQuestions.lastIndex) {
                             val temp = usedQuestions.size
@@ -599,6 +606,7 @@ fun ChoiceScreen(
     score: MutableState<Int>,
     hiddenChoice: List<String>,
     context: Context = LocalContext.current,
+    onAnswerSelected: (String) -> Unit = {},  // NEW: Callback for server validation
     onNext: () -> Unit
 ) {
     val wrongChoices = remember { mutableStateListOf<String>() }
@@ -632,9 +640,13 @@ fun ChoiceScreen(
                     stt = index + 1,
                     onClick = {
                         if (choiceSelected.value.isEmpty()) {
+                            // Record answer for server validation AND update score
+                            // (selectAnswer handles both, no need to update score here)
+                            onAnswerSelected(choice)
+                            
                             if (choice == questionItem.answer) {
                                 choiceSelected.value = choice
-                                score.value += 10
+                                // Note: score is updated in selectAnswer(), don't duplicate here
                             } else if (twoTimeChoice && choiceAttempts.value == 0) {
                                 wrongChoices.add(choice)
                                 choiceAttempts.value++

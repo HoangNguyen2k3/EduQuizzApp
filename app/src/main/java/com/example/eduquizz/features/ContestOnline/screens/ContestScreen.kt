@@ -2,16 +2,25 @@ package com.example.eduquizz.features.contest.screens
 
 import android.content.Intent
 import android.content.IntentFilter
-import android.util.Log
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -20,44 +29,40 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.navigation.Navigation
 import com.example.eduquizz.data.models.Game
 import com.example.eduquizz.features.ContestOnline.ContestPrefs
 import com.example.eduquizz.features.ContestOnline.GamePauseReceiver
 import com.example.eduquizz.features.ContestOnline.Model.QuestionItemContest
-import com.example.eduquizz.features.contest.viewmodel.QuestionViewModelFromFirebase
+import com.example.eduquizz.features.ContestOnline.viewModel.ContestSecureViewModel
 import com.example.eduquizz.navigation.Routes
-import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
+/**
+ * Contest Screen với UI Premium và Server-Side Validation
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContestScreen(
     modifier: Modifier = Modifier,
-    viewModel: QuestionViewModelFromFirebase = hiltViewModel(),
+    viewModel: ContestSecureViewModel = hiltViewModel(),
     userName: String = "Player1",
     onBackClick: () -> Unit = {},
     onGameClick: (Game) -> Unit = {},
     navController: NavController
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
-    var timeLeft by remember { mutableStateOf(600) }
-    var currentIndex by remember { mutableStateOf(0) }
-    var score by remember { mutableStateOf(0) }
-    var showResult by remember { mutableStateOf(false) }
-
-    val coroutineScope = rememberCoroutineScope()
     var isPaused by remember { mutableStateOf(false) }
 
-    val context = LocalContext.current
+    // Game pause receiver
     val receiver = remember {
         GamePauseReceiver(
             onPauseGame = { isPaused = true },
             onResumeGame = { isPaused = false }
         )
     }
+
     DisposableEffect(Unit) {
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF)
@@ -70,192 +75,439 @@ fun ContestScreen(
         }
     }
 
-    // Nếu game bị pause → hiển thị thông báo
+    // Start contest
+    LaunchedEffect(Unit) {
+        viewModel.startContest("English/QuizGame/LevelEasy")
+    }
+
+    // Timer countdown
+    LaunchedEffect(uiState.sessionActive, isPaused) {
+        if (uiState.sessionActive && !uiState.showResult) {
+            while (uiState.timeLeft > 0 && !uiState.showResult) {
+                if (!isPaused) {
+                    delay(1000)
+                    viewModel.updateTimeLeft(uiState.timeLeft - 1)
+                } else {
+                    delay(500)
+                }
+            }
+            if (uiState.timeLeft <= 0) {
+                viewModel.onTimeUp()
+            }
+        }
+    }
+
+    // Pause overlay
     if (isPaused) {
         Box(
-            Modifier.fillMaxSize(),
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.8f)),
             contentAlignment = Alignment.Center
         ) {
-            Text("⏸ Trò chơi đã tạm dừng", fontSize = 20.sp, color = Color.Red)
-        }
-    }
-    LaunchedEffect(Unit) {
-        viewModel.loadQuestions("English/QuizGame/LevelEasy")
-    }
-
-    /*    LaunchedEffect(uiState.questions.isNotEmpty()) {
-            if (uiState.questions.isNotEmpty()) {
-                while (timeLeft > 0 && !showResult) {
-                    delay(1000)
-                    timeLeft -= 1
-                }
-                showResult = true
-                //saveResultToFirebase(userName, score)
-            }
-        }*/
-    LaunchedEffect(uiState.questions.isNotEmpty()) {
-        if (uiState.questions.isNotEmpty()) {
-            while (timeLeft > 0 && !showResult) {
-                if (!isPaused) {      // ⏸ chỉ trừ thời gian khi không bị pause
-                    delay(1000)
-                    timeLeft -= 1
-                } else {
-                    delay(500) // tạm chờ kiểm tra lại sau nửa giây
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(
+                    modifier = Modifier.padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("⏸️", fontSize = 48.sp)
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "Trò chơi đã tạm dừng",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "Quay lại ứng dụng để tiếp tục",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
                 }
             }
-            showResult = true
         }
+        return
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text("Cuộc thi online", fontWeight = FontWeight.Bold)
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            "⏰ ${timeLeft / 60}:${(timeLeft % 60).toString().padStart(2, '0')}",
-                            fontSize = 16.sp,
-                            color = Color(0xFF1E88E5)
-                        )
-                        Text("Điểm: $score", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    }
-                    Spacer(Modifier.width(12.dp))
+    // Main content
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF667eea),
+                        Color(0xFF764ba2)
+                    )
+                )
+            )
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Custom Top Bar
+            ContestTopBar(
+                timeLeft = uiState.timeLeft,
+                score = uiState.clientScore,
+                currentQuestion = uiState.currentIndex + 1,
+                totalQuestions = uiState.questions.size,
+                onBackClick = {
+                    viewModel.resetContest()
+                    onBackClick()
                 }
             )
-        },
-        content = { padding ->
-            when {
-                uiState.loading -> {
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .padding(padding),
-                        Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
+
+            // Content
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                when {
+                    uiState.loading -> {
+                        LoadingView()
                     }
-                }
 
-                uiState.error != null -> {
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .padding(padding),
-                        Alignment.Center
-                    ) {
-                        Text("Lỗi tải dữ liệu: ${uiState.error}", color = Color.Red)
-                    }
-                }
-
-                uiState.questions.isNotEmpty() -> {
-                    val question = uiState.questions.getOrNull(currentIndex)
-
-                    if (showResult || question == null) {
-                        ResultScreen(score = score, onExit = {
-                            currentIndex = 0
-                            score = 0
-                            timeLeft = 600
-                            showResult = false
-                            //onBackClick()
-                            navController.navigate(Routes.LEADERBOARD_GAMES_SCENE)
-                        })
-                    } else {
-                        QuestionQuizView(
-                            question = question,
-                            timeLeft = timeLeft,
-                            score = score,
-                            questionNumber = currentIndex + 1,
-                            totalQuestions = uiState.questions.size,
-                            onAnswerSelected = { answer ->
-                                val correct = answer == question.answer
-                                if (correct) score += 10
-
-                                coroutineScope.launch {
-                                    delay(600)
-                                    if (currentIndex < uiState.questions.lastIndex) {
-                                        currentIndex++
-                                    } else {
-                                        showResult = true
-                                        saveResultToFirebase(userName, score)
-                                    }
-                                }
-                            },
-                            modifier = Modifier.padding(padding)
+                    uiState.error != null -> {
+                        ErrorView(
+                            error = uiState.error!!,
+                            onRetry = onBackClick
                         )
+                    }
+
+                    uiState.showResult -> {
+                        PremiumResultScreen(
+                            clientScore = uiState.clientScore,
+                            verifiedScore = uiState.verifiedScore,
+                            validationError = uiState.validationError,
+                            flaggedSuspicious = uiState.flaggedSuspicious,
+                            submitting = uiState.submitting,
+                            totalQuestions = uiState.questions.size,
+                            onExit = {
+                                ContestPrefs.saveJoinDate(context)
+                                viewModel.resetContest()
+                                navController.navigate(Routes.LEADERBOARD_GAMES_SCENE)
+                            }
+                        )
+                    }
+
+                    uiState.questions.isNotEmpty() -> {
+                        val question = uiState.questions.getOrNull(uiState.currentIndex)
+                        if (question != null) {
+                            PremiumQuestionView(
+                                question = question,
+                                questionNumber = uiState.currentIndex + 1,
+                                totalQuestions = uiState.questions.size,
+                                onAnswerSelected = { answer ->
+                                    viewModel.submitAnswer(answer)
+                                }
+                            )
+                        }
                     }
                 }
             }
         }
-    )
+    }
 }
 
 @Composable
-fun QuestionQuizView(
-    question: QuestionItemContest,
+fun ContestTopBar(
     timeLeft: Int,
     score: Int,
+    currentQuestion: Int,
+    totalQuestions: Int,
+    onBackClick: () -> Unit
+) {
+    val isTimeWarning = timeLeft <= 60
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (isTimeWarning) 1.1f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(500),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse"
+    )
+
+    Surface(
+        color = Color.White.copy(alpha = 0.15f),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Back button
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(Color.White.copy(alpha = 0.2f), CircleShape)
+            ) {
+                Icon(
+                    Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.White
+                )
+            }
+
+            Spacer(Modifier.width(12.dp))
+
+            // Title
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "🏆 Cuộc thi Online",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    "Câu $currentQuestion / $totalQuestions",
+                    fontSize = 12.sp,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
+            }
+
+            // Timer
+            Surface(
+                color = if (isTimeWarning) Color(0xFFFF5252) else Color.White.copy(alpha = 0.2f),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.scale(pulseScale)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "⏱️",
+                        fontSize = 16.sp
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        "${timeLeft / 60}:${(timeLeft % 60).toString().padStart(2, '0')}",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+
+            Spacer(Modifier.width(8.dp))
+
+            // Score
+            Surface(
+                color = Color(0xFF4CAF50),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("⭐", fontSize = 16.sp)
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        "$score",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun LoadingView() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(12.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(48.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator(
+                    color = Color(0xFF667eea),
+                    strokeWidth = 4.dp,
+                    modifier = Modifier.size(64.dp)
+                )
+                Spacer(Modifier.height(24.dp))
+                Text(
+                    "Đang kết nối...",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF667eea)
+                )
+                Text(
+                    "Chuẩn bị phiên thi đấu an toàn",
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ErrorView(error: String, onRetry: () -> Unit) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(12.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = Color(0xFFFF5252),
+                    modifier = Modifier.size(64.dp)
+                )
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    "Có lỗi xảy ra",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    error,
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(24.dp))
+                Button(
+                    onClick = onRetry,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF667eea)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Quay lại", fontSize = 16.sp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PremiumQuestionView(
+    question: QuestionItemContest,
     questionNumber: Int,
     totalQuestions: Int,
-    onAnswerSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
+    onAnswerSelected: (String) -> Unit
 ) {
     var selectedAnswer by remember { mutableStateOf<String?>(null) }
     var answered by remember { mutableStateOf(false) }
 
-    // 🔹 Reset lại khi câu hỏi mới hiển thị
     LaunchedEffect(question.question) {
         selectedAnswer = null
         answered = false
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(20.dp)
-            .background(Color(0xFFF7F9FC)),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+    // Animation for question appearance
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(question) {
+        visible = false
+        delay(100)
+        visible = true
+    }
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn() + slideInVertically { -50 },
+        exit = fadeOut()
     ) {
         Card(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(28.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(8.dp),
+            elevation = CardDefaults.cardElevation(16.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
-                Modifier
-                    .padding(20.dp)
-                    .fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "Câu $questionNumber / $totalQuestions",
-                    color = Color.Gray,
-                    fontSize = 16.sp
+                // Security badge
+                Surface(
+                    color = Color(0xFFE8F5E9),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = Color(0xFF4CAF50),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            "Bảo mật Server",
+                            fontSize = 12.sp,
+                            color = Color(0xFF2E7D32),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                // Progress indicator
+                LinearProgressIndicator(
+                    progress = { questionNumber.toFloat() / totalQuestions },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp)),
+                    color = Color(0xFF667eea),
+                    trackColor = Color(0xFFE0E0E0)
                 )
-                Spacer(Modifier.height(8.dp))
+
+                Spacer(Modifier.height(24.dp))
+
+                // Question text
                 Text(
                     text = question.question,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    color = Color(0xFF1A1A2E),
+                    lineHeight = 32.sp
                 )
-                Spacer(Modifier.height(20.dp))
 
-                question.choices.forEach { choice ->
+                Spacer(Modifier.height(32.dp))
+
+                // Answer options
+                question.choices.forEachIndexed { index, choice ->
+                    val optionLetter = ('A' + index).toString()
+                    
                     val bgColor = when {
-                        !answered -> Color(0xFF42A5F5)
+                        !answered -> Color(0xFF667eea)
                         choice == selectedAnswer && choice == question.answer -> Color(0xFF4CAF50)
-                        choice == selectedAnswer && choice != question.answer -> Color(0xFFD32F2F)
-                        else -> Color(0xFF90CAF9)
+                        choice == selectedAnswer && choice != question.answer -> Color(0xFFFF5252)
+                        choice == question.answer && answered -> Color(0xFF4CAF50).copy(alpha = 0.5f)
+                        else -> Color(0xFFBDBDBD)
                     }
 
                     Button(
@@ -268,14 +520,44 @@ fun QuestionQuizView(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 6.dp),
-                        shape = RoundedCornerShape(12.dp),
+                            .padding(vertical = 6.dp)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = bgColor,
                             contentColor = Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 4.dp,
+                            pressedElevation = 8.dp
                         )
                     ) {
-                        Text(choice, fontSize = 18.sp, textAlign = TextAlign.Center)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Option letter badge
+                            Surface(
+                                color = Color.White.copy(alpha = 0.3f),
+                                shape = CircleShape,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        optionLetter,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.width(16.dp))
+                            Text(
+                                choice,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 }
             }
@@ -283,68 +565,247 @@ fun QuestionQuizView(
     }
 }
 
-
 @Composable
-fun ResultScreen(score: Int, onExit: () -> Unit) {
-    val context = LocalContext.current
+fun PremiumResultScreen(
+    clientScore: Int,
+    verifiedScore: Int?,
+    validationError: String?,
+    flaggedSuspicious: Boolean,
+    submitting: Boolean,
+    totalQuestions: Int,
+    onExit: () -> Unit
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "celebration")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "scale"
+    )
+
     Box(
-        Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF7F9FC)),
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Card(
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(28.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(8.dp),
-            modifier = Modifier.padding(24.dp)
+            elevation = CardDefaults.cardElevation(20.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(24.dp)
+                modifier = Modifier.padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("🎉 Cuộc thi đã kết thúc!", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(8.dp))
-                Text("Tổng điểm của bạn: $score", fontSize = 20.sp, color = Color(0xFF1E88E5))
-                Spacer(Modifier.height(20.dp))
-                Button(onClick = {
-                    ContestPrefs.saveJoinDate(context) // lưu lại ngày đã chơi
-                    onExit()
-                }) {
+                when {
+                    submitting -> {
+                        // Loading state
+                        CircularProgressIndicator(
+                            color = Color(0xFF667eea),
+                            strokeWidth = 4.dp,
+                            modifier = Modifier.size(80.dp)
+                        )
+                        Spacer(Modifier.height(24.dp))
+                        Text(
+                            "🔐 Đang xác thực điểm số...",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF667eea)
+                        )
+                        Text(
+                            "Vui lòng đợi trong giây lát",
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
+                    }
 
-                    Text("Thoát", fontSize = 18.sp)
+                    validationError != null -> {
+                        // Error state
+                        Surface(
+                            color = Color(0xFFFFEBEE),
+                            shape = CircleShape,
+                            modifier = Modifier.size(100.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = null,
+                                    tint = Color(0xFFD32F2F),
+                                    modifier = Modifier.size(60.dp)
+                                )
+                            }
+                        }
 
+                        Spacer(Modifier.height(24.dp))
+
+                        Text(
+                            "Xác thực thất bại!",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFD32F2F)
+                        )
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Surface(
+                            color = Color(0xFFFFEBEE),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    when (validationError) {
+                                        "SCORE_MISMATCH" -> "⚠️ Điểm số không khớp"
+                                        "INVALID_SIGNATURE" -> "⚠️ Phát hiện thay đổi dữ liệu"
+                                        "SESSION_EXPIRED" -> "⚠️ Phiên chơi đã hết hạn"
+                                        else -> "⚠️ Có lỗi xảy ra"
+                                    },
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFB71C1C)
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    "Điểm của bạn không được ghi nhận",
+                                    fontSize = 14.sp,
+                                    color = Color(0xFFD32F2F)
+                                )
+                            }
+                        }
+                    }
+
+                    verifiedScore != null -> {
+                        // Success state
+                        Text(
+                            "🎉",
+                            fontSize = 64.sp,
+                            modifier = Modifier.scale(scale)
+                        )
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Text(
+                            "Chúc mừng!",
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1A1A2E)
+                        )
+
+                        Spacer(Modifier.height(24.dp))
+
+                        // Score card
+                        Surface(
+                            color = Color(0xFF667eea),
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier.shadow(8.dp, RoundedCornerShape(20.dp))
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = Color(0xFF4CAF50),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        "Điểm đã xác thực",
+                                        color = Color.White.copy(alpha = 0.9f),
+                                        fontSize = 14.sp
+                                    )
+                                }
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    "$verifiedScore",
+                                    fontSize = 56.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    "điểm",
+                                    fontSize = 16.sp,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(16.dp))
+
+                        // Stats
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(24.dp)
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    "${verifiedScore / 10}/$totalQuestions",
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF4CAF50)
+                                )
+                                Text("Câu đúng", fontSize = 12.sp, color = Color.Gray)
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    "${(verifiedScore * 100) / (totalQuestions * 10)}%",
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF667eea)
+                                )
+                                Text("Tỷ lệ", fontSize = 12.sp, color = Color.Gray)
+                            }
+                        }
+
+                        if (flaggedSuspicious) {
+                            Spacer(Modifier.height(16.dp))
+                            Surface(
+                                color = Color(0xFFFFF3E0),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    "⚠️ Bài làm đang được xem xét",
+                                    modifier = Modifier.padding(12.dp),
+                                    fontSize = 13.sp,
+                                    color = Color(0xFFE65100)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(32.dp))
+
+                // Exit button
+                Button(
+                    onClick = onExit,
+                    enabled = !submitting,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF667eea)
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(8.dp)
+                ) {
+                    Text(
+                        "🏆 Xem Bảng Xếp Hạng",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
     }
 }
-
-/**
- * 🏆 Lưu kết quả lên Firebase để cập nhật BXH
- */
-private val leaderboardRef by lazy {
-    FirebaseDatabase.getInstance().getReference("Contest/Leaderboard")
-}
-private fun saveResultToFirebase(userName: String, score: Int) {
-    val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
-    val entry = mapOf(
-        "name" to userName,
-        "score" to score,
-        "date" to today,
-        "timestamp" to System.currentTimeMillis()
-    )
-    leaderboardRef.push().setValue(entry)
-}
-/*private fun saveResultToFirebase(userName: String, score: Int) {
-    val ref = FirebaseDatabase.getInstance().getReference("Contest/Leaderboard")
-    val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
-
-    val entry = mapOf(
-        "name" to userName,
-        "score" to score,
-        "date" to today,
-        "timestamp" to System.currentTimeMillis()
-    )
-    ref.push().setValue(entry)
-}*/
