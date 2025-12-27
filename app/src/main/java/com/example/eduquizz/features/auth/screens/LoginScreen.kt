@@ -390,8 +390,8 @@ fun LoginScreen(
                         enabled = !uiState.isLoading &&
                                 usernameOrEmail.isNotBlank() &&
                                 password.isNotBlank() &&
-                                (uiState.remainingAttempts == null || uiState.remainingAttempts!! > 0) &&  // Enable if null or > 0
-                                !uiState.requiresCaptcha  // Disable if captcha required
+                                (uiState.remainingAttempts == null || uiState.remainingAttempts!! > 0)
+                                // NOTE: Removed !requiresCaptcha - onClick opens CAPTCHA dialog when needed
                     ) {
                         if (uiState.isLoading) {
                             CircularProgressIndicator(

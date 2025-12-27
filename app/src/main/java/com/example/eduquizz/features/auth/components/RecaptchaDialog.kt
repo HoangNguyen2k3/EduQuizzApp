@@ -290,12 +290,8 @@ private fun createRecaptchaHtml(siteKey: String): String {
                 <p class="info">Vui lòng xác nhận bạn không phải robot để tiếp tục</p>
                 
                 <div id="recaptcha-container">
-                    <div class="g-recaptcha" 
-                         data-sitekey="$siteKey"
-                         data-callback="onCaptchaSuccess"
-                         data-error-callback="onCaptchaError"
-                         data-expired-callback="onCaptchaExpired">
-                    </div>
+                    <!-- Widget will be rendered here by grecaptcha.render() -->
+                    <div id="recaptcha-widget"></div>
                     <p class="loading" id="loading-msg">⏳ Đang tải reCAPTCHA...</p>
                 </div>
                 
@@ -309,10 +305,23 @@ private fun createRecaptchaHtml(siteKey: String): String {
                 console.log('📍 Site Key:', '$siteKey'.substring(0, 20) + '...');
                 console.log('🌐 Android interface available:', typeof window.Android !== 'undefined');
                 
-                // Hide loading message when reCAPTCHA loads
+                // Explicit render callback - this renders the actual reCAPTCHA checkbox
                 var recaptchaCallback = function() {
-                    console.log('✅ reCAPTCHA script loaded successfully');
+                    console.log('✅ reCAPTCHA API loaded, rendering widget...');
                     document.getElementById('loading-msg').style.display = 'none';
+                    
+                    try {
+                        grecaptcha.render('recaptcha-widget', {
+                            'sitekey': '$siteKey',
+                            'callback': onCaptchaSuccess,
+                            'error-callback': onCaptchaError,
+                            'expired-callback': onCaptchaExpired
+                        });
+                        console.log('✅ reCAPTCHA widget rendered successfully');
+                    } catch (e) {
+                        console.error('❌ Failed to render reCAPTCHA:', e);
+                        document.getElementById('error-msg').style.display = 'block';
+                    }
                 };
                 
                 function onCaptchaSuccess(token) {
@@ -348,7 +357,7 @@ private fun createRecaptchaHtml(siteKey: String): String {
                 }, 10000);
             </script>
             
-            <!-- Load reCAPTCHA script with callback -->
+            <!-- Load reCAPTCHA script with explicit render -->
             <script src="https://www.google.com/recaptcha/api.js?onload=recaptchaCallback&render=explicit" async defer></script>
         </body>
         </html>
