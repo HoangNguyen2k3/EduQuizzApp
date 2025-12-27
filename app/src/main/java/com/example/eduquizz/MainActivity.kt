@@ -54,26 +54,34 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-//            PlayIntegrityHelper.checkIntegrity(this) { passed, json ->
-//                if (!passed) {
-//                    Toast.makeText(this, "App có dấu hiệu bị chỉnh sửa!", Toast.LENGTH_LONG).show()
-//                    finish()
-//                    return@checkIntegrity
-//                }
-//
-//                Log.d("Integrity", "JSON: $json")
-//            }
-//
-//            if (!SignatureUtils.verifyAppSignature(this)) {
-//                Toast.makeText(this, "App đã bị chỉnh sửa!", Toast.LENGTH_LONG).show()
+
+//        // SECURITY CHECK 1: Play Integrity API
+//        // Kiểm tra app integrity để phát hiện APK bị chỉnh sửa hoặc repackage
+//        PlayIntegrityHelper.checkIntegrity(this) { passed, json ->
+//            if (!passed) {
+//                Toast.makeText(this, "App có dấu hiệu bị chỉnh sửa!", Toast.LENGTH_LONG).show()
 //                finish()
-//
-//                return
+//                return@checkIntegrity
 //            }
 //
-//            if (Debug.isDebuggerConnected() || Debug.waitingForDebugger()) {
-//                android.os.Process.killProcess(android.os.Process.myPid())
-//            }
+//            Log.d("Integrity", "JSON: $json")
+//        }
+//
+//        // SECURITY CHECK 2: Signature Verification
+//        // Xác minh chữ ký APK để đảm bảo app không bị repackage
+//        if (!SignatureUtils.verifyAppSignature(this)) {
+//            Toast.makeText(this, "App đã bị chỉnh sửa!", Toast.LENGTH_LONG).show()
+//            finish()
+//
+//            return
+//        }
+//
+//        // SECURITY CHECK 3: Anti-Debugging
+//        // Phát hiện debugger và thoát app ngay lập tức
+//        if (Debug.isDebuggerConnected() || Debug.waitingForDebugger()) {
+//            android.os.Process.killProcess(android.os.Process.myPid())
+//        }
+
 
         dataViewModel.updateLastSeenNow()
         Log.d("MainActivity", "✅ Updated lastSeen: ${System.currentTimeMillis()}")

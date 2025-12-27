@@ -22,15 +22,32 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("D:\\Android\\EduQuizzApp_v1\\keystore\\my-release-key-1")
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "123456789"
+            keyAlias = "key-alias-1"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: "987654321"
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true // R8-ON: lam roi code, xoa code ko dung, toi uu byte code
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
+        }
+        debug {
+            isMinifyEnabled = false
         }
     }
+
+
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
